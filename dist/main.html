@@ -11,18 +11,38 @@
 <body>
 
 <div class="flex flex-col items-center font-poppins bg-background h-screen">
-    <nav class="flex justify-between items-center h-20 sized90 mx-4 border-solid border-b border-text-color border-opacity-25">
-        <div id="stockZ" class="flex bg-transparent text-6xl font-semibold justify-center gap-6">
+<!--     <nav class="grid grid-rows-1 grid-cols-3 h-20 sized90 mx-4 border-solid border-b border-text-color border-opacity-25">
+
+        <div id="stockZ" class="flex justify-self-start bg-transparent text-6xl font-semibold justify-center gap-6 self-center">
             <span class="text-text-color select-none">STOCK</span> <span class="text-accent-color select-none">Z</span>
         </div>
-        <div class="flex justify-self-center bg-red-500 h-full w-1/2">
-
+        <div class="flex justify-self-center justify-between items-center h-full w-full self-center text-2xl text-text-color font-poppins font-medium">
+            <a href=""><button>Ticker Info</button></a>
+            <a href=""><button>Main</button></a>
+            <a href=""><button>Watch List</button></a>
         </div>
-        <div>
+        <div class="flex justify-self-end h-full">
+            <img src="../images/logOut.png" alt="Log Out" class="h-1/2 self-center">
+        </div>
+    </nav> -->
 
+    <nav class="grid grid-rows-1 grid-cols-3 sized90 h-12 lg:h-20 border-solid border-b border-text-color border-opacity-25">
+        <div id="stockZ" class="flex justify-self-start bg-transparent text-2x1 lg:text-6xl font-semibold justify-center gap-2 lg:gap-6 self-center">
+            <span class="text-text-color select-none">STOCK</span> <span class="text-accent-color select-none">Z</span>
+        </div>
+        <div class="flex justify-self-center justify-between items-center h-full w-full text-1x1 self-center lg:text-2xl text-text-color font-medium">
+            <a href="" class="hidden lg:block"><button>Ticker Info</button></a>
+            <a href=""><button>Main</button></a>
+            <a href="" class="hidden lg:block"><button>Watch List</button></a>
+        </div>
+        <div class="flex justify-self-end h-full">
+            <img src="../images/logOut.png" alt="Log Out" class="h-1/2 lg:h-1/4 self-center">
         </div>
     </nav>
 
+    <main>
+        
+    </main>
     
 </div>
 
