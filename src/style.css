@@ -1,0 +1,28 @@
+@keyframes moveStockZ {
+    0% {
+        transform: translate(0, 0);
+    }
+    100% {
+        transform: translate(-42vw, -32vh);
+        font-size: 3.75rem;
+    }
+}
+@keyframes fadeOutButtons {
+    0% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+
+.moved {
+    position: relative;
+    animation: moveStockZ 0.5s forwards ease-in-out;
+}
+.fadeAway {
+    animation: fadeOutButtons 0.5s forwards ease-in-out;
+}
+.sized90 {
+    width: 98%;
+}
