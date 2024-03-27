@@ -8,21 +8,22 @@
     <link rel="stylesheet" href="../src/output.css">
     <link rel="stylesheet" href="../src/style.css">
 </head>
-<body>
+<body class="overflow-hidden bg-background w-screen h-screen">
 
-<div class="flex flex-col justify-center items-center font-poppins bg-background h-screen">
+<div class="flex flex-col justify-center items-center font-poppins bg-background h-screen fade-in">
     
-    <div id="stockZ" class="flex bg-transparent mb-10 text-9xl font-semibold justify-center gap-6">
+    <!-- <div id="stockZ" class="flex bg-transparent mb-10 md:text-9xl text-2xl font-semibold justify-center gap-6"> -->
+    <div id="stockZ" class="flex bg-transparent font-semibold justify-center text-6xl laptop:text-9xl laptop:gap-6 gap-2 mb-10">
         <span class="text-text-color select-none">STOCK</span> <span class="text-accent-color select-none">Z</span>
     </div>
-    <div class="flex gap-6 mb-6">
-        <input type="text" name="email" id="inputUsername" class=" bg-text-color flex py-2 px-3 rounded text-background text-1xl w-48" placeholder="Username">
-        <input type="password" name="email" id="inputUsername" class="bg-text-color flex py-2 px-3 rounded text-background text-1xl w-48" placeholder="Password">
+    <div class="flex flex-col laptop:flex-row gap-3 text-1xl laptop:gap-6 laptop:mb-6">
+        <input type="text" name="email" id="inputUsername" class=" bg-text-color flex rounded text-background py-1 px-2 laptop:py-2 laptop:px-3 laptop:text-1xl laptop:w-48" placeholder="Username">
+        <input type="password" name="email" id="inputPassword" class=" bg-text-color flex rounded text-background py-1 px-2 laptop:py-2 laptop:px-3 laptop:text-1xl laptop:w-48" placeholder="Password">
     </div>
-    <button id="enterButton" class="bg-text-color flex py-1  rounded text-background text-1xl w-40 h-10 mb-32 justify-center items-center hover:bg-accent-color transition-colors duration-300 ease-in-out">Enter</button>
+    <button id="enterButton" class="bg-text-color flex laptop:py-1 laptop:text-1xl laptop:w-40 laptop:h-10 laptop:mb-32 rounded text-background justify-center items-center hover:bg-accent-color transition-colors duration-300 ease-in-out w-1/4 mt-3 laptop:mt-0">Enter</button>
 </div>
 
-<script src="../src/javascript.js">
+<script src="../src/javascript.mjs">
 </script>
 
 </body>
