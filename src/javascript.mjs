@@ -20,8 +20,11 @@ const analytics = getAnalytics(app); */
 /* Elements */
 var enterButton = document.getElementById("enterButton");
 let logOutButton = document.getElementById("logOutButton");
+let tickerInfoBtn = document.getElementById("tickerInfoBtn");
+let homeBtn = document.getElementById("homeBtn");
 const mainTickerInput = document.getElementById("mainTickerInput");
 const tickerSubmitBtn = document.getElementById("tickerSubmitBtn");
+
 
 if(enterButton){
     enterButton.addEventListener("click", function() {
@@ -33,10 +36,23 @@ if(enterButton){
         enterButton.classList.add("fadeAway");
         setTimeout(() => {
             window.location.href = ('./main.html');
-        }, 500);
+        }, 200);
 
     });
     
+}
+
+if(!enterButton){
+    tickerInfoBtn.addEventListener('click', function(){
+        if (!document.URL.includes('tickerInfo.html')){
+            window.location.href = 'tickerInfo.html';
+        }
+    });
+    homeBtn.addEventListener('click', function(){
+        if (!document.URL.includes('main.html')){
+            window.location.href = 'main.html';
+        }
+    });
 }
 
 if(mainTickerInput){

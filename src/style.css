@@ -31,14 +31,14 @@
     animation: moveStockZ 0.5s forwards ease-in-out;
 }
 .fadeAway {
-    animation: fadeOutButtons 0.5s forwards ease-in-out;
+    animation: fadeOutButtons 0.2s forwards ease-in-out;
 }
 .sized90 {
     width: 98%;
 }
 #mainPage {
     opacity: 0;
-    transition-duration: 0.5s;
+    transition-duration: 0.2s;
     transition-property: opacity;
   }
 

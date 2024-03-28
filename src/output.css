@@ -556,12 +556,12 @@ video {
   margin-right: 1.25rem;
 }
 
-.mt-3 {
-  margin-top: 0.75rem;
-}
-
 .mt-10 {
   margin-top: 2.5rem;
+}
+
+.mt-3 {
+  margin-top: 0.75rem;
 }
 
 .flex {
@@ -584,6 +584,10 @@ video {
   height: 25%;
 }
 
+.h-10 {
+  height: 2.5rem;
+}
+
 .h-12 {
   height: 3rem;
 }
@@ -604,16 +608,8 @@ video {
   height: 16.666667%;
 }
 
-.h-20 {
-  height: 5rem;
-}
-
-.h-14 {
-  height: 3.5rem;
-}
-
-.h-10 {
-  height: 2.5rem;
+.w-1\/2 {
+  width: 50%;
 }
 
 .w-1\/4 {
@@ -628,16 +624,16 @@ video {
   width: 100%;
 }
 
-.w-1\/5 {
-  width: 20%;
-}
-
-.w-1\/2 {
-  width: 50%;
-}
-
 .w-screen {
   width: 100vw;
+}
+
+.w-2\/6 {
+  width: 33.333333%;
+}
+
+.w-3\/6 {
+  width: 50%;
 }
 
 .select-none {
@@ -656,6 +652,10 @@ video {
 
 .flex-col {
   flex-direction: column;
+}
+
+.items-start {
+  align-items: flex-start;
 }
 
 .items-center {
@@ -714,10 +714,6 @@ video {
   border-radius: 0.5rem;
 }
 
-.rounded-sm {
-  border-radius: 0.125rem;
-}
-
 .border-2 {
   border-width: 2px;
 }
@@ -748,6 +744,11 @@ video {
   background-color: rgb(17 19 17 / var(--tw-bg-opacity));
 }
 
+.bg-secondary-color {
+  --tw-bg-opacity: 1;
+  background-color: rgb(66 92 82 / var(--tw-bg-opacity));
+}
+
 .bg-text-color {
   --tw-bg-opacity: 1;
   background-color: rgb(228 236 228 / var(--tw-bg-opacity));
@@ -755,11 +756,6 @@ video {
 
 .bg-transparent {
   background-color: transparent;
-}
-
-.bg-secondary-color {
-  --tw-bg-opacity: 1;
-  background-color: rgb(66 92 82 / var(--tw-bg-opacity));
 }
 
 .px-2 {
@@ -778,6 +774,10 @@ video {
 
 .pt-10 {
   padding-top: 2.5rem;
+}
+
+.pt-8 {
+  padding-top: 2rem;
 }
 
 .text-center {
@@ -808,6 +808,11 @@ video {
   line-height: 1;
 }
 
+.text-3xl {
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+}
+
 .font-bold {
   font-weight: 700;
 }
@@ -818,6 +823,10 @@ video {
 
 .font-semibold {
   font-weight: 600;
+}
+
+.uppercase {
+  text-transform: uppercase;
 }
 
 .text-accent-color {
@@ -835,16 +844,20 @@ video {
   color: rgb(228 236 228 / var(--tw-text-opacity));
 }
 
-.text-opacity-85 {
-  --tw-text-opacity: 0.85;
+.underline {
+  text-decoration-line: underline;
 }
 
-.text-opacity-95 {
-  --tw-text-opacity: 0.95;
+.underline-offset-2 {
+  text-underline-offset: 2px;
 }
 
-.text-opacity-100 {
-  --tw-text-opacity: 1;
+.underline-offset-auto {
+  text-underline-offset: auto;
+}
+
+.underline-offset-8 {
+  text-underline-offset: 8px;
 }
 
 .placeholder-opacity-60::-moz-placeholder {
@@ -890,6 +903,16 @@ video {
 .placeholder\:text-5xl::placeholder {
   font-size: 3rem;
   line-height: 1;
+}
+
+.placeholder\:text-3xl::-moz-placeholder {
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+}
+
+.placeholder\:text-3xl::placeholder {
+  font-size: 1.875rem;
+  line-height: 2.25rem;
 }
 
 .hover\:bg-accent-color:hover {
@@ -945,12 +968,20 @@ video {
     height: 2.5rem;
   }
 
+  .laptop\:h-12 {
+    height: 3rem;
+  }
+
   .laptop\:h-16 {
     height: 4rem;
   }
 
-  .laptop\:h-12 {
-    height: 3rem;
+  .laptop\:h-1\/6 {
+    height: 16.666667%;
+  }
+
+  .laptop\:w-1\/6 {
+    width: 16.666667%;
   }
 
   .laptop\:w-2\/6 {
@@ -965,8 +996,8 @@ video {
     width: 12rem;
   }
 
-  .laptop\:w-1\/6 {
-    width: 16.666667%;
+  .laptop\:w-20 {
+    width: 5rem;
   }
 
   .laptop\:flex-row {
@@ -996,6 +1027,11 @@ video {
     padding-bottom: 0.5rem;
   }
 
+  .laptop\:text-2xl {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+
   .laptop\:text-5xl {
     font-size: 3rem;
     line-height: 1;
@@ -1011,14 +1047,9 @@ video {
     line-height: 1;
   }
 
-  .laptop\:text-2xl {
-    font-size: 1.5rem;
-    line-height: 2rem;
-  }
-
-  .laptop\:text-3xl {
-    font-size: 1.875rem;
-    line-height: 2.25rem;
+  .laptop\:text-4xl {
+    font-size: 2.25rem;
+    line-height: 2.5rem;
   }
 
   .laptop\:placeholder\:text-8xl::-moz-placeholder {
@@ -1029,5 +1060,25 @@ video {
   .laptop\:placeholder\:text-8xl::placeholder {
     font-size: 6rem;
     line-height: 1;
+  }
+
+  .laptop\:placeholder\:text-5xl::-moz-placeholder {
+    font-size: 3rem;
+    line-height: 1;
+  }
+
+  .laptop\:placeholder\:text-5xl::placeholder {
+    font-size: 3rem;
+    line-height: 1;
+  }
+
+  .laptop\:placeholder\:text-4xl::-moz-placeholder {
+    font-size: 2.25rem;
+    line-height: 2.5rem;
+  }
+
+  .laptop\:placeholder\:text-4xl::placeholder {
+    font-size: 2.25rem;
+    line-height: 2.5rem;
   }
 }
