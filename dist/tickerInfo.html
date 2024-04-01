@@ -28,10 +28,47 @@
         </button>
     </nav>
 
-    <main class="flex flex-col h-full w-full justify-start items-center pt-8 font-bold">
-        <div class="flex justify-center items-center border-text-color border-2 laptop:border-3 border-opacity-50 border-solid rounded-lg h-12 laptop:h-1/8 w-3/6 laptop:w-48">
-            <input type="text" id="mainTickerInput" placeholder="TICKER" class="bg-transparent text-center uppercase placeholder:text-center text-text-color placeholder-text-text-color placeholder-opacity-60 outline-none text-3xl laptop:text-4xl placeholder:text-3xl laptop:placeholder:text-4xl h-full w-full focus:placeholder-transparent overflow-hidden">
+    <main class="flex flex-col h-full w-full justify-start items-center pt-8 font-bold gap-2">
+        <div class="flex justify-center items-center select-none border-text-color border-2 laptop:border-3 border-opacity-50 border-solid rounded-lg h-16 laptop:h-1/8 w-3/6 laptop:w-52 text-center uppercase text-text-color text-3xl laptop:text-4xl overflow-hidden">WFC</div>
+       
+        <div class="flex flex-col laptop:flex-row w-full laptop:w-3/5 laptop:h-1/4 justify-start items-center gap-2 laptop:gap-0 laptop:mt-5">
+            <div class="flex flex-col justify-center items-start mt-5 laptop:mt-0 h-1/8 laptop:h-1/2 w-3/4 bg-transparent">
+                <div class="flex justify-center items-center text-text-color bg-secondary-color h-1/2 w-full rounded-t laptop:rounded-tr-none border-b-2 laptop:border-r-2 border-background text-xl laptop:text-2xl font-medium">Great Buy Range</div>
+                <div class="flex h-1/2 w-full bg-transparent">
+                    <div class="flex justify-center items-center h-full w-1/2 bg-great-buy-one rounded-bl border-r-2 border-background text-background underline underline-offset-2 text-xl laptop:text-2xl ">$40.00</div>
+                    <div class="flex justify-center items-center h-full w-1/2 bg-great-buy-two rounded-br laptop:rounded-br-none laptop:border-r-2 border-background text-background underline underline-offset-2 text-xl laptop:text-2xl">$42.00</div>
+                </div>
+            </div>
+            <div class="flex flex-col justify-center items-start h-1/8 laptop:h-1/2 w-3/4 bg-transparent">
+                <div class="flex justify-center items-center text-text-color bg-secondary-color h-1/2 w-full rounded-t laptop:rounded-t-none border-b-2 laptop:border-r-2 border-background text-xl laptop:text-2xl font-medium">Good Buy Range</div>
+                <div class="flex h-1/2 w-full bg-transparent">
+                    <div class="flex justify-center items-center h-full w-1/2 bg-good-buy-one rounded-bl laptop:rounded-bl-none border-r-2 border-background text-background underline underline-offset-2 text-xl laptop:text-2xl ">$44.00</div>
+                    <div class="flex justify-center items-center h-full w-1/2 bg-good-buy-two rounded-br laptop:rounded-b-none laptop:border-r-2 border-background text-background underline underline-offset-2 text-xl laptop:text-2xl">$46.00</div>
+                </div>
+            </div>
+            <div class="flex flex-col justify-center items-start h-1/8 laptop:h-1/2 w-3/4 bg-transparent">
+                <div class="flex justify-center items-center text-text-color bg-secondary-color h-1/2 w-full rounded-t laptop:rounded-t-none border-b-2 laptop:border-r-2 border-background text-xl laptop:text-2xl font-medium ">Okay Buy Range</div>
+                <div class="flex h-1/2 w-full bg-transparent">
+                    <div class="flex justify-center items-center h-full w-1/2 bg-okay-buy-one rounded-bl laptop:rounded-bl-none border-r-2 border-background text-background underline underline-offset-2 text-xl laptop:text-2xl" >$49.00</div>
+                    <div class="flex justify-center items-center h-full w-1/2 bg-okay-buy-two rounded-br laptop:rounded-b-none laptop:border-r-2 border-background text-background underline underline-offset-2 text-xl laptop:text-2xl">$50.00</div>
+                </div>
+            </div>
+            <div class="flex flex-col justify-center items-start h-1/8 laptop:h-1/2 w-3/4 bg-transparent">
+                <div class="flex justify-center items-center text-text-color bg-secondary-color h-1/2 w-full rounded-t laptop:rounded-t-none laptop:rounded-tr border-b-2 border-background text-xl laptop:text-2xl font-medium">Bad Buy Range</div>
+                <div class="flex h-1/2 w-full bg-transparent">
+                    <div class="flex justify-center items-center h-full w-1/2 bg-desperate-buy-one rounded-bl laptop:rounded-bl-none border-r-2 border-background text-background underline text-xl laptop:text-2xl">$52.00</div>
+                    <div class="flex justify-center items-center h-full w-1/2 bg-desperate-buy-two rounded-br text-background underline underline-offset-2 text-xl laptop:text-2xl">$55.00</div>
+                </div>
+            </div>
+           
         </div>
+        <section class="flex flex-col h-1/6 laptop:h-32 w-3/4 laptop:w-1/4 desktop:w-1/3 gap-2 mt-5">
+            <button class="text-text-color bg-secondary-color rounded h-2/5 font-medium text-xl laptop:text-2xl">Add To Watchlist</button>
+            <div class="flex justify-between w-full h-2/5 gap-2">
+                <button class="flex justify-center items-center bg-secondary-color w-1/2 h-full rounded text-text-color font-medium text-sm laptop:text-2xl">Stock Statistics</button>
+                <button class="flex justify-center items-center bg-secondary-color w-1/2 h-full rounded text-text-color font-medium text-sm laptop:text-2xl">Stock Description</button>
+            </div>
+        </section>
     </main>
     
 </div>
