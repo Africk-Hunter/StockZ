@@ -18,13 +18,21 @@ const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app); */
 
 /* Elements */
-var enterButton = document.getElementById("enterButton");
-let logOutButton = document.getElementById("logOutButton");
-let tickerInfoBtn = document.getElementById("tickerInfoBtn");
-let homeBtn = document.getElementById("homeBtn");
-const mainTickerInput = document.getElementById("mainTickerInput");
-const tickerSubmitBtn = document.getElementById("tickerSubmitBtn");
 
+var enterButton         = document.getElementById("enterButton");
+let logOutButton        = document.getElementById("logOutButton");
+/* Nav Buttons */
+let tickerInfoBtn       = document.getElementById("tickerInfoBtn");
+let homeBtn             = document.getElementById("homeBtn");
+let watchListBtn        = document.getElementById("watchListBtn");
+/* Main Page */
+const tickerParentBox   = document.getElementById("tickerParentBox");
+const mainTickerInput   = document.getElementById("mainTickerInput");
+const tickerSubmitBtn   = document.getElementById("tickerSubmitBtn");
+/* Ticker Info Page */
+let tickerLabelIP       = document.getElementById("tickerLabelIP");
+
+let tickerValue = "";
 
 if(enterButton){
     enterButton.addEventListener("click", function() {
@@ -53,9 +61,14 @@ if(!enterButton){
             window.location.href = 'main.html';
         }
     });
+    watchListBtn.addEventListener('click', function(){
+        if (!document.URL.includes('watchlist.html')){
+            window.location.href = 'watchlist.html';
+        }
+    });
 }
 
-if(mainTickerInput){
+if(logOutButton){
     logOutButton.addEventListener('click', function() {
         document.getElementById('mainWrapper').classList.add('fadeAway');
         setTimeout(() => {
@@ -63,12 +76,26 @@ if(mainTickerInput){
         }, 500);
         
     });
+}
+
+if(tickerParentBox){
     mainTickerInput.addEventListener('input', function(){
         if(mainTickerInput.value != ""){
             tickerSubmitBtn.style.display = 'flex';
         } else{
             tickerSubmitBtn.style.display = 'none';
         }
+    });
+    tickerSubmitBtn.addEventListener('click', function() {
+
+        tickerValue = mainTickerInput.value;
+        tickerSubmitBtn.style.display = 'none';
+        mainTickerInput.classList.add("sizeText");
+        tickerParentBox.classList.add("moveUpBox");
+        setTimeout(() => {
+            window.location.href = ('./tickerInfo.html'); 
+        }, 700);
+        
     });
 }
 
