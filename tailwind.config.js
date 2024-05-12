@@ -16,8 +16,6 @@ module.exports = {
         'okay-buy-two': '#CE934D',
         'desperate-buy-one': '#EA3333',
         'desperate-buy-two': '#CE4C4C',
-
-
       },
       screens: {
         'tablet': '640px',
