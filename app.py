@@ -49,13 +49,11 @@ def run_calculations():
         else:
             print("Failed to retrieve data. Status code:", response.status_code)
 
-        return close_information  # Return the close_information list
+        return close_information  
 
-    # Get the ticker symbol from the query parameters
     ticker_symbol = request.args.get('ticker')
     if ticker_symbol:
         close_information = scrape_stock_data(ticker_symbol.upper())
-        # Return the close_information list as JSON
         return jsonify(close_information)
     else:
         return jsonify({"error": "Ticker symbol not provided."}), 400

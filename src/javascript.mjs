@@ -1,23 +1,33 @@
-/* import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
+ 
 
-const firebaseConfig = {
-  apiKey: "YOUR_FIREBASE_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID",
-  measurementId: "YOUR_MEASUREMENT_ID"
+async function main() {
+    const uri = "mongodb+srv://hunterafrick:qkVMAYk6YgLtKfQ2@stockz.abxj0i5.mongodb.net/";      
+    const client = new MongoClient(uri);
+
+    try {
+        // Connect to the MongoDB cluster
+        await client.connect();
+
+        // Make the appropriate DB calls
+        await  listDatabases(client);
+
+    } catch (e) {
+        console.error(e);
+    } finally {
+        await client.close();
+    }
+}
+
+async function listDatabases(client){
+    databasesList = await client.db().admin().listDatabases();
+
+    console.log("Databases:");
+    databasesList.databases.forEach(db => console.log(` - ${db.name}`));
 };
 
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app); */
-var apiKey = 'GM5IDAXHE8LSLU1F'; 
-
+main().catch(console.error);
 
 /* Elements */
-
 var enterButton         = document.getElementById("enterButton");
 let logOutButton        = document.getElementById("logOutButton");
 /* Nav Buttons */
@@ -84,17 +94,29 @@ if (tickerParentBox) {
         }
     });
     tickerSubmitBtn.addEventListener('click', function() {
+        tickerSubmit();
+    });
+    mainTickerInput.addEventListener("keypress", function (event) {
+        if (event.key === "Enter" && mainTickerInput.value != "") {
+            event.preventDefault();
+            tickerSubmit();
+        }
+    });
+
+    function tickerSubmit(){
         tickerValue = mainTickerInput.value;
         tickerSubmitBtn.style.display = 'none';
         mainTickerInput.classList.add("sizeText");
         tickerParentBox.classList.add("moveUpBox");
-        console.log(tickerValue.toUpperCase());
         currentTicker = tickerValue;
-        console.log("it is" +currentTicker);
-        getStockData(tickerValue.toUpperCase()).then(() => {
-            window.location.href = ('/tickerInfo'); 
-        });
-    });
+        getStockData(tickerValue.toUpperCase())
+            .then(() => {
+                window.location.href = ('/tickerInfo'); 
+            })
+            .catch(error => {
+                console.error('Error occurred when retriving stock data: ', error);
+            });
+    }
     
 }
 if (tickerLabelIP) {
@@ -162,22 +184,27 @@ function runStockCalculations(data, ticker) {
 
 function loadCalculatedValues() {
     var storageItem = localStorage.getItem('mostRecentCalculations');
-    if (storageItem) {
+    try {
+        if (storageItem) {
         
-        var calculations = JSON.parse(storageItem);
-        
-        tickerLabelIP.innerHTML = calculations.ticker;
-        document.getElementById('grBL').innerHTML = "$" + calculations.greatBRLow.toFixed(2);
-        document.getElementById('grBH').innerHTML = "$" + calculations.greatBRHigh.toFixed(2);
-        document.getElementById('gBL').innerHTML = "$" + calculations.goodBRLow.toFixed(2);
-        document.getElementById('gBH').innerHTML = "$" + calculations.goodBRHigh.toFixed(2);
-        document.getElementById('oBL').innerHTML = "$" + calculations.okayBRLow.toFixed(2);
-        document.getElementById('oBH').innerHTML = "$" + calculations.okayBRHigh.toFixed(2);
-        document.getElementById('bBL').innerHTML = "$" + calculations.badBRLow.toFixed(2);
-        document.getElementById('bBH').innerHTML = "$" + calculations.badBRHigh.toFixed(2);
-        
-    } else {
-        console.log("No calculations found in localStorage.");
+            var calculations = JSON.parse(storageItem);
+            
+            tickerLabelIP.innerHTML = calculations.ticker;
+            document.getElementById('grBL').innerHTML = "$" + calculations.greatBRLow.toFixed(2);
+            document.getElementById('grBH').innerHTML = "$" + calculations.greatBRHigh.toFixed(2);
+            document.getElementById('gBL').innerHTML = "$" + calculations.goodBRLow.toFixed(2);
+            document.getElementById('gBH').innerHTML = "$" + calculations.goodBRHigh.toFixed(2);
+            document.getElementById('oBL').innerHTML = "$" + calculations.okayBRLow.toFixed(2);
+            document.getElementById('oBH').innerHTML = "$" + calculations.okayBRHigh.toFixed(2);
+            document.getElementById('bBL').innerHTML = "$" + calculations.badBRLow.toFixed(2);
+            document.getElementById('bBH').innerHTML = "$" + calculations.badBRHigh.toFixed(2);
+            
+        } else {
+            console.log("No calculations found in localStorage.");
+        }
+    } catch (error) {
+        console.log("Error occurred when loading data onto page.");
     }
+    
 }
 
