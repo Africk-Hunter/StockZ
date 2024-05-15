@@ -1,32 +1,4 @@
- 
-
-async function main() {
-    const uri = "mongodb+srv://hunterafrick:qkVMAYk6YgLtKfQ2@stockz.abxj0i5.mongodb.net/";      
-    const client = new MongoClient(uri);
-
-    try {
-        // Connect to the MongoDB cluster
-        await client.connect();
-
-        // Make the appropriate DB calls
-        await  listDatabases(client);
-
-    } catch (e) {
-        console.error(e);
-    } finally {
-        await client.close();
-    }
-}
-
-async function listDatabases(client){
-    databasesList = await client.db().admin().listDatabases();
-
-    console.log("Databases:");
-    databasesList.databases.forEach(db => console.log(` - ${db.name}`));
-};
-
-main().catch(console.error);
-
+const MAX_VALUE = 9999
 /* Elements */
 var enterButton         = document.getElementById("enterButton");
 let logOutButton        = document.getElementById("logOutButton");
@@ -42,7 +14,7 @@ const tickerSubmitBtn   = document.getElementById("tickerSubmitBtn");
 let tickerLabelIP       = document.getElementById("tickerLabelIP");
 let currentTicker       = "";
 let stockStatsLink      = document.getElementById("stockStatsLink");
-let stockDescLink      = document.getElementById("stockDescLink");
+let stockDescLink       = document.getElementById("stockDescLink");
 
 if (enterButton) {
     enterButton.addEventListener("click", function() {
@@ -138,6 +110,10 @@ if (tickerLabelIP) {
         var url = 'https://finance.yahoo.com/quote/' + ticker + '/profile';
         window.open(url, '_blank');
     });
+    tickerLabelIP.addEventListener('click', function(){
+        
+    })
+
 }
 
 function getStockData(ticker){
@@ -158,15 +134,48 @@ function getStockData(ticker){
 
 
 function runStockCalculations(data, ticker) {
-    var greatBRLow, greatBRHigh, goodBRLow, goodBRHigh, okayBRLow, okayBRHigh, badBRLow, badBRHigh;
-    greatBRLow = data[0];
-    greatBRHigh = greatBRLow + 2;
-    goodBRLow = greatBRHigh + 2;
-    goodBRHigh = goodBRLow + 2;
-    okayBRLow = goodBRHigh + 2;
-    okayBRHigh = okayBRLow + 2;
-    badBRLow = okayBRHigh + 2;
-    badBRHigh = badBRLow + 2;
+
+    /* 
+        1. Average change per month (percentage NOT $ amount)
+            for(index, months)
+                change[index] = months[index] - months[index + 1]
+            sum all of change and find average
+        2. Multiply average by current month (maybe)
+        3. Find last dip (correction)
+        4. Average change per month * months since the dip + value at the dip
+        5. Result is the best possible value
+        6. Max - min / 8
+
+        Max Price = Price at start of year + (average change per month * months passed in the year)
+                  = (3 * Dip Value + 1 * height before the dip value) / 4
+
+        Potential
+            1. find dip point
+            2. search 1 year (arbitrary amount of time) in the future to find where it bottomed out
+            3. log month of bottomed out
+    */
+    
+    var greatBRLow, greatBRHigh, goodBRLow, goodBRHigh, okayBRLow, okayBRHigh, badBRLow, badBRHigh,
+        averageMonthlyChange, priceInMiddleOfDip;
+
+    averageMonthlyChange = calculateAverageMonthlyChange(data);
+    const [dipMonth, dipPrice, dipHolder, dipHolderPrice] = findDipInformation(data);
+    let min = dipPrice + (dipMonth * (averageMonthlyChange * dipPrice));
+    
+    priceInMiddleOfDip = (((3 * dipPrice) + (dipHolderPrice)) / 4);
+    monthsInMiddleOfDip = (dipHolder + dipMonth) / 2
+
+    let max = ((priceInMiddleOfDip * averageMonthlyChange) * monthsInMiddleOfDip) + priceInMiddleOfDip;
+    let amountChange = (max - min) / 8;
+
+    greatBRLow = min;
+    greatBRHigh = greatBRLow + amountChange;
+    goodBRLow = greatBRHigh + amountChange;
+    goodBRHigh = goodBRLow + amountChange;
+    okayBRLow = goodBRHigh + amountChange;
+    okayBRHigh = okayBRLow + amountChange;
+    badBRLow = okayBRHigh + amountChange;
+    badBRHigh = max;
 
     var calculations = {
         ticker: ticker,
@@ -181,6 +190,19 @@ function runStockCalculations(data, ticker) {
     };
     localStorage.setItem('mostRecentCalculations', JSON.stringify(calculations));
 }
+
+function calculateAverageMonthlyChange(closeData){
+
+    let monthlyChange = 0;
+    let index = 1;
+    for (index; index < closeData.length - 1; index++) {
+        monthlyChange += (closeData[index] / closeData[index + 1]);
+    }
+    monthlyChange /= (index - 1);
+    monthlyChange -= 1;
+    return monthlyChange;
+}
+
 
 function loadCalculatedValues() {
     var storageItem = localStorage.getItem('mostRecentCalculations');
@@ -206,5 +228,50 @@ function loadCalculatedValues() {
         console.log("Error occurred when loading data onto page.");
     }
     
+}
+
+function findDipInformation(closeData){
+
+    let monthScore = 1, 
+        monthScoreMonthlyChange = 0.01,
+        highestScore = 0,
+        lowestMonth,
+        lowestPrice,
+        dipHolder, dipHolderPrice;
+
+    for (let index = 0; index < closeData.length - 1; index++) {
+        monthScore -= monthScoreMonthlyChange; //Adjust monthly score per month
+        let changeRatio = 1 - (closeData[index] / closeData[index + 1]);
+        
+        if(changeRatio > .10){ // If the drop in a month exceeds the threshold, go 12 months in the future and find where it bottoms out
+            let localLowestPrice = MAX_VALUE,
+                localLowestMonth,
+                secondaryMonthScore = monthScore,
+                localDipHolder = index,
+                localDipHolderPrice = closeData[index - 1];
+
+            for (let lowestPointIndex = index; lowestPointIndex > index - 12; lowestPointIndex--) { //Move 12 months in the future to find where it bottoms out
+                secondaryMonthScore += monthScoreMonthlyChange;
+                if(closeData[lowestPointIndex] < localLowestPrice){
+                    localLowestPrice = closeData[lowestPointIndex];
+                    localLowestMonth = lowestPointIndex - 1;
+                }
+            }
+            let weightedChange = 2 * changeRatio;
+            if(calculateScore(secondaryMonthScore, weightedChange) > highestScore){
+                highestScore = calculateScore(secondaryMonthScore, weightedChange);
+                lowestMonth = localLowestMonth;
+                lowestPrice = localLowestPrice;
+                dipHolder = localDipHolder;
+                dipHolderPrice = localDipHolderPrice;
+            }
+            
+        }
+    }
+    return( [lowestMonth, lowestPrice, dipHolder, dipHolderPrice] );
+}
+
+function calculateScore(monthlyScore, changeRatio){
+    return monthlyScore + changeRatio;
 }
 

@@ -26,7 +26,9 @@ def run_calculations():
 
     def scrape_stock_data(ticker):
         currentTime = str(int(time.time()))
-        url = "https://finance.yahoo.com/quote/" + ticker.upper() + "/history?frequency=1mo&period1=0&period2=" + currentTime
+        startTime = str(1400118174)#May 15, 2014
+        url = "https://finance.yahoo.com/quote/" + ticker.upper() + "/history?frequency=1mo&period1=" + startTime + "&period2=" + currentTime
+        print(url)
         
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
@@ -43,7 +45,7 @@ def run_calculations():
                 for row in rows:
                     cells = row.find_all('td')
                     if len(cells) >= 4:
-                        close_information.append(float(cells[5].text))
+                        close_information.append(float(cells[3].text))
             else:
                 print("Historical data not found on the page.")
         else:
