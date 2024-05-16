@@ -9,7 +9,7 @@ StockZ is a web application designed to assist users in identifying optimal purc
 - **Responsive Design:** Enjoy a seamless user experience across all devices with a user-friendly design crafted using Tailwind CSS. Whether on desktop or mobile, the interface remains intuitive and easy to navigate.
 
 ## Deployement
-This project is deployed on Render [here](https://stockz-531y.onrender.com/tickerInfo)
+This project is deployed on Render [here](https://stockz-531y.onrender.com/)
 
 ## Technologies Used
 - HTML
