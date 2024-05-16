@@ -95,12 +95,29 @@ if (tickerLabelIP) {
     loadCalculatedValues();
     let ticker = "";
     var storageItem = localStorage.getItem('mostRecentCalculations');
-        if (storageItem) {
-            var calculations = JSON.parse(storageItem);
-            ticker = calculations.ticker;
+    if (storageItem) {
+        var calculations = JSON.parse(storageItem);
+        ticker = calculations.ticker;
+    } else {
+        console.log("No calculations found in localStorage.");
+    }
+
+    var recentData = localStorage.getItem('mostRecentData');
+    try {
+        if (recentData) {
+        
+            var data = JSON.parse(recentData);
+            console.log("Recent data" + recentData);
+            createStockChart(data);
+            
+            
         } else {
-            console.log("No calculations found in localStorage.");
+            console.log("No data was found in localStorage.");
         }
+    } catch (error) {
+        console.log("Error occurred when loading data.");
+    }
+
 
     stockStatsLink.addEventListener('click', function() {
         var url = 'https://finance.yahoo.com/quote/' + ticker + '/';
@@ -111,6 +128,14 @@ if (tickerLabelIP) {
         window.open(url, '_blank');
     });
     tickerLabelIP.addEventListener('click', function(){
+        document.getElementById('buyHolder').style.display = 'none';
+        document.getElementById('stockChart').style.display = 'none';
+        document.getElementById('otherButtons').style.display = 'none';
+        tickerLabelIP.innerHTML = "";
+        tickerLabelIP.classList.add("moveDownBox");
+        setTimeout(() => {
+            window.location.href = ('/main'); 
+        }, 500);
         
     })
 
@@ -123,6 +148,7 @@ function getStockData(ticker){
         xhttp.onreadystatechange = function() {
             if (this.readyState == 4 && this.status == 200) {
                 var response = JSON.parse(this.responseText);
+                localStorage.setItem('mostRecentData', JSON.stringify(response));
                 runStockCalculations(response, ticker);
                 resolve();
             }
@@ -274,4 +300,80 @@ function findDipInformation(closeData){
 function calculateScore(monthlyScore, changeRatio){
     return monthlyScore + changeRatio;
 }
+
+function createStockChart(prices) {
+    var ctx = document.getElementById('stockChart').getContext('2d');
+    let color = 'rgb(3, 172, 19)';
+    let colorTrans = 'rgb(3, 172, 19, .2)';
+    if (prices[0] < prices[prices.length - 1]) {
+        color = 'rgb(255, 99, 132)';
+        colorTrans = 'rgba(255, 99, 132, 0.2)';
+    }
+
+    prices.reverse();
+    
+    let currentDate = new Date();
+    let reversedLabels = Array.from({ length: prices.length }, (_, i) => {
+        let date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+        return date.toLocaleDateString();
+    }).reverse();
+
+    var stockChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: reversedLabels, 
+            datasets: [{
+                label: 'Stock Price',
+                data: prices,
+                borderColor: color,
+                backgroundColor: colorTrans,
+                borderWidth: 1,
+                fill: true
+            }]
+        },
+        options: {
+            scales: {
+                x: {
+                    ticks: {
+                        font: {
+                            size: 35
+                        },
+                        maxRotation: 90,
+                        minRotation: 90,
+                    },
+                    title: {
+                        display: true,
+                        text: 'Date',
+                        font: {
+                            size: 45
+                        }
+                    }
+                },
+                y: {
+                    ticks: {
+                        font: {
+                            size: 35
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Stock Price',
+                        font: {
+                            size: 45
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+}
+
+
+
+
 
