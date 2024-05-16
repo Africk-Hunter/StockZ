@@ -105,12 +105,8 @@ if (tickerLabelIP) {
     var recentData = localStorage.getItem('mostRecentData');
     try {
         if (recentData) {
-        
             var data = JSON.parse(recentData);
-            console.log("Recent data" + recentData);
             createStockChart(data);
-            
-            
         } else {
             console.log("No data was found in localStorage.");
         }
@@ -161,25 +157,6 @@ function getStockData(ticker){
 
 function runStockCalculations(data, ticker) {
 
-    /* 
-        1. Average change per month (percentage NOT $ amount)
-            for(index, months)
-                change[index] = months[index] - months[index + 1]
-            sum all of change and find average
-        2. Multiply average by current month (maybe)
-        3. Find last dip (correction)
-        4. Average change per month * months since the dip + value at the dip
-        5. Result is the best possible value
-        6. Max - min / 8
-
-        Max Price = Price at start of year + (average change per month * months passed in the year)
-                  = (3 * Dip Value + 1 * height before the dip value) / 4
-
-        Potential
-            1. find dip point
-            2. search 1 year (arbitrary amount of time) in the future to find where it bottomed out
-            3. log month of bottomed out
-    */
     
     var greatBRLow, greatBRHigh, goodBRLow, goodBRHigh, okayBRLow, okayBRHigh, badBRLow, badBRHigh,
         averageMonthlyChange, priceInMiddleOfDip;
@@ -238,22 +215,26 @@ function loadCalculatedValues() {
             var calculations = JSON.parse(storageItem);
             
             tickerLabelIP.innerHTML = calculations.ticker;
-            document.getElementById('grBL').innerHTML = "$" + calculations.greatBRLow.toFixed(2);
-            document.getElementById('grBH').innerHTML = "$" + calculations.greatBRHigh.toFixed(2);
-            document.getElementById('gBL').innerHTML = "$" + calculations.goodBRLow.toFixed(2);
-            document.getElementById('gBH').innerHTML = "$" + calculations.goodBRHigh.toFixed(2);
-            document.getElementById('oBL').innerHTML = "$" + calculations.okayBRLow.toFixed(2);
-            document.getElementById('oBH').innerHTML = "$" + calculations.okayBRHigh.toFixed(2);
-            document.getElementById('bBL').innerHTML = "$" + calculations.badBRLow.toFixed(2);
-            document.getElementById('bBH').innerHTML = "$" + calculations.badBRHigh.toFixed(2);
+            assignValueOnScreen('grBL', calculations.greatBRLow);
+            assignValueOnScreen('grBH', calculations.greatBRHigh);
+            assignValueOnScreen('gBL', calculations.goodBRLow);
+            assignValueOnScreen('gBH', calculations.goodBRHigh);
+            assignValueOnScreen('oBL', calculations.okayBRLow);
+            assignValueOnScreen('oBH', calculations.okayBRHigh);
+            assignValueOnScreen('bBL', calculations.badBRLow);
+            assignValueOnScreen('bBH', calculations.badBRHigh);
             
         } else {
             console.log("No calculations found in localStorage.");
         }
     } catch (error) {
-        console.log("Error occurred when loading data onto page.");
+        console.log("Error occurred when loading data onto page.", error);
     }
     
+}
+
+function assignValueOnScreen(id, value){
+    document.getElementById(id).innerHTML = "$" + value.toFixed(2);
 }
 
 function findDipInformation(closeData){
