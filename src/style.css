@@ -35,8 +35,7 @@ canvas {
 /* Mobile breakpoint */
 @media (max-width: 767px) {
     canvas {
-       height: 0 !important;
-       width: 0 !important;
+       display: none !important;
     }
 }
 
