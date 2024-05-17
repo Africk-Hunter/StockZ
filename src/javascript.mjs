@@ -1,3 +1,19 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAuxROpJhqJ4-fgIC4xwNYV5ycd0O_QCO4",
+  authDomain: "stockz-1d5ca.firebaseapp.com",
+  projectId: "stockz-1d5ca",
+  storageBucket: "stockz-1d5ca.appspot.com",
+  messagingSenderId: "853457963776",
+  appId: "1:853457963776:web:0cae1e3883c0195f6681e5",
+  measurementId: "G-80DCFJFT65"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
 const MAX_VALUE = 9999
 /* Elements */
 var enterButton         = document.getElementById("enterButton");
@@ -16,19 +32,37 @@ let currentTicker       = "";
 let stockStatsLink      = document.getElementById("stockStatsLink");
 let stockDescLink       = document.getElementById("stockDescLink");
 
-if (enterButton) {
-    enterButton.addEventListener("click", function() {
+async function loginUser(username, password) {
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, username, password);
+      return userCredential.user;
+    } catch (error) {
+      console.error("Error logging in: ", error);
+      
+      return null;
+    }
+  }
+  
+  if (enterButton) {
+    enterButton.addEventListener("click", async function () {
+      const username = document.querySelector('input[type="text"]').value;
+      const password = document.querySelector('input[type="password"]').value;
+  
+      const user = await loginUser(username, password);
+  
+      if (user) {
         document.getElementById("stockZ").classList.add("fadeAway");
         var inputs = document.querySelectorAll('input[type="text"], input[type="password"]');
-        inputs.forEach(function(input) {
-            input.classList.add("fadeAway");
+        inputs.forEach(function (input) {
+          input.classList.add("fadeAway");
         });
         enterButton.classList.add("fadeAway");
         setTimeout(() => {
-            window.location.href = ('/main');
+          window.location.href = '/main';
         }, 200);
+      }
     });
-}
+  }
 
 else {
     tickerInfoBtn.addEventListener('click', function(){
@@ -50,11 +84,21 @@ else {
 
 if (logOutButton) {
     logOutButton.addEventListener('click', function() {
+        logOutUser();
+    });
+}
+
+async function logOutUser(){
+    try {
+        await signOut(auth);
         document.getElementById('mainWrapper').classList.add('fadeAway');
         setTimeout(() => {
-            window.location.href = ('/');
+          window.location.href = '/';
         }, 500);
-    });
+      } catch (error) {
+        console.error('Error logging out: ', error);
+        alert('An error occurred while logging out. Please try again.');
+      }
 }
 
 if (tickerParentBox) {
@@ -76,7 +120,7 @@ if (tickerParentBox) {
     });
 
     function tickerSubmit(){
-        tickerValue = mainTickerInput.value;
+        let tickerValue = mainTickerInput.value;
         tickerSubmitBtn.style.display = 'none';
         mainTickerInput.classList.add("sizeText");
         tickerParentBox.classList.add("moveUpBox");
@@ -159,7 +203,7 @@ function runStockCalculations(data, ticker) {
 
     
     var greatBRLow, greatBRHigh, goodBRLow, goodBRHigh, okayBRLow, okayBRHigh, badBRLow, badBRHigh,
-        averageMonthlyChange, priceInMiddleOfDip;
+        averageMonthlyChange, priceInMiddleOfDip, monthsInMiddleOfDip;
 
     averageMonthlyChange = calculateAverageMonthlyChange(data);
     const [dipMonth, dipPrice, dipHolder, dipHolderPrice] = findDipInformation(data);
