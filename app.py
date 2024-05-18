@@ -45,7 +45,8 @@ def run_calculations():
                 for row in rows:
                     cells = row.find_all('td')
                     if len(cells) >= 4:
-                        close_information.append(float(cells[3].text))
+                        cleaned_number = (cells[3].text).replace(",", "")
+                        close_information.append(float(cleaned_number))
             else:
                 print("Historical data not found on the page.")
         else:

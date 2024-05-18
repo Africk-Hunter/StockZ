@@ -18,6 +18,8 @@ const MAX_VALUE = 9999
 /* Elements */
 var enterButton         = document.getElementById("enterButton");
 let logOutButton        = document.getElementById("logOutButton");
+let inputUsername       = document.getElementById('inputUsername');
+let inputPassword       = document.getElementById('inputPassword');
 /* Nav Buttons */
 let tickerInfoBtn       = document.getElementById("tickerInfoBtn");
 let homeBtn             = document.getElementById("homeBtn");
@@ -42,45 +44,69 @@ async function loginUser(username, password) {
       return null;
     }
   }
-  
-  if (enterButton) {
-    enterButton.addEventListener("click", async function () {
-      const username = document.querySelector('input[type="text"]').value;
-      const password = document.querySelector('input[type="password"]').value;
-  
-      const user = await loginUser(username, password);
-  
-      if (user) {
+  function handleLogin() {
+    const username = inputUsername.value;
+    const password = inputPassword.value;
+
+    loginUser(username, password).then((user) => {
+    if (username == "") {
+        inputUsername.style.background = "red";
+    }
+    if (password == "") {
+        inputPassword.style.background = "red";
+    }
+    inputPassword.addEventListener('click', function () {
+        inputPassword.style.background = '#E4ECE4';
+    });
+    inputUsername.addEventListener('click', function () {
+        inputUsername.style.background = '#E4ECE4';
+    });
+
+    if (user) {
         document.getElementById("stockZ").classList.add("fadeAway");
         var inputs = document.querySelectorAll('input[type="text"], input[type="password"]');
         inputs.forEach(function (input) {
-          input.classList.add("fadeAway");
+            input.classList.add("fadeAway");
         });
         enterButton.classList.add("fadeAway");
         setTimeout(() => {
-          window.location.href = '/main';
+            window.location.href = '/main';
         }, 200);
+    }
+    });
+  }
+  
+  if (enterButton) {
+    enterButton.addEventListener("click", handleLogin);
+  
+    inputUsername.addEventListener("keypress", function (event) {
+      if (event.key === "Enter") {
+        handleLogin();
+      }
+    });
+  
+    inputPassword.addEventListener("keypress", function (event) {
+      if (event.key === "Enter") {
+        handleLogin();
+      }
+    });
+  } else {
+    tickerInfoBtn.addEventListener('click', function () {
+      if (!document.URL.includes('tickerInfo.html')) {
+        window.location.href = '/tickerInfo';
+      }
+    });
+    homeBtn.addEventListener('click', function () {
+      if (!document.URL.includes('main.html')) {
+        window.location.href = '/main';
+      }
+    });
+    watchListBtn.addEventListener('click', function () {
+      if (!document.URL.includes('watchlist.html')) {
+        window.location.href = '/watchlist';
       }
     });
   }
-
-else {
-    tickerInfoBtn.addEventListener('click', function(){
-        if (!document.URL.includes('tickerInfo.html')){
-            window.location.href = '/tickerInfo';
-        }
-    });
-    homeBtn.addEventListener('click', function(){
-        if (!document.URL.includes('main.html')){
-            window.location.href = '/main';
-        }
-    });
-    watchListBtn.addEventListener('click', function(){
-        if (!document.URL.includes('watchlist.html')){
-            window.location.href = '/watchlist';
-        }
-    });
-}
 
 if (logOutButton) {
     logOutButton.addEventListener('click', function() {
@@ -255,7 +281,6 @@ function loadCalculatedValues() {
     var storageItem = localStorage.getItem('mostRecentCalculations');
     try {
         if (storageItem) {
-        
             var calculations = JSON.parse(storageItem);
             
             tickerLabelIP.innerHTML = calculations.ticker;
@@ -274,52 +299,65 @@ function loadCalculatedValues() {
     } catch (error) {
         console.log("Error occurred when loading data onto page.", error);
     }
-    
 }
 
 function assignValueOnScreen(id, value){
-    document.getElementById(id).innerHTML = "$" + value.toFixed(2);
+    if (value !== null && value !== undefined) {
+        document.getElementById(id).innerHTML = "$" + value.toFixed(2);
+    } else {
+        console.error(`Value for ${id} is null or undefined:`, value);
+        document.getElementById(id).innerHTML = "N/A";
+    }
 }
+
 
 function findDipInformation(closeData){
 
     let monthScore = 1, 
         monthScoreMonthlyChange = 0.01,
         highestScore = 0,
+        threshHoldValue = .10,
         lowestMonth,
         lowestPrice,
         dipHolder, dipHolderPrice;
-
-    for (let index = 0; index < closeData.length - 1; index++) {
-        monthScore -= monthScoreMonthlyChange; //Adjust monthly score per month
-        let changeRatio = 1 - (closeData[index] / closeData[index + 1]);
-        
-        if(changeRatio > .10){ // If the drop in a month exceeds the threshold, go 12 months in the future and find where it bottoms out
-            let localLowestPrice = MAX_VALUE,
-                localLowestMonth,
-                secondaryMonthScore = monthScore,
-                localDipHolder = index,
-                localDipHolderPrice = closeData[index - 1];
-
-            for (let lowestPointIndex = index; lowestPointIndex > index - 12; lowestPointIndex--) { //Move 12 months in the future to find where it bottoms out
-                secondaryMonthScore += monthScoreMonthlyChange;
-                if(closeData[lowestPointIndex] < localLowestPrice){
-                    localLowestPrice = closeData[lowestPointIndex];
-                    localLowestMonth = lowestPointIndex - 1;
-                }
-            }
-            let weightedChange = 2 * changeRatio;
-            if(calculateScore(secondaryMonthScore, weightedChange) > highestScore){
-                highestScore = calculateScore(secondaryMonthScore, weightedChange);
-                lowestMonth = localLowestMonth;
-                lowestPrice = localLowestPrice;
-                dipHolder = localDipHolder;
-                dipHolderPrice = localDipHolderPrice;
-            }
-            
+        while (performDipLoop() == 0 && threshHoldValue > 0){
+            threshHoldValue -= .03;
         }
-    }
+    
     return( [lowestMonth, lowestPrice, dipHolder, dipHolderPrice] );
+
+    function performDipLoop(){
+        for (let index = 0; index < closeData.length - 1; index++) {
+            monthScore -= monthScoreMonthlyChange; //Adjust monthly score per month
+            let changeRatio = 1 - (closeData[index] / closeData[index + 1]);
+            
+            if(changeRatio > threshHoldValue){ // If the drop in a month exceeds the threshold, go 12 months in the future and find where it bottoms out
+                let localLowestPrice = MAX_VALUE,
+                    localLowestMonth,
+                    secondaryMonthScore = monthScore,
+                    localDipHolder = index,
+                    localDipHolderPrice = closeData[index - 1];
+    
+                    for (let lowestPointIndex = index; lowestPointIndex > index - 12 && lowestPointIndex >= 0; lowestPointIndex--) {  //Move 12 months in the future to find where it bottoms out
+                        secondaryMonthScore += monthScoreMonthlyChange;
+                        if(closeData[lowestPointIndex] < localLowestPrice){
+                            localLowestPrice = closeData[lowestPointIndex];
+                            localLowestMonth = lowestPointIndex - 1;
+                        }
+                    }
+                let weightedChange = 2 * changeRatio;
+                if(calculateScore(secondaryMonthScore, weightedChange) > highestScore){
+                    highestScore = calculateScore(secondaryMonthScore, weightedChange);
+                    lowestMonth = localLowestMonth;
+                    lowestPrice = localLowestPrice;
+                    dipHolder = localDipHolder;
+                    dipHolderPrice = localDipHolderPrice;
+                }
+                
+            }
+        }
+        return highestScore;
+    }
 }
 
 function calculateScore(monthlyScore, changeRatio){
