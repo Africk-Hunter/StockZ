@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='output.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" type="image/x-icon" href="../src/favicon.ico">
 </head>
 <body class="bg-background w-screen h-screen">
 
@@ -17,8 +18,8 @@
             <span class="text-text-color hidden laptop:flex laptop:text-5xl select-none">STOCK</span><span class="text-accent-color select-none text-4xl laptop:text-5xl ml-2">Z</span>
         </div>
 
-        <div class="flex justify-self-center justify-between items-center h-full w-full text-2xl self-center text-text-color font-medium">
-            <div id="tickerInfoBtn"><img src="{{ url_for('static', filename='tickerIcon.png') }}" alt="Watch List" class="laptop:hidden h-6"><button class="hidden  laptop:flex">Ticker Info</button></div>
+        <div class="flex justify-self-center justify-between items-center h-full w-5/6 text-2xl self-center text-text-color font-medium">
+            <div id="tickerInfoBtn"><img src="{{ url_for('static', filename='tickerIcon.png') }}" alt="Watch List" class="laptop:hidden h-6"><button class="hidden laptop:flex">Ticker Info</button></div>
             <div id="homeBtn"><img src="{{ url_for('static', filename='houseIcon.svg') }}" alt="Watch List" class="laptop:hidden h-6"><button class="hidden laptop:flex underline underline-offset-8">Main</button></div>
             <div id="watchListBtn"><img src="{{ url_for('static', filename='listIcon.png') }}" alt="Watch List" class="laptop:hidden h-6"><button class="hidden laptop:flex">Watch List</button></div>
         </div>

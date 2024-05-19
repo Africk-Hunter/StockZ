@@ -95,3 +95,9 @@ canvas {
     font-size: 2.25rem;
     line-height: 2.5rem;
 }
+.shrinkWaitlistBox{
+    width: 15rem;
+}
+#watchlistDeleteButton:hover > img{
+    filter: invert(1);
+}

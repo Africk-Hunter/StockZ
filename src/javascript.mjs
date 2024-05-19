@@ -1,5 +1,6 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'
+import { getAuth, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'
+import { getFirestore, collection, setDoc, getDocs, doc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'
 
 const firebaseConfig = {
   apiKey: "AIzaSyAuxROpJhqJ4-fgIC4xwNYV5ycd0O_QCO4",
@@ -12,27 +13,42 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 const auth = getAuth(app);
 
-const MAX_VALUE = 9999
+const MAX_VALUE             = 9999;
+let currentTicker           = "";
 /* Elements */
-var enterButton         = document.getElementById("enterButton");
-let logOutButton        = document.getElementById("logOutButton");
-let inputUsername       = document.getElementById('inputUsername');
-let inputPassword       = document.getElementById('inputPassword');
+var enterButton             = document.getElementById("enterButton");
+let logOutButton            = document.getElementById("logOutButton");
+let inputUsername           = document.getElementById('inputUsername');
+let inputPassword           = document.getElementById('inputPassword');
 /* Nav Buttons */
-let tickerInfoBtn       = document.getElementById("tickerInfoBtn");
-let homeBtn             = document.getElementById("homeBtn");
-let watchListBtn        = document.getElementById("watchListBtn");
+let tickerInfoBtn           = document.getElementById("tickerInfoBtn");
+let homeBtn                 = document.getElementById("homeBtn");
+let watchListBtn            = document.getElementById("watchListBtn");
 /* Main Page */
-const tickerParentBox   = document.getElementById("tickerParentBox");
-const mainTickerInput   = document.getElementById("mainTickerInput");
-const tickerSubmitBtn   = document.getElementById("tickerSubmitBtn");
+const tickerParentBox       = document.getElementById("tickerParentBox");
+const mainTickerInput       = document.getElementById("mainTickerInput");
+const tickerSubmitBtn       = document.getElementById("tickerSubmitBtn");
 /* Ticker Info Page */
-let tickerLabelIP       = document.getElementById("tickerLabelIP");
-let currentTicker       = "";
-let stockStatsLink      = document.getElementById("stockStatsLink");
-let stockDescLink       = document.getElementById("stockDescLink");
+let tickerLabelIP           = document.getElementById("tickerLabelIP");
+let stockStatsLink          = document.getElementById("stockStatsLink");
+let stockDescLink           = document.getElementById("stockDescLink");
+let addToWatchlist          = document.getElementById("addToWatchlist");
+/* Watch List Page */
+let watchlistItemsContainer = document.getElementById("watchlistItemsContainer");
+let refreshButton           = document.getElementById("refreshButton");
+let watchListContainerLarge = document.getElementById("watchListContainerLarge");
+
+auth.onAuthStateChanged((user) => {
+    if (user) {
+        if (watchlistItemsContainer) {
+            runWatchlist(user);
+        }
+    }
+});
+
 
 async function loginUser(username, password) {
     try {
@@ -144,23 +160,27 @@ if (tickerParentBox) {
             tickerSubmit();
         }
     });
-
-    function tickerSubmit(){
-        let tickerValue = mainTickerInput.value;
-        tickerSubmitBtn.style.display = 'none';
-        mainTickerInput.classList.add("sizeText");
-        tickerParentBox.classList.add("moveUpBox");
-        currentTicker = tickerValue;
-        getStockData(tickerValue.toUpperCase())
-            .then(() => {
-                window.location.href = ('/tickerInfo'); 
-            })
-            .catch(error => {
-                console.error('Error occurred when retriving stock data: ', error);
-            });
-    }
-    
 }
+
+function tickerSubmit(){
+    let tickerValue = mainTickerInput.value;
+    tickerSubmitBtn.style.display = 'none';
+    mainTickerInput.classList.add("sizeText");
+    tickerParentBox.classList.add("moveUpBox");
+    currentTicker = tickerValue;
+    getStockData(tickerValue.toUpperCase(), 'mostRecentData')
+        .then(() => {
+            var storageItem = localStorage.getItem('mostRecentData');
+            var data = JSON.parse(storageItem);
+            runStockCalculations(data, tickerValue, 'mostRecentCalculations');
+            window.location.href = ('/tickerInfo'); 
+        })
+        .catch(error => {
+            console.error('Error occurred when retriving stock data: ', error);
+        });
+}
+
+/* Ticker Info Page */
 if (tickerLabelIP) {
     loadCalculatedValues();
     let ticker = "";
@@ -202,20 +222,213 @@ if (tickerLabelIP) {
         setTimeout(() => {
             window.location.href = ('/main'); 
         }, 500);
-        
     })
-
+    addToWatchlist.addEventListener('click', function(){
+        const user = auth.currentUser;
+        if (user) {
+            addToWatchlistFunc(tickerLabelIP.innerHTML.toUpperCase(), user.uid);
+          } else {
+            console.error("No user is signed in. " + error);
+          }
+    })
 }
 
-function getStockData(ticker){
+async function addToWatchlistFunc(ticker, uid) {
+    const userDocRef = doc(db, `users/${uid}/watchlist`, ticker);
+    try {
+        await setDoc(userDocRef, { ticker: ticker });
+    } catch (e) {
+        console.error("Error adding document: ", e);
+    }
+}
+
+/* Watch List page*/
+if(watchlistItemsContainer){
+    refreshButton.addEventListener('click', async function(){
+        const user = auth.currentUser;
+        if (user) {
+            runWatchlist(user);
+        } else {
+            console.error("No user is signed in.");
+        }
+    });
+}
+
+async function runWatchlist(user){
+    const watchlistItems = await fetchWatchlistItems(user.uid);
+    updateWatchlistUI(watchlistItems);
+}
+
+async function fetchWatchlistItems(uid) {
+    const watchlistCollectionRef = collection(db, `users/${uid}/watchlist`);
+    try {
+        const querySnapshot = await getDocs(watchlistCollectionRef);
+        let watchlistItems = [];
+        querySnapshot.forEach((doc) => {
+            watchlistItems.push(doc.id);
+        });
+        return watchlistItems;
+    } catch (e) {
+        console.error("Error fetching watchlist items: ", e);
+        return [];
+    }
+}
+
+function updateWatchlistUI(tickers) {
+    const watchlistItemsContainer = document.getElementById('watchlistItemsContainer');
+    watchlistItemsContainer.innerHTML = '';
+
+    tickers.forEach(ticker => {
+        const stockContainer = createStockContainerItem(ticker);
+        watchlistItemsContainer.appendChild(stockContainer);
+    });
+}
+
+function createStockContainerItem(ticker) {
+    let gbPrice, bbPrice;
+
+    const container = document.createElement('div');
+    container.className = 'stock-container';
+
+    const stockItem = document.createElement('div');
+    stockItem.className = 'stock-item flex w-full h-7 laptop:h-9 text-background text-lg laptop:text-2xl select-none font-semibold transition-all duration-150 ease-in-out';
+
+    const nameDiv = document.createElement('div');
+    nameDiv.className = 'flex h-full w-1/3 justify-center items-center bg-text-color rounded-l border-r select-none hover:cursor-pointer border-background transition-all duration-150 ease-in-out';
+    nameDiv.textContent = ticker;
+
+    const gbPriceDiv = document.createElement('div');
+    gbPriceDiv.className = 'flex h-full w-1/3 justify-center items-center bg-great-buy-one border-r select-none border-background transition-all duration-150 ease-in-out';
+
+    const bbPriceDiv = document.createElement('div');
+    bbPriceDiv.className = 'flex h-full w-1/3 justify-center items-center bg-desperate-buy-one rounded-r select-none transition-all duration-150 ease-in-out';
+
+    const deleteIcon = document.createElement('button');
+    deleteIcon.className = 'delete-icon flex h-full w-10 justify-center items-center bg-none rounded border-solid border border-text-color border-opacity-25 ml-auto hover:bg-text-color';
+    deleteIcon.id = "watchlistDeleteButton";
+    deleteIcon.innerHTML = '<img class="h-full w-4/5" src="../src/trashcan.svg" alt="Delete">';
+    deleteIcon.style.display = 'none'; 
+
+    nameDiv.addEventListener('transitionend', handleTransitionEnd);
+    gbPriceDiv.addEventListener('transitionend', handleTransitionEnd);
+    bbPriceDiv.addEventListener('transitionend', handleTransitionEnd);
+    
+    stockItem.addEventListener('mouseenter', function() {
+        shrinkWatchlistItem();
+    });
+
+    stockItem.addEventListener('mouseleave', function() {
+        deleteIcon.style.display = 'none';
+        unshrinkWatchlistItem()
+    });
+
+    function shrinkWatchlistItem(){
+        nameDiv.classList.add("shrinkWaitlistBox");
+        gbPriceDiv.classList.add("shrinkWaitlistBox");
+        bbPriceDiv.classList.add("shrinkWaitlistBox");
+    }
+    function unshrinkWatchlistItem(){
+        nameDiv.classList.remove("shrinkWaitlistBox");
+        gbPriceDiv.classList.remove("shrinkWaitlistBox");
+        bbPriceDiv.classList.remove("shrinkWaitlistBox");
+    }
+    
+    function handleTransitionEnd() {
+        if (checkIfClassIsApplied()) {
+            deleteIcon.style.display = 'flex';
+        }
+    }
+    function checkIfClassIsApplied(){
+        return (
+            nameDiv.classList.contains("shrinkWaitlistBox") &&
+            gbPriceDiv.classList.contains("shrinkWaitlistBox") &&
+            bbPriceDiv.classList.contains("shrinkWaitlistBox")
+        )
+    }
+    
+    nameDiv.addEventListener('click', function(){
+        watchListContainerLarge.classList.add("fadeAway");
+        getStockData(nameDiv.textContent, 'mostRecentData')
+        .then(() => {
+            var storageItem = localStorage.getItem('mostRecentData');
+            var data = JSON.parse(storageItem);
+            runStockCalculations(data, nameDiv.textContent, 'mostRecentCalculations');
+            window.location.href = ('/tickerInfo'); 
+        })
+        .catch(error => {
+            console.error('Error occurred when retriving stock data: ', error);
+        });
+    })
+
+    deleteIcon.addEventListener('click', function(){
+        deleteFromFirebase(nameDiv.textContent);
+        stockItem.remove();
+    });
+
+    getStockData(ticker, 'watchListData')
+        .then(() => {
+            var watchListData = localStorage.getItem('watchListData');
+            var data = JSON.parse(watchListData);
+            runStockCalculations(data, ticker, 'watchListCalculations');
+            var localCalculations = localStorage.getItem('watchListCalculations');
+
+            try {
+                if (localCalculations) {
+                    var calculations = JSON.parse(localCalculations);
+                    gbPrice = calculations.greatBRLow.toFixed(2);
+                    bbPrice = calculations.badBRHigh.toFixed(2);
+                    gbPriceDiv.textContent = gbPrice;
+                    bbPriceDiv.textContent = bbPrice;
+                    stockItem.appendChild(nameDiv);
+                    stockItem.appendChild(gbPriceDiv);
+                    stockItem.appendChild(bbPriceDiv);
+                    stockItem.appendChild(deleteIcon);
+            
+                    container.appendChild(stockItem);
+                } else {
+                    console.log("No calculations found in localStorage.");
+                }
+            } catch (error) {
+                console.log("Error occurred when loading data onto page.", error);
+            }
+        })
+        .catch(error => {
+            console.error('Error occurred when retrieving stock data: ', error);
+        });
+
+
+
+    return container;
+}
+
+async function deleteFromFirebase(ticker) {
+    const user = auth.currentUser;
+    if (user) {
+        const watchlistCollectionRef = collection(db, `users/${user.uid}/watchlist`);
+        const querySnapshot = await getDocs(watchlistCollectionRef);
+        querySnapshot.forEach(async (doc) => {
+            if (doc.id === ticker) {
+                try {
+                    await deleteDoc(doc.ref);
+                } catch (error) {
+                    console.error("Error deleting document: ", error);
+                }
+            }
+        });
+    } else {
+        console.error("No user is signed in.");
+    }
+}
+
+
+function getStockData(ticker, localStorageItem){
     return new Promise((resolve, reject) => {
         var xhttp = new XMLHttpRequest();
 
         xhttp.onreadystatechange = function() {
             if (this.readyState == 4 && this.status == 200) {
                 var response = JSON.parse(this.responseText);
-                localStorage.setItem('mostRecentData', JSON.stringify(response));
-                runStockCalculations(response, ticker);
+                localStorage.setItem(localStorageItem, JSON.stringify(response));
                 resolve();
             }
         };
@@ -224,10 +437,8 @@ function getStockData(ticker){
     });
 }
 
+function runStockCalculations(data, ticker, localStorageItem) {
 
-function runStockCalculations(data, ticker) {
-
-    
     var greatBRLow, greatBRHigh, goodBRLow, goodBRHigh, okayBRLow, okayBRHigh, badBRLow, badBRHigh,
         averageMonthlyChange, priceInMiddleOfDip, monthsInMiddleOfDip;
 
@@ -261,7 +472,8 @@ function runStockCalculations(data, ticker) {
         badBRLow: badBRLow,
         badBRHigh: badBRHigh
     };
-    localStorage.setItem('mostRecentCalculations', JSON.stringify(calculations));
+    console.log(localStorageItem);
+    localStorage.setItem(localStorageItem, JSON.stringify(calculations));
 }
 
 function calculateAverageMonthlyChange(closeData){
@@ -275,7 +487,6 @@ function calculateAverageMonthlyChange(closeData){
     monthlyChange -= 1;
     return monthlyChange;
 }
-
 
 function loadCalculatedValues() {
     var storageItem = localStorage.getItem('mostRecentCalculations');
@@ -320,9 +531,11 @@ function findDipInformation(closeData){
         lowestMonth,
         lowestPrice,
         dipHolder, dipHolderPrice;
-        while (performDipLoop() == 0 && threshHoldValue > 0){
-            threshHoldValue -= .03;
-        }
+
+    //If the threshold isn't met, lower the threshold
+    while (performDipLoop() == 0 && threshHoldValue > 0){
+        threshHoldValue -= .03;
+    }
     
     return( [lowestMonth, lowestPrice, dipHolder, dipHolderPrice] );
 
