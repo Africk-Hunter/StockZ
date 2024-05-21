@@ -255,20 +255,27 @@ async function addToWatchlistFunc(ticker, goodBuyPrice, badBuyPrice, uid) {
             goodBuyPrice: goodBuyPrice,
             badBuyPrice: badBuyPrice
         });
-        
+
         let watchListItems = localStorage.getItem('userWatchListData');
         let parsedWatchList = watchListItems ? JSON.parse(watchListItems) : [];
-        parsedWatchList.push({
-            ticker: ticker,
-            goodBuyPrice: goodBuyPrice,
-            badBuyPrice: badBuyPrice
-        });
-        localStorage.setItem('userWatchListData', JSON.stringify(parsedWatchList));
 
+        const exists = parsedWatchList.some(item => item.ticker === ticker);
+
+        if (!exists) {
+            parsedWatchList.push({
+                ticker: ticker,
+                goodBuyPrice: goodBuyPrice,
+                badBuyPrice: badBuyPrice
+            });
+            localStorage.setItem('userWatchListData', JSON.stringify(parsedWatchList));
+        } else {
+            console.log(`Ticker ${ticker} is already in the watchlist.`);
+        }
     } catch (e) {
         console.error("Error adding document: ", e);
     }
 }
+
 
 /* Watch List page*/
 if(watchlistItemsContainer){
