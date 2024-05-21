@@ -27,7 +27,7 @@
 canvas {
     border-radius: 5px;
     color: rgb(228, 236, 228);
-    border: 2px solid rgb(228, 236, 228, .5);
+    /* border: 2px solid rgb(228, 236, 228, .5); */
     padding: 1% .5% .5% .5%;
     margin-bottom: 1.25rem;
 }
@@ -38,7 +38,6 @@ canvas {
        display: none !important;
     }
 }
-
 /* 1920x1080 resolution breakpoint */
 @media (min-width: 1920px) {
     canvas {
@@ -52,8 +51,6 @@ canvas {
         width: 70rem !important;
     }
 }
-
-  
 .fade-in {
     animation: fade-in 0.2s ease-out forwards;
 }
