@@ -39,6 +39,8 @@ let stockDescLink           = document.getElementById("stockDescLink");
 let addToWatchlist          = document.getElementById("addToWatchlist");
 let grBLonPage              = document.getElementById("grBL");
 let bBHonPage               = document.getElementById("bBH");
+let dipPrice                = document.getElementById("dipPrice");
+let currentPrice            = document.getElementById("currentPrice");
 /* Watch List Page */
 let watchlistItemsContainer = document.getElementById("watchlistItemsContainer");
 let refreshButton           = document.getElementById("refreshButton");
@@ -522,7 +524,9 @@ function runStockCalculations(data, ticker, localStorageItem) {
         okayBRLow: okayBRLow,
         okayBRHigh: okayBRHigh,
         badBRLow: badBRLow,
-        badBRHigh: badBRHigh
+        badBRHigh: badBRHigh,
+        dipPrice: dipPrice,
+        currentPrice: data[0]
     };
     localStorage.setItem(localStorageItem, JSON.stringify(calculations));
 }
@@ -554,6 +558,8 @@ function loadCalculatedValues() {
             assignValueOnScreen('oBH', calculations.okayBRHigh);
             assignValueOnScreen('bBL', calculations.badBRLow);
             assignValueOnScreen('bBH', calculations.badBRHigh);
+            assignValueOnScreen('dipPrice', calculations.dipPrice);
+            assignValueOnScreen('currentPrice', calculations.currentPrice);
             
         } else {
             console.log("No calculations found in localStorage.");
@@ -631,7 +637,7 @@ function calculateScore(monthlyScore, changeRatio){
 function createStockChart(prices) {
     var ctx = document.getElementById('stockChart').getContext('2d');
     let color = 'rgb(3, 172, 19)';
-    let colorTrans = 'rgb(3, 172, 19, .2)';
+    let colorTrans = 'rgba(3, 172, 19, 0.2)';
     if (prices[0] < prices[prices.length - 1]) {
         color = 'rgb(255, 99, 132)';
         colorTrans = 'rgba(255, 99, 132, 0.2)';
@@ -659,34 +665,59 @@ function createStockChart(prices) {
             }]
         },
         options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            elements: {
+                point:{
+                    radius: 0
+                }
+            },
             scales: {
                 x: {
                     ticks: {
+                        display: displayTicks(), // Display ticks conditionally
+                        maxTicksLimit: getMaxTicksLimit(), // Maximum number of ticks dynamically
+                        callback: function(value, index, ticks) {
+                            let screenWidth = window.innerWidth;
+                            if (screenWidth < 640) {
+                                return (index % 2 === 0) ? this.getLabelForValue(value) : '';
+                            }
+                            return this.getLabelForValue(value);
+                        },
                         font: {
-                            size: 35
+                            size: getFontSize(),
                         },
                         maxRotation: 90,
                         minRotation: 90,
                     },
                     title: {
-                        display: true,
+                        display: false,
                         text: 'Date',
                         font: {
-                            size: 45
+                            size: getFontSize(),
                         }
                     }
                 },
                 y: {
+                    position: 'right', // Position y-axis on the right side
                     ticks: {
+                        maxTicksLimit: getMaxTicksLimit(), // Maximum number of ticks dynamically
+                        callback: function(value, index, ticks) {
+                            let screenWidth = window.innerWidth;
+                            if (screenWidth < 640) {
+                                return (index % 2 === 0) ? this.getLabelForValue(value) : '';
+                            }
+                            return '$' + value;
+                        },
                         font: {
-                            size: 35
+                            size: getFontSize(),
                         }
                     },
                     title: {
                         display: true,
                         text: 'Stock Price',
                         font: {
-                            size: 45
+                            size: getFontSize(),
                         }
                     }
                 }
@@ -698,7 +729,54 @@ function createStockChart(prices) {
             }
         }
     });
+
+    // Adjust canvas size dynamically
+    window.addEventListener('resize', function() {
+        stockChart.options.scales.x.ticks.maxTicksLimit = getMaxTicksLimit();
+        stockChart.options.scales.x.ticks.display = displayTicks(); // Update displayTicks on resize
+        stockChart.resize();
+    });
+
+    function displayTicks() {
+        let screenWidth = window.innerWidth;
+        return screenWidth >= 640; // Display ticks only if screen width is 640px or larger
+    }
+
+    function getMaxTicksLimit() {
+        let screenWidth = window.innerWidth;
+        if (screenWidth < 640) {
+            return 0; // smaller than tablet
+        } else if (screenWidth < 1024) {
+            return 0; // tablet
+        } else if (screenWidth < 1600) {
+            return 25; // laptop
+        } else if (screenWidth < 1921) {
+            return 30; // desktop
+        } else {
+            return 40; // desktopXL
+        }
+    }
+    function getFontSize() {
+        let screenWidth = window.innerWidth;
+        if (screenWidth < 767) {
+            return 10; // smaller than tablet
+        } else if (screenWidth < 1024) {
+            return 12; // tablet
+        } else if (screenWidth < 1600) {
+            return 12; // laptop
+        } else if (screenWidth < 1921) {
+            return 20; // desktop
+        } else {
+            return 27; // desktopXL
+        }
+    }
 }
+
+
+
+
+
+
 
 
 

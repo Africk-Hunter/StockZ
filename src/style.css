@@ -27,31 +27,54 @@
 canvas {
     border-radius: 5px;
     color: rgb(228, 236, 228);
-    /* border: 2px solid rgb(228, 236, 228, .5); */
     padding: 1% .5% .5% .5%;
     margin-bottom: 1.25rem;
 }
 
 /* Mobile breakpoint */
 @media (max-width: 767px) {
+    .innerChart {
+        height: clamp(100px, 200px, 300px);
+        display: flex;
+        align-items: stretch; /* Ensures the canvas fills the container */
+    }
+    .shrinkWaitlistBox {
+        width: 11rem;
+    }
     canvas {
-       display: none !important;
+        border-radius: 5px;
+        color: rgb(228, 236, 228);
+        padding: 0;
+        margin: 1.25rem 0; /* Removed redundant margin property */
+        border: 1px #E4ECE4 solid;
+        flex: 1; /* Ensures the canvas takes up the full height of its container */
     }
 }
+
 /* 1920x1080 resolution breakpoint */
 @media (min-width: 992px) {
-    canvas {
-        height: clamp(15rem, 22.5rem, 25rem) !important;
-        width: 45rem !important;
+    .innerChart{
+        min-width: 100%;
+        height: clamp(300px, 400px, 900px);
     }
     .shrinkWaitlistBox{
         width: 11rem;
     }
 }
+@media (min-width: 1500px) {
+    .innerChart{
+        min-width: 100%;
+        height: clamp(300px, 575px, 900px);
+    }
+    .shrinkWaitlistBox{
+        width: 11rem;
+    }
+}
+
 @media (min-width: 2560px) {
-    canvas {
-        height: 35rem !important;
-        width: 70rem !important;
+    .innerChart{
+        min-width: 100%;
+        height: clamp(300px, 750px, 1000px);
     }
     .shrinkWaitlistBox{
         width: 15rem;
