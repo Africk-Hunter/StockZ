@@ -1413,10 +1413,6 @@ video {
     margin-top: 4rem;
   }
 
-  .laptop\:mt-5 {
-    margin-top: 1.25rem;
-  }
-
   .laptop\:flex {
     display: flex;
   }
@@ -1499,6 +1495,10 @@ video {
 
   .laptop\:w-60 {
     width: 15rem;
+  }
+
+  .laptop\:w-full {
+    width: 100%;
   }
 
   .laptop\:flex-row {
@@ -1596,6 +1596,11 @@ video {
     line-height: 1;
   }
 
+  .laptop\:text-xl {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+  }
+
   .laptop\:placeholder\:text-8xl::-moz-placeholder {
     font-size: 6rem;
     line-height: 1;
@@ -1607,7 +1612,7 @@ video {
   }
 }
 
-@media (min-width: 1921px) {
+@media (min-width: 1600px) {
   .desktop\:mt-20 {
     margin-top: 5rem;
   }
@@ -1620,33 +1625,17 @@ video {
     width: 40%;
   }
 
-  .desktop\:rounded-lg {
-    border-radius: 0.5rem;
+  .desktop\:w-5\/6 {
+    width: 83.333333%;
   }
 
   .desktop\:rounded-xl {
     border-radius: 0.75rem;
   }
 
-  .desktop\:rounded-bl-lg {
-    border-bottom-left-radius: 0.5rem;
-  }
-
-  .desktop\:rounded-br-lg {
-    border-bottom-right-radius: 0.5rem;
-  }
-
-  .desktop\:rounded-tl-lg {
-    border-top-left-radius: 0.5rem;
-  }
-
-  .desktop\:rounded-tr-lg {
-    border-top-right-radius: 0.5rem;
-  }
-
-  .desktop\:text-3xl {
-    font-size: 1.875rem;
-    line-height: 2.25rem;
+  .desktop\:text-2xl {
+    font-size: 1.5rem;
+    line-height: 2rem;
   }
 
   .desktop\:text-9xl {
@@ -1662,5 +1651,37 @@ video {
   .desktop\:placeholder\:text-9xl::placeholder {
     font-size: 8rem;
     line-height: 1;
+  }
+}
+
+@media (min-width: 1921px) {
+  .desktopXL\:rounded-lg {
+    border-radius: 0.5rem;
+  }
+
+  .desktopXL\:rounded-bl-lg {
+    border-bottom-left-radius: 0.5rem;
+  }
+
+  .desktopXL\:rounded-br-lg {
+    border-bottom-right-radius: 0.5rem;
+  }
+
+  .desktopXL\:rounded-tl-lg {
+    border-top-left-radius: 0.5rem;
+  }
+
+  .desktopXL\:rounded-tr-lg {
+    border-top-right-radius: 0.5rem;
+  }
+
+  .desktopXL\:text-2xl {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+
+  .desktopXL\:text-3xl {
+    font-size: 1.875rem;
+    line-height: 2.25rem;
   }
 }

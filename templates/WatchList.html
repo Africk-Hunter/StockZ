@@ -18,10 +18,10 @@
             <span class="text-text-color hidden laptop:flex laptop:text-5xl select-none">STOCK</span><span class="text-accent-color select-none text-4xl laptop:text-5xl ml-2">Z</span>
         </div>
 
-        <div class="flex justify-self-center justify-between items-center h-full w-5/6 text-2xl self-center text-text-color font-medium">
-            <div id="tickerInfoBtn"><img src="{{ url_for('static', filename='tickerIcon.png') }}" alt="Watch List" class="laptop:hidden h-6"><button class="hidden laptop:flex">Ticker Info</button></div>
+        <div class="flex justify-self-center justify-between items-center h-full w-5/6 desktop:w-5/6 laptop:w-full laptop:text-xl desktop:text-2xl self-center text-text-color font-medium">
+            <div id="tickerInfoBtn"><img src="{{ url_for('static', filename='tickerIcon.png') }}" alt="Watch List" class="laptop:hidden h-6"><button class="hidden underline underline-offset-8 laptop:flex">Ticker Info</button></div>
             <div id="homeBtn"><img src="{{ url_for('static', filename='houseIcon.svg') }}" alt="Watch List" class="laptop:hidden h-6"><button class="hidden laptop:flex">Main</button></div>
-            <div id="watchListBtn"><img src="{{ url_for('static', filename='listIcon.png') }}" alt="Watch List" class="laptop:hidden h-6"><button class="hidden underline underline-offset-8  laptop:flex">Watch List</button></div>
+            <div id="watchListBtn"><img src="{{ url_for('static', filename='listIcon.png') }}" alt="Watch List" class="laptop:hidden h-6"><button class="hidden laptop:flex">Watch List</button></div>
         </div>
 
         <button class="flex justify-self-end h-full mr-5" id="logOutButton">

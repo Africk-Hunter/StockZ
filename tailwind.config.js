@@ -27,8 +27,11 @@ module.exports = {
   
         'laptop': '1024px',
         // => @media (min-width: 1024px) { ... }
-  
-        'desktop': '1921px',
+
+        'desktop': '1600px',
+        // => @media (min-width: 1600px) { ... }
+
+        'desktopXL': '1921px',
         // => @media (min-width: 1280px) { ... }
       },
       fontFamily: {

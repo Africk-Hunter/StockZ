@@ -39,9 +39,9 @@ canvas {
     }
 }
 /* 1920x1080 resolution breakpoint */
-@media (min-width: 1920px) {
+@media (min-width: 992px) {
     canvas {
-        height: 22.5rem !important;
+        height: clamp(15rem, 22.5rem, 25rem) !important;
         width: 45rem !important;
     }
     .shrinkWaitlistBox{
