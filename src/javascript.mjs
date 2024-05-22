@@ -121,22 +121,34 @@ if (enterButton) {
   } else {
     stockZLogo.addEventListener('click', function(){
         if (!document.URL.includes('main.html')) {
-            window.location.href = '/main';
+            document.querySelector('main').classList.add("fadeAway");
+            setTimeout(() => {
+                window.location.href = '/main';
+            }, 200);
         }
     })
     tickerInfoBtn.addEventListener('click', function () {
         if (!document.URL.includes('tickerInfo.html')) {
-            window.location.href = '/tickerInfo';
+            document.querySelector('main').classList.add("fadeAway");
+            setTimeout(() => {
+                window.location.href = '/tickerInfo';
+            }, 200);
         }
     });
     homeBtn.addEventListener('click', function () {
         if (!document.URL.includes('main.html')) {
-            window.location.href = '/main';
+            document.querySelector('main').classList.add("fadeAway");
+            setTimeout(() => {
+                window.location.href = '/main';
+            }, 200);
         }
     });
     watchListBtn.addEventListener('click', function () {
         if (!document.URL.includes('watchlist.html')) {
-            window.location.href = '/watchlist';
+            document.querySelector('main').classList.add("fadeAway");
+            setTimeout(() => {
+                window.location.href = '/watchlist';
+            }, 200);
         }
     });
 }
@@ -231,7 +243,7 @@ if (tickerLabelIP) {
     });
     tickerLabelIP.addEventListener('click', function() {
         document.getElementById('buyHolder').style.display = 'none';
-        document.getElementById('stockChart').style.display = 'none';
+        document.getElementById('extraInfo').style.display = 'none';
         document.getElementById('otherButtons').style.display = 'none';
         tickerLabelIP.innerHTML = "";
         tickerLabelIP.classList.add("moveDownBox");
@@ -364,7 +376,7 @@ function createStockContainerItem(item) {
     container.className = 'stock-container';
 
     const stockItem = document.createElement('div');
-    stockItem.className = 'stock-item flex w-full h-7 laptop:h-9 text-background text-lg laptop:text-2xl select-none font-semibold transition-all duration-150 ease-in-out';
+    stockItem.className = 'stock-item flex w-full h-7 laptop:h-9 text-background text-md laptop:text-2xl select-none font-semibold transition-all duration-150 ease-in-out';
 
     const nameDiv = document.createElement('div');
     nameDiv.className = 'flex h-full w-1/3 justify-center items-center bg-text-color rounded-l border-r select-none hover:cursor-pointer border-background transition-all duration-150 ease-in-out';
@@ -379,7 +391,7 @@ function createStockContainerItem(item) {
     bbPriceDiv.textContent = item.badBuyPrice;
 
     const deleteIcon = document.createElement('button');
-    deleteIcon.className = 'delete-icon flex h-full w-10 justify-center items-center bg-none rounded border-solid border border-text-color border-opacity-25 ml-auto hover:bg-text-color';
+    deleteIcon.className = 'delete-icon flex h-full w-7 laptop:w-10 justify-center items-center bg-none rounded border-solid border border-text-color border-opacity-25 ml-auto hover:bg-text-color';
     deleteIcon.id = "watchlistDeleteButton";
     deleteIcon.innerHTML = '<img class="h-full w-4/5" src="../src/trashcan.svg" alt="Delete">';
     deleteIcon.style.display = 'none';
@@ -387,6 +399,15 @@ function createStockContainerItem(item) {
     nameDiv.addEventListener('transitionend', handleTransitionEnd);
     gbPriceDiv.addEventListener('transitionend', handleTransitionEnd);
     bbPriceDiv.addEventListener('transitionend', handleTransitionEnd);
+
+    stockItem.addEventListener('click', function () {
+        if(nameDiv.classList.contains("shrinkWaitlistBox")){
+            deleteIcon.style.display = 'none';
+            unshrinkWatchlistItem();
+        } else{
+            shrinkWatchlistItem();
+        }
+    });
 
     stockItem.addEventListener('mouseenter', function () {
         shrinkWatchlistItem();
@@ -443,6 +464,12 @@ function createStockContainerItem(item) {
         var parsedWatchList = JSON.parse(watchListItems);
         var updatedWatchList = parsedWatchList.filter(watchListItem => watchListItem.ticker !== item.ticker);
         localStorage.setItem('userWatchListData', JSON.stringify(updatedWatchList));
+        const user = auth.currentUser;
+        if (user) {
+            runWatchlist(user);
+        } else {
+            console.error("No user is signed in.");
+        }
     });
 
     stockItem.appendChild(nameDiv);
@@ -453,8 +480,6 @@ function createStockContainerItem(item) {
 
     return container;
 }
-
-
 
 async function deleteFromFirebase(ticker) {
     const user = auth.currentUser;
@@ -749,7 +774,7 @@ function createStockChart(prices) {
         } else if (screenWidth < 1024) {
             return 0; // tablet
         } else if (screenWidth < 1600) {
-            return 25; // laptop
+            return 20; // laptop
         } else if (screenWidth < 1921) {
             return 30; // desktop
         } else {
@@ -763,11 +788,11 @@ function createStockChart(prices) {
         } else if (screenWidth < 1024) {
             return 12; // tablet
         } else if (screenWidth < 1600) {
-            return 12; // laptop
+            return 11; // laptop
         } else if (screenWidth < 1921) {
-            return 20; // desktop
+            return 16; // desktop
         } else {
-            return 27; // desktopXL
+            return 20; // desktopXL
         }
     }
 }

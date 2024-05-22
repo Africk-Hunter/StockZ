@@ -929,6 +929,14 @@ video {
   width: 2rem;
 }
 
+.w-10\/12 {
+  width: 83.333333%;
+}
+
+.w-11\/12 {
+  width: 91.666667%;
+}
+
 .flex-grow {
   flex-grow: 1;
 }
@@ -1338,6 +1346,16 @@ video {
   line-height: 1.75rem;
 }
 
+.text-xs {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.text-base {
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+
 .font-bold {
   font-weight: 700;
 }
@@ -1682,6 +1700,10 @@ video {
     width: 50%;
   }
 
+  .laptop\:w-10\/12 {
+    width: 83.333333%;
+  }
+
   .laptop\:flex-row {
     flex-direction: row;
   }
@@ -1804,6 +1826,21 @@ video {
     line-height: 1.75rem;
   }
 
+  .laptop\:text-base {
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  .laptop\:text-sm {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .laptop\:text-xs {
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+
   .laptop\:placeholder\:text-8xl::-moz-placeholder {
     font-size: 6rem;
     line-height: 1;
@@ -1851,6 +1888,11 @@ video {
     line-height: 1.75rem;
   }
 
+  .desktop\:text-8xl {
+    font-size: 6rem;
+    line-height: 1;
+  }
+
   .desktop\:placeholder\:text-9xl::-moz-placeholder {
     font-size: 8rem;
     line-height: 1;
@@ -1858,6 +1900,16 @@ video {
 
   .desktop\:placeholder\:text-9xl::placeholder {
     font-size: 8rem;
+    line-height: 1;
+  }
+
+  .desktop\:placeholder\:text-8xl::-moz-placeholder {
+    font-size: 6rem;
+    line-height: 1;
+  }
+
+  .desktop\:placeholder\:text-8xl::placeholder {
+    font-size: 6rem;
     line-height: 1;
   }
 }
@@ -1891,5 +1943,30 @@ video {
   .desktopXL\:text-3xl {
     font-size: 1.875rem;
     line-height: 2.25rem;
+  }
+
+  .desktopXL\:text-9xl {
+    font-size: 8rem;
+    line-height: 1;
+  }
+
+  .desktopXL\:placeholder\:text-8xl::-moz-placeholder {
+    font-size: 6rem;
+    line-height: 1;
+  }
+
+  .desktopXL\:placeholder\:text-8xl::placeholder {
+    font-size: 6rem;
+    line-height: 1;
+  }
+
+  .desktopXL\:placeholder\:text-9xl::-moz-placeholder {
+    font-size: 8rem;
+    line-height: 1;
+  }
+
+  .desktopXL\:placeholder\:text-9xl::placeholder {
+    font-size: 8rem;
+    line-height: 1;
   }
 }

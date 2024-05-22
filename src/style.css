@@ -39,7 +39,7 @@ canvas {
         align-items: stretch; /* Ensures the canvas fills the container */
     }
     .shrinkWaitlistBox {
-        width: 11rem;
+        width: 4rem;
     }
     canvas {
         border-radius: 5px;
@@ -58,13 +58,13 @@ canvas {
         height: clamp(300px, 400px, 900px);
     }
     .shrinkWaitlistBox{
-        width: 11rem;
+        width: 8rem;
     }
 }
 @media (min-width: 1500px) {
     .innerChart{
         min-width: 100%;
-        height: clamp(300px, 575px, 900px);
+        height: clamp(300px, 525px, 900px);
     }
     .shrinkWaitlistBox{
         width: 11rem;
@@ -74,7 +74,7 @@ canvas {
 @media (min-width: 2560px) {
     .innerChart{
         min-width: 100%;
-        height: clamp(300px, 750px, 1000px);
+        height: clamp(300px, 675px, 1000px);
     }
     .shrinkWaitlistBox{
         width: 15rem;
@@ -108,7 +108,7 @@ canvas {
 }
 
 .moveUpBox{
-    margin-top: 2rem;
+    margin-top: 0;
     height: 4rem;
     width: 13rem;
 }
