@@ -55,7 +55,7 @@ canvas {
 @media (min-width: 992px) {
     .innerChart{
         min-width: 100%;
-        height: clamp(300px, 400px, 900px);
+        height: clamp(300px, 380px, 900px);
     }
     .shrinkWaitlistBox{
         width: 8rem;
@@ -64,7 +64,7 @@ canvas {
 @media (min-width: 1500px) {
     .innerChart{
         min-width: 100%;
-        height: clamp(300px, 525px, 900px);
+        height: clamp(300px, 475px, 900px);
     }
     .shrinkWaitlistBox{
         width: 11rem;
@@ -74,7 +74,7 @@ canvas {
 @media (min-width: 2560px) {
     .innerChart{
         min-width: 100%;
-        height: clamp(300px, 675px, 1000px);
+        height: clamp(300px, 600px, 1000px);
     }
     .shrinkWaitlistBox{
         width: 15rem;
@@ -82,6 +82,9 @@ canvas {
 }
 .fade-in {
     animation: fade-in 0.2s ease-out forwards;
+}
+.fade-in-slow {
+    animation: fade-in 0.5s ease-out forwards;
 }
 .moved {
     position: relative;

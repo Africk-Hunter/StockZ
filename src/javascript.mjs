@@ -41,6 +41,7 @@ let grBLonPage              = document.getElementById("grBL");
 let bBHonPage               = document.getElementById("bBH");
 let dipPrice                = document.getElementById("dipPrice");
 let currentPrice            = document.getElementById("currentPrice");
+let thresHoldWarning        = document.getElementById("thresHoldWarning");
 /* Watch List Page */
 let watchlistItemsContainer = document.getElementById("watchlistItemsContainer");
 let refreshButton           = document.getElementById("refreshButton");
@@ -245,6 +246,7 @@ if (tickerLabelIP) {
         document.getElementById('buyHolder').style.display = 'none';
         document.getElementById('extraInfo').style.display = 'none';
         document.getElementById('otherButtons').style.display = 'none';
+        thresHoldWarning.style.display = 'none';
         tickerLabelIP.innerHTML = "";
         tickerLabelIP.classList.add("moveDownBox");
         setTimeout(() => {
@@ -365,18 +367,26 @@ function updateWatchlistUI(watchListItems) {
     const watchlistItemsContainer = document.getElementById('watchlistItemsContainer');
     watchlistItemsContainer.innerHTML = '';
 
-    watchListItems.forEach(item => {
+    watchListItems.forEach((item, index) => {
         const stockContainer = createStockContainerItem(item);
+        setTimeout(() => {
+            stockContainer.classList.add('fade-in-slow');
+        }, index * 75);
+
         watchlistItemsContainer.appendChild(stockContainer);
     });
 }
 
+
 function createStockContainerItem(item) {
     const container = document.createElement('div');
     container.className = 'stock-container';
+    container.style.opacity = 0;
+    
 
     const stockItem = document.createElement('div');
     stockItem.className = 'stock-item flex w-full h-7 laptop:h-9 text-background text-md laptop:text-2xl select-none font-semibold transition-all duration-150 ease-in-out';
+    ;
 
     const nameDiv = document.createElement('div');
     nameDiv.className = 'flex h-full w-1/3 justify-center items-center bg-text-color rounded-l border-r select-none hover:cursor-pointer border-background transition-all duration-150 ease-in-out';
@@ -592,6 +602,7 @@ function loadCalculatedValues() {
     } catch (error) {
         console.log("Error occurred when loading data onto page.", error);
     }
+    activeWarningOnScreen();
 }
 
 function assignValueOnScreen(id, value){
@@ -612,11 +623,18 @@ function findDipInformation(closeData){
         threshHoldValue = .10,
         lowestMonth,
         lowestPrice,
-        dipHolder, dipHolderPrice;
+        dipHolder, dipHolderPrice,
+        thresHoldChanged = 0;
 
     //If the threshold isn't met, lower the threshold
     while (performDipLoop() == 0 && threshHoldValue > 0){
         threshHoldValue -= .03;
+        thresHoldChanged = 1;
+    }
+    if(thresHoldChanged === 1){
+        toggleWarning('threshold');
+    } else{
+        toggleWarning('none');
     }
     
     return( [lowestMonth, lowestPrice, dipHolder, dipHolderPrice] );
@@ -652,6 +670,26 @@ function findDipInformation(closeData){
             }
         }
         return highestScore;
+    }
+}
+
+function toggleWarning(warningType){
+    if(warningType === 'threshold'){
+        localStorage.setItem('recentlyCalculatedWarning', JSON.stringify('threshold'));
+    } else{
+        localStorage.setItem('recentlyCalculatedWarning', JSON.stringify('none'));
+    }
+    
+}
+
+function activeWarningOnScreen(){
+    var warning = localStorage.getItem('recentlyCalculatedWarning');
+    var data = JSON.parse(warning);
+    console.log(data);
+    if (data === 'threshold'){
+        thresHoldWarning.style.display = 'flex';
+    } else if (data === 'none'){
+        thresHoldWarning.style.display = 'none';
     }
 }
 
