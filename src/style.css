@@ -112,13 +112,12 @@ canvas {
 
 .moveUpBox{
     margin-top: 0;
-    height: 4rem;
     width: 13rem;
 }
 .moveDownBox{
     margin-top: 6rem;
     height: 33.3333%;
-    width: 33.3333%;
+    width: 40%;
 }
 .sizeText {
     font-size: 2.25rem;
