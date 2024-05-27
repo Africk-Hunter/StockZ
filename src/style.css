@@ -112,6 +112,7 @@ canvas {
 
 .moveUpBox{
     margin-top: 0;
+    height: 4rem;
     width: 13rem;
 }
 .moveDownBox{
