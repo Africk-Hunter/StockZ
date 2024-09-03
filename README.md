@@ -20,5 +20,5 @@ This project is deployed at [Stock-Z.com](https://stock-z.com/)
 - HTML
 - Tailwind CSS
 - JavaScript
-
+- Python with Flask
 
