@@ -34,12 +34,12 @@ canvas {
 /* Mobile breakpoint */
 @media (max-width: 767px) {
     .innerChart {
-        height: clamp(100px, 200px, 300px);
+        height: clamp(100px, 200, 300px);
         display: flex;
         align-items: stretch; /* Ensures the canvas fills the container */
     }
     .shrinkWaitlistBox {
-        width: 4rem;
+        width: 4.2rem;
     }
     canvas {
         border-radius: 5px;
@@ -48,6 +48,9 @@ canvas {
         margin: 1.25rem 0; /* Removed redundant margin property */
         border: 1px #E4ECE4 solid;
         flex: 1; /* Ensures the canvas takes up the full height of its container */
+    }
+    #watchlistDeleteButton{
+        width: 15%;
     }
 }
 
