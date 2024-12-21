@@ -22,3 +22,18 @@ This project is deployed at [Stock-Z.com](https://stock-z.com/). Due to the natu
 - JavaScript
 - Python with Flask
 
+## Running Locally
+
+To get the project running locally, follow these steps:
+
+1. **Clone the repository:** ``git clone https://github.com/your-username/StockZ.git``
+
+2. **Install dependencies:**
+   - For Python dependencies, run: ``pip install -r requirements.txt``
+   - For Node.js dependencies, run: ``npm install``
+
+3. Build CSS with ``npm run build``
+
+4. Run the Flask application with ``python app.py``
+
+5. Open project in your browser at ``http://127.0.0.1:5000``

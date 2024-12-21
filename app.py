@@ -26,7 +26,7 @@ def run_calculations():
 
     def scrape_stock_data(ticker):
         currentTime = str(int(time.time()))
-        startTime = str(1400118174)#May 15, 2014
+        startTime = str(1400118174) # May 15, 2014
         url = "https://finance.yahoo.com/quote/" + ticker.upper() + "/history/?frequency=1mo&period1=" + startTime + "&period2=" + currentTime
         print(url)
         
@@ -43,7 +43,7 @@ def run_calculations():
 
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, 'html.parser')
-            historical_table = soup.find('table', class_='table yf-j5d1l')
+            historical_table = soup.find('table', class_='table yf-j5d1ld')
 
             if historical_table:
                 rows = historical_table.find_all('tr')
