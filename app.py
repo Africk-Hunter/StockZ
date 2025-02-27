@@ -43,7 +43,7 @@ def run_calculations():
 
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, 'html.parser')
-            historical_table = soup.find('table', class_='table yf-j5d1ld')
+            historical_table = soup.find('table', class_='table yf-1jecxey')
 
             if historical_table:
                 rows = historical_table.find_all('tr')
