@@ -43,18 +43,25 @@ def run_calculations():
 
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, 'html.parser')
-            historical_table = soup.find('table', class_='table yf-1jecxey')
+            try:
+                historical_table = None
+                for table in soup.find_all('table'):
+                    headers = table.find_all('thead')
+                    if headers and 'Date' in headers[0].text and 'Close' in headers[-1].text:
+                        historical_table = table
+                        break
 
-            if historical_table:
-                rows = historical_table.find_all('tr')
-
-                for row in rows:
-                    cells = row.find_all('td')
-                    if len(cells) >= 4:
-                        cleaned_number = (cells[3].text).replace(",", "")
-                        close_information.append(float(cleaned_number))
-            else:
-                print("Historical data not found on the page.")
+                if historical_table:
+                    rows = historical_table.find_all('tr')
+                    for row in rows:
+                        cells = row.find_all('td')
+                        if len(cells) >= 4:
+                            cleaned_number = cells[3].text.replace(",", "")
+                            close_information.append(float(cleaned_number))
+                else:
+                    print("Historical data not found on the page.")
+            except Exception as e:
+                print(f"An error occurred while parsing the table: {e}")
         else:
             print("Failed to retrieve data. Status code:", response.status_code)
 
