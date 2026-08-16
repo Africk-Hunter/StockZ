@@ -1,9 +1,8 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-          "./dist/*.{html,js,css}",
-          "./src/*.{html,js,css}",
-          "./templates/*.{html,js}"
+          "./public/**/*.html",
+          "./public/src/**/*.{html,js,mjs,css}"
           ],
   theme: {
     extend: {
@@ -32,7 +31,7 @@ module.exports = {
         // => @media (min-width: 1600px) { ... }
 
         'desktopXL': '1921px',
-        // => @media (min-width: 1280px) { ... }
+        // => @media (min-width: 1921px) { ... }
       },
       fontFamily: {
         'poppins': ['Poppins', 'sans-serif'],

@@ -5,36 +5,60 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>StockZ</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../src/output.css">
-    <link rel="stylesheet" href="../src/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="icon" type="image/x-icon" href="../src/favicon.ico">
+    <link rel="stylesheet" href="/src/output.css">
+    <link rel="stylesheet" href="/src/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" integrity="sha384-NrKB+u6Ts6AtkIhwPixiKTzgSKNblyhlk0Sohlgar9UHUBzai/sgnNNWWd291xqt" crossorigin="anonymous"></script>
+    <link rel="icon" type="image/x-icon" href="/src/favicon.ico">
 </head>
 <body class="bg-background w-screen h-screen">
 
 <div class="flex flex-col items-center font-poppins h-screen" id="mainWrapper">
 
-    <nav class="grid grid-rows-1 grid-cols-3 sized90 h-12 laptop:h-16 border-solid border-b border-text-color border-opacity-25">
-        <div id="stockZLogo" class="flex justify-self-start bg-transparent font-semibold justify-center laptop:gap-1 self-center hover:cursor-pointer">
+    <nav class="hidden laptop:grid grid-rows-1 grid-cols-3 sized90 h-12 laptop:h-16 border-solid border-b border-text-color border-opacity-25">
+        <div id="stockZLogo" class="nav-home flex justify-self-start bg-transparent font-semibold justify-center laptop:gap-1 self-center hover:cursor-pointer">
             <span class="text-text-color hidden laptop:flex laptop:text-5xl select-none">STOCK</span><span class="text-accent-color select-none text-4xl laptop:text-5xl ml-2">Z</span>
         </div>
 
         <div class="flex justify-self-center justify-between items-center h-full w-full desktop:w-5/6 laptop:w-full laptop:text-xl desktop:text-2xl self-center text-text-color font-medium">
-            <div id="tickerInfoBtn"><img src="{{ url_for('static', filename='tickerIcon.png') }}" alt="Watch List" class="laptop:hidden h-6"><button class="hidden underline underline-offset-8 laptop:flex">Ticker Info</button></div>
-            <div id="homeBtn"><img src="{{ url_for('static', filename='houseIcon.svg') }}" alt="Watch List" class="laptop:hidden h-6"><button class="hidden laptop:flex">Main</button></div>
-            <div id="watchListBtn"><img src="{{ url_for('static', filename='listIcon.png') }}" alt="Watch List" class="laptop:hidden h-6"><button class="hidden laptop:flex">Watch List</button></div>
+            <div id="tickerInfoBtn" class="nav-ticker-info"><img src="/src/tickerIcon.png" alt="Watch List" class="laptop:hidden h-6"><button class="hidden underline underline-offset-8 laptop:flex">Ticker Info</button></div>
+            <div id="homeBtn" class="nav-home"><img src="/src/houseIcon.svg" alt="Watch List" class="laptop:hidden h-6"><button class="hidden laptop:flex">Main</button></div>
+            <div id="watchListBtn" class="nav-watchlist"><img src="/src/listIcon.png" alt="Watch List" class="laptop:hidden h-6"><button class="hidden laptop:flex">Watch List</button></div>
         </div>
 
-        <button class="flex justify-self-end h-full mr-5" id="logOutButton">
-            <img src="{{ url_for('static', filename='logOut.png') }}" alt="Log Out" class="h-1/2 laptop:h-1/2 self-center">
+        <button class="nav-logout flex justify-self-end h-full mr-5" id="logOutButton">
+            <img src="/src/logOut.png" alt="Log Out" class="h-1/2 laptop:h-1/2 self-center">
         </button>
     </nav>
 
-    <main class="flex flex-col h-max laptop:h-full w-full laptop:w-10/12 justify-start laptop:justify-between items-center font-bold gap-2 fade-in py-8">
+    <div class="laptop:hidden flex items-center justify-between w-full px-5 pt-4 pb-1">
+        <div class="nav-home flex items-baseline gap-1 font-poppins font-extrabold text-sm tracking-widest uppercase select-none hover:cursor-pointer">
+            <span class="text-text-color">Stock</span><span class="text-accent-color">Z</span>
+        </div>
+        <button type="button" class="nav-logout flex items-center justify-center w-8 h-8">
+            <img src="/src/logOut.png" alt="Log Out" class="h-4">
+        </button>
+    </div>
+
+    <nav class="laptop:hidden fixed bottom-0 left-0 right-0 flex bg-background border-t border-text-color border-opacity-25 pb-6 pt-2 z-10">
+        <div class="nav-ticker-info flex-1 flex flex-col items-center gap-1 hover:cursor-pointer">
+            <img src="/src/tickerIcon.png" alt="" class="h-4">
+            <span class="text-accent-color text-[11px] font-semibold">Ticker Info</span>
+        </div>
+        <div class="nav-home flex-1 flex flex-col items-center gap-1 hover:cursor-pointer">
+            <img src="/src/houseIcon.svg" alt="" class="h-4 opacity-50">
+            <span class="text-text-color text-opacity-60 text-[11px] font-semibold">Search</span>
+        </div>
+        <div class="nav-watchlist flex-1 flex flex-col items-center gap-1 hover:cursor-pointer">
+            <img src="/src/listIcon.png" alt="" class="h-4 opacity-50">
+            <span class="text-text-color text-opacity-60 text-[11px] font-semibold">Watch List</span>
+        </div>
+    </nav>
+
+    <main class="flex flex-col h-max laptop:h-full w-full laptop:w-10/12 justify-start laptop:justify-between items-center font-bold gap-2 fade-in py-8 pb-24 laptop:pb-8 px-5 laptop:px-0">
         <div id="tickerLabelIP" class="flex justify-center items-center select-none border-text-color border-2 laptop:border-3 border-opacity-50 border-solid rounded-lg min-h-16 laptop:h-1/8 w-3/6 laptop:w-52 hover:cursor-pointer transition-all duration-500 ease-in-out text-center uppercase text-text-color text-3xl laptop:text-4xl overflow-hidden"></div>
-       
+
         <span id="thresHoldWarning" class="w-3/4 text-center laptop:justify-center text-sm laptop:text-xl desktop:text-2xl desktopXL:text-2xl text-desperate-buy-one hidden">Warning: Threshold was lowered. Use caution when examining stock.</span>
-        <div id="buyHolder" class="flex flex-col laptop:flex-row w-full laptop:w-4/5 laptop:h-20 desktopXL:h-36 justify-start items-center gap-0 laptop:gap-0 laptop:mt-0">
+        <div id="buyHolder" class="hidden laptop:flex laptop:flex-row w-full laptop:w-4/5 laptop:h-20 desktopXL:h-36 justify-start items-center gap-0 laptop:gap-0 laptop:mt-0">
 
             <div class="flex flex-col justify-center items-start mt-5 laptop:mt-0 min-h-20 laptop:h-full w-3/4 bg-transparent">
                 <div class="flex justify-center items-center text-text-color bg-secondary-color h-1/2 w-full rounded-t laptop:rounded-tr-none desktopXL:rounded-tl-lg border-b-2 laptop:border-r-2 border-background text-xl llaptop:text-xl desktopXL:text-3xl font-medium">Great Buy Range</div>
@@ -64,15 +88,37 @@
                     <div id="bBH" class="flex justify-center items-center h-full w-1/2 bg-desperate-buy-two rounded-br desktopXL:rounded-br-lg text-background text-xl laptop:text-xl desktop:text-2xl desktopXL:text-3xl"></div>
                 </div>
             </div>
-           
+
+        </div>
+        <div class="laptop:hidden flex flex-col gap-2 w-full">
+            <div class="text-text-color text-opacity-60 font-bold text-xs uppercase tracking-wide">Buy Range</div>
+            <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                <div class="flex-shrink-0 min-w-[9.25rem] rounded-lg px-4 py-3 bg-great-buy-one text-background">
+                    <div class="text-xs font-bold uppercase tracking-wide">Great</div>
+                    <div id="mobileGreatRange" class="font-poppins font-bold text-base"></div>
+                </div>
+                <div class="flex-shrink-0 min-w-[9.25rem] rounded-lg px-4 py-3 bg-good-buy-one text-background">
+                    <div class="text-xs font-bold uppercase tracking-wide">Good</div>
+                    <div id="mobileGoodRange" class="font-poppins font-bold text-base"></div>
+                </div>
+                <div class="flex-shrink-0 min-w-[9.25rem] rounded-lg px-4 py-3 bg-okay-buy-one text-background">
+                    <div class="text-xs font-bold uppercase tracking-wide">Okay</div>
+                    <div id="mobileOkayRange" class="font-poppins font-bold text-base"></div>
+                </div>
+                <div class="flex-shrink-0 min-w-[9.25rem] rounded-lg px-4 py-3 bg-desperate-buy-one text-background">
+                    <div class="text-xs font-bold uppercase tracking-wide">Bad</div>
+                    <div id="mobileBadRange" class="font-poppins font-bold text-base"></div>
+                </div>
+            </div>
         </div>
         <section id="extraInfo" class="flex flex-col-reverse laptop:flex-row w-full laptop:w-4/5 laptop:h-3/6 items-center">
             <div class="laptop:w-3/4">
+                <div id="chartRangeButtons" class="flex justify-center laptop:justify-end gap-2 mb-2"></div>
                 <div class="innerChart">
                     <canvas id="stockChart" class="flex"></canvas>
                 </div>
             </div>
-            <div class="flex flex-col w-3/4 laptop:w-1/4 h-full ">
+            <div class="flex flex-col w-full laptop:w-1/4 h-full ">
                 <div class="flex flex-col justify-center items-start mt-5 laptop:mt-0 min-h-20 laptop:h-1/5 w-full bg-transparent">
                     <div class="flex h-1/2 w-full bg-transparent">
                         <div class="flex justify-center items-center h-full w-1/2 bg-secondary-color rounded-tl desktopXL:rounded-tl-lg border-r-2 border-background text-text-color text-lg laptop:text-sm desktop:text-xl desktopXL:text-3xl font-medium">Current Price</div>
@@ -83,21 +129,39 @@
                         <div id="dipPrice" class="flex justify-center items-center h-full w-1/2 bg-text-color rounded-br desktopXL:rounded-br-lg laptop:border-r-2 border-background text-background text-xl laptop:text-xl desktop:text-2xl desktopXL:text-3xl"></div>
                     </div>
                 </div>
+                <div class="flex flex-col justify-center items-start mt-5 laptop:mt-2 min-h-32 laptop:h-2/5 w-full bg-transparent">
+                    <div class="flex flex-1 w-full bg-transparent">
+                        <div class="flex justify-center items-center text-center leading-tight h-full w-1/2 px-2 bg-secondary-color rounded-tl desktopXL:rounded-tl-lg border-b-2 border-r-2 border-background text-text-color text-xs laptop:text-sm desktop:text-lg desktopXL:text-2xl font-medium">Dividend Yield</div>
+                        <div id="dividendYield" class="flex justify-center items-center text-center leading-tight h-full w-1/2 px-2 bg-text-color rounded-tr desktopXL:rounded-tr-lg border-b-2 border-background text-background text-xs laptop:text-sm desktop:text-lg desktopXL:text-2xl font-semibold"></div>
+                    </div>
+                    <div class="flex flex-1 w-full bg-transparent">
+                        <div class="flex justify-center items-center text-center leading-tight h-full w-1/2 px-2 bg-secondary-color border-b-2 border-r-2 border-background text-text-color text-xs laptop:text-sm desktop:text-lg desktopXL:text-2xl font-medium">Payout Ratio</div>
+                        <div id="payoutRatio" class="flex justify-center items-center text-center leading-tight h-full w-1/2 px-2 bg-text-color border-b-2 border-background text-background text-xs laptop:text-sm desktop:text-lg desktopXL:text-2xl font-semibold"></div>
+                    </div>
+                    <div class="flex flex-1 w-full bg-transparent">
+                        <div class="flex justify-center items-center text-center leading-tight h-full w-1/2 px-2 bg-secondary-color rounded-bl desktopXL:rounded-bl-lg border-r-2 border-background text-text-color text-xs laptop:text-sm desktop:text-lg desktopXL:text-2xl font-medium">Last Payout</div>
+                        <div id="lastPayoutAmount" class="flex justify-center items-center text-center leading-tight h-full w-1/2 px-2 bg-text-color rounded-br desktopXL:rounded-br-lg text-background text-xs laptop:text-sm desktop:text-lg desktopXL:text-2xl font-semibold"></div>
+                    </div>
+                </div>
             </div>
         </section>
-        
-        <section id="otherButtons" class="flex flex-col min-h-1/6 laptop:h-32 desktopXL:h-40 w-3/4 laptop:w-1/4 desktopXL:w-2/5 gap-2 justify-end">
+
+        <section id="otherButtons" class="flex flex-col min-h-1/6 laptop:h-44 desktopXL:h-52 w-full laptop:w-1/4 desktopXL:w-2/5 gap-2 justify-end">
             <button id="addToWatchlist" class="text-text-color bg-secondary-color rounded desktopXL:rounded-lg h-8 laptop:h-2/6 active:scale-110 font-medium text-xl laptop:text-md desktop:text-xl desktopXL:text-2xl hover:bg-text-color hover:text-background hover:-translate-y-2 transition-all duration-200 ease-in-out">Add To Watchlist</button>
             <div class="flex justify-between w-full h-8 laptop:h-2/6 gap-2">
                 <button id="stockStatsLink" class="flex justify-center items-center bg-secondary-color w-1/2 h-full active:scale-110 rounded desktopXL:rounded-lg text-text-color font-medium text-sm laptop:text-md desktop:text-xl desktopXL:text-2xl hover:bg-text-color hover:text-background hover:-translate-y-1 transition-all duration-200 ease-in-out">Stock Statistics</button>
                 <button id="stockDescLink" class="flex justify-center items-center bg-secondary-color w-1/2 h-full active:scale-110 rounded desktopXL:rounded-lg text-text-color font-medium text-sm laptop:text-md desktop:text-xl desktopXL:text-2xl hover:bg-text-color hover:text-background hover:-translate-y-1 transition-all duration-200 ease-in-out">Stock Description</button>
             </div>
+            <div class="flex justify-between w-full h-8 laptop:h-2/6 gap-2">
+                <button id="dividendHistoryLink" class="flex justify-center items-center bg-secondary-color w-1/2 h-full active:scale-110 rounded desktopXL:rounded-lg text-text-color font-medium text-sm laptop:text-md desktop:text-xl desktopXL:text-2xl hover:bg-text-color hover:text-background hover:-translate-y-1 transition-all duration-200 ease-in-out">Dividend History</button>
+                <button id="epsChartLink" class="flex justify-center items-center bg-secondary-color w-1/2 h-full active:scale-110 rounded desktopXL:rounded-lg text-text-color font-medium text-sm laptop:text-md desktop:text-xl desktopXL:text-2xl hover:bg-text-color hover:text-background hover:-translate-y-1 transition-all duration-200 ease-in-out">EPS Chart</button>
+            </div>
         </section>
     </main>
-    
+
 </div>
 
-<script type="module" src="../src/javascript.mjs"></script>
+<script type="module" src="/src/javascript.mjs"></script>
 
 </body>
 </html>

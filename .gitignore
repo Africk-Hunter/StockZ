@@ -1,1 +1,12 @@
 node_modules/
+# Local Netlify folder
+.netlify
+
+# Secrets / local env
+.env
+.env.*
+
+# Editor / OS artifacts
+.vscode/
+.DS_Store
+Thumbs.db

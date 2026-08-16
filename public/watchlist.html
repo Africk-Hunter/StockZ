@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StockZ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/src/output.css">
+    <link rel="stylesheet" href="/src/style.css">
+    <link rel="icon" type="image/x-icon" href="/src/favicon.ico">
+</head>
+<body class="bg-background w-screen h-screen">
+
+<div class="flex flex-col items-center font-poppins h-screen" id="mainWrapper">
+
+    <nav class="hidden laptop:grid grid-rows-1 grid-cols-3 sized90 h-12 laptop:h-16 border-solid border-b border-text-color border-opacity-25">
+        <div id="stockZLogo" class="nav-home flex justify-self-start bg-transparent font-semibold justify-center laptop:gap-1 self-center hover:cursor-pointer">
+            <span class="text-text-color hidden laptop:flex laptop:text-5xl select-none">STOCK</span><span class="text-accent-color select-none text-4xl laptop:text-5xl ml-2">Z</span>
+        </div>
+
+        <div class="flex justify-self-center justify-between items-center h-full w-5/6 desktop:w-5/6 laptop:w-full laptop:text-xl desktop:text-2xl self-center text-text-color font-medium">
+            <div id="tickerInfoBtn" class="nav-ticker-info"><img src="/src/tickerIcon.png" alt="Watch List" class="laptop:hidden h-6"><button class="hidden laptop:flex">Ticker Info</button></div>
+            <div id="homeBtn" class="nav-home"><img src="/src/houseIcon.svg" alt="Watch List" class="laptop:hidden h-6"><button class="hidden laptop:flex">Main</button></div>
+            <div id="watchListBtn" class="nav-watchlist"><img src="/src/listIcon.png" alt="Watch List" class="laptop:hidden h-6"><button class="hidden laptop:flex underline underline-offset-8">Watch List</button></div>
+        </div>
+
+        <button class="nav-logout flex justify-self-end h-full mr-5" id="logOutButton">
+            <img src="/src/logOut.png" alt="Log Out" class="h-1/2 laptop:h-1/2 self-center">
+        </button>
+    </nav>
+
+    <div class="laptop:hidden flex items-center justify-between w-full px-5 pt-4 pb-1">
+        <div class="nav-home flex items-baseline gap-1 font-poppins font-extrabold text-sm tracking-widest uppercase select-none hover:cursor-pointer">
+            <span class="text-text-color">Stock</span><span class="text-accent-color">Z</span>
+        </div>
+        <button type="button" class="nav-logout flex items-center justify-center w-8 h-8">
+            <img src="/src/logOut.png" alt="Log Out" class="h-4">
+        </button>
+    </div>
+
+    <nav class="laptop:hidden fixed bottom-0 left-0 right-0 flex bg-background border-t border-text-color border-opacity-25 pb-6 pt-2 z-10">
+        <div class="nav-ticker-info flex-1 flex flex-col items-center gap-1 hover:cursor-pointer">
+            <img src="/src/tickerIcon.png" alt="" class="h-4 opacity-50">
+            <span class="text-text-color text-opacity-60 text-[11px] font-semibold">Ticker Info</span>
+        </div>
+        <div class="nav-home flex-1 flex flex-col items-center gap-1 hover:cursor-pointer">
+            <img src="/src/houseIcon.svg" alt="" class="h-4 opacity-50">
+            <span class="text-text-color text-opacity-60 text-[11px] font-semibold">Search</span>
+        </div>
+        <div class="nav-watchlist flex-1 flex flex-col items-center gap-1 hover:cursor-pointer">
+            <img src="/src/listIcon.png" alt="" class="h-4">
+            <span class="text-accent-color text-[11px] font-semibold">Watch List</span>
+        </div>
+    </nav>
+
+    <main class="flex flex-grow w-full justify-center items-start mt-10 laptop:mt-16 desktop:mt-20 fade-in">
+        <section id="watchListContainerLarge" class="flex flex-col items-center justify-start w-11/12 h-5/6 laptop:w-4/5 desktop:w-3/5 desktop:h-3/4 desktopXL:w-1/2 rounded laptop:rounded-xl desktop:rounded-xl border-solid border border-text-color border-opacity-25">
+            <div class="laptop:hidden flex items-center justify-start w-72 mt-3 font-poppins font-bold text-xl text-text-color">Watch List</div>
+            <div class="flex justify-between items-center h-8 w-72 laptop:w-11/12 laptop:h-20 mt-2">
+                <div id="folderDropdownWrapper" class="relative flex items-center h-full">
+                    <button id="folderDropdownBtn" type="button" class="flex items-center gap-1 laptop:gap-2 h-full px-2 laptop:px-4 text-text-color text-[9px] laptop:text-lg desktop:text-xl font-semibold bg-secondary-color rounded laptop:rounded-lg hover:bg-text-color hover:text-background transition-colors duration-150 select-none min-w-0 max-w-[8rem] laptop:max-w-xs">
+                        <span id="folderDropdownLabel" class="truncate">All Stocks</span>
+                        <span class="text-[7px] laptop:text-xs flex-shrink-0">&#9660;</span>
+                    </button>
+                    <div id="folderDropdownPanel" class="hidden absolute left-0 top-full mt-1 w-48 laptop:w-64 bg-secondary-color rounded laptop:rounded-lg shadow-lg z-20 py-1 text-text-color text-xs laptop:text-base max-h-72 overflow-y-auto no-scrollbar">
+                    </div>
+                </div>
+                <!-- Small bar at top for refresh button to go in top right corner -->
+                <button id="refreshButton" class="h-full w-5 laptop:w-10 disabled:opacity-50 disabled:cursor-not-allowed"><img src="/src/refreshIcon.svg" alt="Refresh" class=""></button>
+            </div>
+            <!-- Column widths (grid-cols) must stay in sync with the row template in createStockContainerItem() in javascript.mjs, including the two trailing action-icon tracks, or header/row columns drift out of alignment -->
+            <div class="hidden laptop:grid grid-cols-[1.6fr_1fr_1fr_1fr_1fr_1.75rem_1.75rem] laptop:grid-cols-[1.6fr_1fr_1fr_1fr_1fr_2.5rem_2.5rem] w-11/12 h-8 laptop:h-14 rounded border-solid border text-text-color text-[9px] laptop:text-base desktop:text-lg desktopXL:text-xl border-text-color border-opacity-25 font-semibold">
+                <!-- Column Names -->
+                <button id="sortByName" class="flex justify-center items-center h-full border-r border-text-color border-opacity-25 hover:bg-text-color hover:bg-opacity-10 transition-colors duration-150 select-none px-1 min-w-0 truncate">Name<span id="sortByNameArrow" class="ml-1"></span></button>
+                <button id="sortByPrice" class="flex justify-center items-center h-full border-r border-text-color border-opacity-25 hover:bg-text-color hover:bg-opacity-10 transition-colors duration-150 select-none px-1 min-w-0 truncate">Price<span id="sortByPriceArrow" class="ml-1"></span></button>
+                <button id="sortByGB" class="flex justify-center items-center h-full border-r border-text-color border-opacity-25 hover:bg-text-color hover:bg-opacity-10 transition-colors duration-150 select-none px-1 min-w-0 truncate">GB<span id="sortByGBArrow" class="ml-1"></span></button>
+                <button id="sortByBB" class="flex justify-center items-center h-full border-r border-text-color border-opacity-25 hover:bg-text-color hover:bg-opacity-10 transition-colors duration-150 select-none px-1 min-w-0 truncate">BB<span id="sortByBBArrow" class="ml-1"></span></button>
+                <button id="sortByDividend" class="flex justify-center items-center h-full hover:bg-text-color hover:bg-opacity-10 transition-colors duration-150 select-none px-1 min-w-0 truncate">Div<span id="sortByDividendArrow" class="ml-1"></span></button>
+            </div>
+            <div id="watchlistItemsContainer" class="hidden laptop:flex flex-col w-11/12 h-5/6 mt-3 overflow-y-auto overflow-x-hidden gap-2 no-scrollbar">
+
+            </div>
+
+            <div id="watchlistCardsContainer" class="laptop:hidden flex flex-col w-11/12 flex-1 mt-3 overflow-y-auto no-scrollbar gap-3.5 pb-20">
+
+            </div>
+
+        </section>
+    </main>
+
+    <div id="folderModalOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-30 flex items-center justify-center px-4">
+        <div id="folderModal" class="flex flex-col bg-background border border-text-color border-opacity-25 rounded-lg w-full max-w-xs laptop:max-w-md p-4 laptop:p-6 gap-3 text-text-color">
+            <div class="flex justify-between items-center">
+                <h2 id="folderModalTitle" class="text-base laptop:text-2xl font-semibold truncate pr-2">Add to Folders</h2>
+                <button id="folderModalCloseBtn" type="button" class="text-text-color text-2xl leading-none hover:text-accent-color flex-shrink-0">&times;</button>
+            </div>
+            <div id="folderModalList" class="flex flex-col gap-1 max-h-60 overflow-y-auto no-scrollbar">
+            </div>
+            <form id="folderModalNewFolderForm" class="flex gap-2 mt-2">
+                <input id="folderModalNewFolderInput" type="text" placeholder="New folder name" maxlength="40" autocomplete="off" class="flex-1 min-w-0 bg-secondary-color rounded px-2 py-1 text-text-color placeholder-text-color placeholder-opacity-50 outline-none text-sm laptop:text-base">
+                <button type="submit" class="bg-accent-color text-background rounded px-3 py-1 font-semibold text-sm laptop:text-base hover:opacity-90 flex-shrink-0">Add</button>
+            </form>
+        </div>
+    </div>
+
+    <script type="module" src="/src/javascript.mjs"></script>
+</body>
+</html>
+
+<!-- Example Watchlist Item -->
+<!--
+    <div class="flex w-full h-7 laptop:h-9 text-background text-lg laptop:text-2xl font-semibold">
+        <div class="flex h-full w-60 justify-center items-center bg-text-color rounded-l border-r border-background">WFC</div>
+        <div class="flex flexh-full w-60 justify-center items-center bg-great-buy-one border-r border-background">$39.45</div>
+        <div class="flex h-full w-60 justify-center items-center bg-desperate-buy-one rounded-r">$51.02</div>
+        <div id="deleteWatchlistItem" class="flex h-full w-10 justify-center items-center bg-none rounded border-solid border border-text-color border-opacity-25 ml-auto"><img class="h-full w-4/5" src="/src/trashcan.svg" alt="Delete"></div>
+    </div>
+ -->

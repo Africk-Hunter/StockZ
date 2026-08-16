@@ -38,9 +38,6 @@ canvas {
         display: flex;
         align-items: stretch; /* Ensures the canvas fills the container */
     }
-    .shrinkWaitlistBox {
-        width: 4.2rem;
-    }
     canvas {
         border-radius: 5px;
         color: rgb(228, 236, 228);
@@ -48,9 +45,6 @@ canvas {
         margin: 1.25rem 0; /* Removed redundant margin property */
         border: 1px #E4ECE4 solid;
         flex: 1; /* Ensures the canvas takes up the full height of its container */
-    }
-    #watchlistDeleteButton{
-        width: 15%;
     }
 }
 
@@ -60,17 +54,11 @@ canvas {
         min-width: 100%;
         height: clamp(300px, 380px, 900px);
     }
-    .shrinkWaitlistBox{
-        width: 8rem;
-    }
 }
 @media (min-width: 1500px) {
     .innerChart{
         min-width: 100%;
         height: clamp(300px, 475px, 900px);
-    }
-    .shrinkWaitlistBox{
-        width: 11rem;
     }
 }
 
@@ -78,9 +66,6 @@ canvas {
     .innerChart{
         min-width: 100%;
         height: clamp(300px, 600px, 1000px);
-    }
-    .shrinkWaitlistBox{
-        width: 15rem;
     }
 }
 .fade-in {
@@ -130,4 +115,8 @@ canvas {
 
 #watchlistDeleteButton:hover > img{
     filter: invert(1);
+}
+
+.invalid-ticker {
+    color: #EA3333;
 }

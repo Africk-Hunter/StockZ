@@ -20,7 +20,7 @@ This project is deployed at [Stock-Z.com](https://stock-z.com/). Due to the natu
 - HTML
 - Tailwind CSS
 - JavaScript
-- Python with Flask
+- Netlify Functions (Node.js) for the stock data scrape
 
 ## Running Locally
 
@@ -28,12 +28,8 @@ To get the project running locally, follow these steps:
 
 1. **Clone the repository:** ``git clone https://github.com/your-username/StockZ.git``
 
-2. **Install dependencies:**
-   - For Python dependencies, run: ``pip install -r requirements.txt``
-   - For Node.js dependencies, run: ``npm install``
+2. **Install dependencies:** ``npm install``
 
-3. Build CSS with ``npm run build``
+3. **Install the Netlify CLI** (if you don't have it): ``npm install -g netlify-cli``
 
-4. Run the Flask application with ``python app.py``
-
-5. Open project in your browser at ``http://127.0.0.1:5000``
+4. Run ``netlify dev`` — this builds the CSS, serves `public/` as a static site, and runs the `/run-calculations` function locally, all at ``http://localhost:8888``
