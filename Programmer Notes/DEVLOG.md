@@ -231,3 +231,62 @@ conventions rather than the handoff mockup's literal palette — the desktop
   have been a regression).
 - Not verified in a real mobile browser this session — see `task.md` for
   the outstanding manual check.
+
+---
+
+## 1.3 — Error reporting + dip-scoring bug fix _(in progress, uncommitted)_
+
+**Status:** working tree changes, not yet committed.
+
+### Summary
+
+Added a lightweight error-logging / "Report a Problem" pipeline (frontend
+capture → new `log-error` function → Netlify function logs, since there's
+still no database or email provider), and fixed a real scoring bug in
+`findDipInformation` where a decayed score was leaking across retry passes.
+
+### Error logging & bug-report widget
+
+- New `netlify/functions/log-error.mjs`: POST-only, rate-limited (reuses
+  `isRateLimited`/`clientIp` from `lib/shared.mjs`), body-size-capped
+  (20 KB) endpoint that validates/truncates each field and writes the
+  report out via `console.error` — the Netlify Functions log viewer is the
+  actual "inbox" for these, there's nowhere else for them to go.
+- `javascript.mjs`: wraps `console.error` (so every existing and future
+  call site is captured for free) and adds `window` `error` /
+  `unhandledrejection` listeners; each captured error is pushed onto a
+  capped 25-entry `localStorage` ring buffer and beaconed to `/log-error`
+  via `navigator.sendBeacon` (falling back to a `keepalive` `fetch`).
+- Added a floating "Report a Problem" button + modal
+  (`initBugReportWidget()`), injected on every page since the module loads
+  everywhere. A user's description is bundled with the last 10 buffered
+  errors and POSTed to the same `/log-error` function.
+
+### Bug fix: `findDipInformation` dip-score reset
+
+- `monthScore` was declared once outside `performDipLoop()` and never
+  reset between calls. Each threshold-lowering retry (and the final
+  unconditional fallback pass) resumed scanning `closeData` from wherever
+  the *previous* pass's decayed score had left off, eventually driving
+  every candidate's score permanently negative for low-volatility tickers
+  that never cleared the higher thresholds — leaving
+  `recoveryLowMonth`/`recoveryLowPrice` unset. Moved `let monthScore = 1`
+  inside `performDipLoop()` so every pass starts fresh.
+
+### Config
+
+- `netlify.toml`: pinned `NODE_VERSION = "22"` under `[build.environment]`;
+  added explicit `[[redirects]]` entries mapping `/stock-info`,
+  `/run-calculations`, `/run-dividend-info`, and the new `/log-error` to
+  their `/.netlify/functions/*` targets (each function already declares
+  its own `config.path`, so this is belt-and-suspenders).
+- `package.json`: bumped the `engines.node` constraint from `>=18` to
+  `>=22.19.0` to match.
+
+### Not done here
+
+- No UI/visual regression testing performed this session for the new
+  bug-report modal.
+- `public/src/output.css` changes in this pass are just the regenerated
+  Tailwind build output reflecting the new widget's classes — not a
+  manual edit.

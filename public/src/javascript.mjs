@@ -30,6 +30,179 @@ function sanitizeTicker(raw) {
     return TICKER_PATTERN.test(upper) ? upper : null;
 }
 
+/* ------------------------------------------------------------------ *
+ * Error logging & bug reports.
+ *
+ * There's no backend/database for this static site, so error reports are
+ * POSTed to the /log-error function, which just writes them to Netlify's
+ * function logs — that's the only "delivery" needed. Errors are also kept
+ * in a capped localStorage ring buffer so a user-submitted report can
+ * include what happened earlier in the session, not just the error at
+ * report time. console.error is wrapped (instead of editing every call
+ * site) so every existing and future console.error call is captured for
+ * free, on top of truly uncaught exceptions and unhandled rejections.
+ * ------------------------------------------------------------------ */
+const ERROR_LOG_KEY = 'stockZ_errorLog';
+const ERROR_LOG_MAX_ENTRIES = 25;
+
+function readErrorLog() {
+    try {
+        const parsed = JSON.parse(localStorage.getItem(ERROR_LOG_KEY) || '[]');
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+        return [];
+    }
+}
+
+function recordError(level, message, extra = {}) {
+    const entry = {
+        timestamp: new Date().toISOString(),
+        level,
+        message: String(message).slice(0, 2000),
+        page: location.pathname,
+        ...extra,
+    };
+
+    const log = readErrorLog();
+    log.push(entry);
+    while (log.length > ERROR_LOG_MAX_ENTRIES) log.shift();
+    try {
+        localStorage.setItem(ERROR_LOG_KEY, JSON.stringify(log));
+    } catch (error) {
+        // localStorage full/unavailable — nothing more to do locally.
+    }
+
+    sendErrorReport(entry);
+}
+
+function sendErrorReport(entry) {
+    try {
+        const payload = JSON.stringify({ ...entry, userAgent: navigator.userAgent });
+        if (navigator.sendBeacon) {
+            navigator.sendBeacon('/log-error', new Blob([payload], { type: 'application/json' }));
+        } else {
+            fetch('/log-error', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true }).catch(() => {});
+        }
+    } catch (error) {
+        // Reporting must never itself throw or block the app.
+    }
+}
+
+const nativeConsoleError = console.error.bind(console);
+console.error = function (...args) {
+    nativeConsoleError(...args);
+    try {
+        const message = args.map((arg) => {
+            if (arg instanceof Error) return arg.stack || arg.message;
+            if (typeof arg === 'string') return arg;
+            try { return JSON.stringify(arg); } catch { return String(arg); }
+        }).join(' ');
+        recordError('console.error', message);
+    } catch (error) {
+        // Never let logging itself break the app.
+    }
+};
+
+window.addEventListener('error', function (event) {
+    recordError('uncaught-exception', event.message, {
+        source: event.filename,
+        line: event.lineno,
+        column: event.colno,
+        stack: event.error && event.error.stack ? String(event.error.stack).slice(0, 4000) : undefined,
+    });
+});
+
+window.addEventListener('unhandledrejection', function (event) {
+    const reason = event.reason;
+    recordError('unhandled-rejection', reason instanceof Error ? reason.message : String(reason), {
+        stack: reason instanceof Error && reason.stack ? String(reason.stack).slice(0, 4000) : undefined,
+    });
+});
+
+// User-facing "Report a Problem" button + modal, injected on every page
+// (the script is loaded everywhere) so it works regardless of what's
+// broken elsewhere on the page. Submits the description plus recent
+// captured errors to the same /log-error function.
+function initBugReportWidget() {
+    const trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.className = 'fixed bottom-20 right-4 laptop:bottom-6 laptop:right-6 z-20 flex items-center justify-center w-10 h-10 laptop:w-12 laptop:h-12 rounded-full bg-secondary-color text-text-color shadow-lg hover:bg-accent-color hover:text-background transition-colors duration-150';
+    trigger.title = 'Report a problem';
+    trigger.setAttribute('aria-label', 'Report a problem');
+    trigger.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5 laptop:w-6 laptop:h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>';
+
+    const overlay = document.createElement('div');
+    overlay.className = 'hidden fixed inset-0 bg-black bg-opacity-50 z-30 flex items-center justify-center px-4';
+    overlay.innerHTML = `
+        <div class="flex flex-col bg-background border border-text-color border-opacity-25 rounded-lg w-full max-w-xs laptop:max-w-md p-4 laptop:p-6 gap-3 text-text-color">
+            <div class="flex justify-between items-center">
+                <h2 class="text-base laptop:text-xl font-semibold">Report a Problem</h2>
+                <button type="button" data-bug-report-close class="text-text-color text-2xl leading-none hover:text-accent-color flex-shrink-0">&times;</button>
+            </div>
+            <p class="text-xs laptop:text-sm text-text-color text-opacity-70">Tell me what happened — recent technical details from your session will be included automatically so I can look into it.</p>
+            <textarea data-bug-report-description rows="4" maxlength="1000" placeholder="What were you doing when something went wrong? (optional)" class="w-full bg-secondary-color bg-opacity-30 rounded px-2 py-2 text-text-color placeholder-text-color placeholder-opacity-50 outline-none text-sm resize-none"></textarea>
+            <div data-bug-report-status class="text-xs laptop:text-sm hidden"></div>
+            <div class="flex justify-end gap-2">
+                <button type="button" data-bug-report-cancel class="px-3 py-1.5 rounded text-sm laptop:text-base text-text-color text-opacity-70 hover:text-opacity-100">Cancel</button>
+                <button type="button" data-bug-report-send class="px-3 py-1.5 rounded bg-accent-color text-background font-semibold text-sm laptop:text-base hover:opacity-90">Send Report</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(trigger);
+    document.body.appendChild(overlay);
+
+    const descriptionEl = overlay.querySelector('[data-bug-report-description]');
+    const statusEl = overlay.querySelector('[data-bug-report-status]');
+    const sendBtn = overlay.querySelector('[data-bug-report-send]');
+
+    const closeModal = () => {
+        overlay.classList.add('hidden');
+        descriptionEl.value = '';
+        statusEl.classList.add('hidden');
+        statusEl.textContent = '';
+    };
+
+    trigger.addEventListener('click', () => overlay.classList.remove('hidden'));
+    overlay.addEventListener('click', (event) => { if (event.target === overlay) closeModal(); });
+    overlay.querySelector('[data-bug-report-close]').addEventListener('click', closeModal);
+    overlay.querySelector('[data-bug-report-cancel]').addEventListener('click', closeModal);
+
+    sendBtn.addEventListener('click', async () => {
+        const description = descriptionEl.value.trim();
+        sendBtn.disabled = true;
+        sendBtn.textContent = 'Sending…';
+
+        try {
+            const response = await fetch('/log-error', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    level: 'user-report',
+                    message: description || '(no description provided)',
+                    description,
+                    page: location.pathname,
+                    userAgent: navigator.userAgent,
+                    timestamp: new Date().toISOString(),
+                    recentErrors: readErrorLog().slice(-10),
+                }),
+            });
+            if (!response.ok) throw new Error(`Report failed with status ${response.status}`);
+            statusEl.textContent = 'Thanks — your report was sent.';
+            statusEl.className = 'text-xs laptop:text-sm text-accent-color';
+            setTimeout(closeModal, 1500);
+        } catch (error) {
+            statusEl.textContent = "Couldn't send automatically — please email gamehunter5879@gmail.com directly.";
+            statusEl.className = 'text-xs laptop:text-sm text-desperate-buy-one';
+        } finally {
+            sendBtn.disabled = false;
+            sendBtn.textContent = 'Send Report';
+            statusEl.classList.remove('hidden');
+        }
+    });
+}
+initBugReportWidget();
+
 let tickerRequestId         = 0;
 /* Elements */
 var enterButton             = document.getElementById("enterButton");
@@ -1426,8 +1599,7 @@ function assignRangeOnScreen(id, low, high) {
 
 function findDipInformation(closeData){
 
-    let monthScore = 1,
-        monthScoreMonthlyChange = DIP_SCORE_DECAY_PER_MONTH,
+    let monthScoreMonthlyChange = DIP_SCORE_DECAY_PER_MONTH,
         highestScore = 0,
         threshHoldValue = INITIAL_DIP_THRESHOLD,
         recoveryLowMonth,
@@ -1457,6 +1629,13 @@ function findDipInformation(closeData){
     return( [recoveryLowMonth, recoveryLowPrice, dropStartMonth, preDropPrice] );
 
     function performDipLoop(){
+        // Reset each call: without this, repeated threshold-lowering passes
+        // (and the final unconditional fallback pass) inherit decay left
+        // over from every prior full scan of closeData, eventually driving
+        // every candidate's score permanently negative for low-volatility
+        // tickers that never clear the higher thresholds — leaving
+        // recoveryLowMonth/recoveryLowPrice/etc. unset entirely.
+        let monthScore = 1;
         for (let index = 0; index < closeData.length - 1; index++) {
             monthScore -= monthScoreMonthlyChange; //Adjust monthly score per month
             let changeRatio = 1 - (closeData[index] / closeData[index + 1]);

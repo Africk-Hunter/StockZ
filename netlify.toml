@@ -3,6 +3,9 @@
   functions = "netlify/functions"
   command = "npm run build"
 
+[build.environment]
+  NODE_VERSION = "22"
+
 [dev]
   framework = "#static"
   publish = "public"
@@ -21,6 +24,26 @@
 [[redirects]]
   from = "/watchlist"
   to = "/watchlist.html"
+  status = 200
+
+[[redirects]]
+  from = "/stock-info"
+  to = "/.netlify/functions/stock-info"
+  status = 200
+
+[[redirects]]
+  from = "/run-calculations"
+  to = "/.netlify/functions/run-calculations"
+  status = 200
+
+[[redirects]]
+  from = "/run-dividend-info"
+  to = "/.netlify/functions/run-dividend-info"
+  status = 200
+
+[[redirects]]
+  from = "/log-error"
+  to = "/.netlify/functions/log-error"
   status = 200
 
 [[headers]]
