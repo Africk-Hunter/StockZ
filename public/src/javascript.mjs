@@ -119,17 +119,14 @@ window.addEventListener('unhandledrejection', function (event) {
     });
 });
 
-// User-facing "Report a Problem" button + modal, injected on every page
-// (the script is loaded everywhere) so it works regardless of what's
-// broken elsewhere on the page. Submits the description plus recent
-// captured errors to the same /log-error function.
+// User-facing "Report a Problem" modal, wired up to the nav-bug-report
+// button(s) that sit next to the logout button in the navbar. That markup
+// only exists on pages a logged-in user reaches (main/tickerInfo/watchlist),
+// so the whole feature is naturally absent from the login page instead of
+// needing an auth-state check here.
 function initBugReportWidget() {
-    const trigger = document.createElement('button');
-    trigger.type = 'button';
-    trigger.className = 'fixed bottom-20 right-4 laptop:bottom-6 laptop:right-6 z-20 flex items-center justify-center w-10 h-10 laptop:w-12 laptop:h-12 rounded-full bg-secondary-color text-text-color shadow-lg hover:bg-accent-color hover:text-background transition-colors duration-150';
-    trigger.title = 'Report a problem';
-    trigger.setAttribute('aria-label', 'Report a problem');
-    trigger.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5 laptop:w-6 laptop:h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>';
+    const triggers = document.querySelectorAll('.nav-bug-report');
+    if (triggers.length === 0) return;
 
     const overlay = document.createElement('div');
     overlay.className = 'hidden fixed inset-0 bg-black bg-opacity-50 z-30 flex items-center justify-center px-4';
@@ -149,7 +146,6 @@ function initBugReportWidget() {
         </div>
     `;
 
-    document.body.appendChild(trigger);
     document.body.appendChild(overlay);
 
     const descriptionEl = overlay.querySelector('[data-bug-report-description]');
@@ -163,7 +159,7 @@ function initBugReportWidget() {
         statusEl.textContent = '';
     };
 
-    trigger.addEventListener('click', () => overlay.classList.remove('hidden'));
+    triggers.forEach((trigger) => trigger.addEventListener('click', () => overlay.classList.remove('hidden')));
     overlay.addEventListener('click', (event) => { if (event.target === overlay) closeModal(); });
     overlay.querySelector('[data-bug-report-close]').addEventListener('click', closeModal);
     overlay.querySelector('[data-bug-report-cancel]').addEventListener('click', closeModal);
@@ -256,11 +252,17 @@ let folderModalNewFolderInput = document.getElementById("folderModalNewFolderInp
 let currentFolderId         = null;
 let currentModalTicker      = null;
 
-auth.onAuthStateChanged((user) => {
+auth.onAuthStateChanged(async (user) => {
     if (user) {
         if (watchlistItemsContainer) {
             initWatchlistFolders(user);
             runWatchlist(user);
+        } else if (enterButton) {
+            let userWatchListData = await fetchWatchlistItems(user.uid);
+            localStorage.setItem('userWatchListData', JSON.stringify(userWatchListData));
+            let userWatchlistFolders = await fetchWatchlistFolders(user.uid);
+            localStorage.setItem('userWatchlistFolders', JSON.stringify(userWatchlistFolders));
+            window.location.href = '/main';
         }
     }
 });
@@ -1351,12 +1353,16 @@ function createStockCardItem(item) {
 
     const pillRow = document.createElement('div');
     pillRow.className = 'flex gap-2';
+    const currentPricePill = document.createElement('div');
+    currentPricePill.className = 'flex-1 text-center rounded-md py-1.5 bg-white text-background text-xs font-bold';
+    currentPricePill.textContent = item.currentPrice != null ? `$${Number(item.currentPrice).toFixed(2)}` : '—';
     const gbPill = document.createElement('div');
     gbPill.className = 'flex-1 text-center rounded-md py-1.5 bg-great-buy-one text-background text-xs font-bold';
     gbPill.textContent = 'GB ' + item.goodBuyPrice;
     const bbPill = document.createElement('div');
     bbPill.className = 'flex-1 text-center rounded-md py-1.5 bg-desperate-buy-one text-background text-xs font-bold';
     bbPill.textContent = 'BB ' + item.badBuyPrice;
+    pillRow.appendChild(currentPricePill);
     pillRow.appendChild(gbPill);
     pillRow.appendChild(bbPill);
 

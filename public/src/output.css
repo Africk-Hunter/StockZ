@@ -1247,6 +1247,10 @@ video {
   gap: 1.5rem;
 }
 
+.gap-4 {
+  gap: 1rem;
+}
+
 .self-center {
   align-self: center;
 }
@@ -1517,6 +1521,11 @@ video {
 
 .bg-transparent {
   background-color: transparent;
+}
+
+.bg-white {
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 255 255 / var(--tw-bg-opacity));
 }
 
 .bg-opacity-20 {
@@ -2173,6 +2182,10 @@ video {
 
   .laptop\:h-full {
     height: 100%;
+  }
+
+  .laptop\:h-8 {
+    height: 2rem;
   }
 
   .laptop\:min-h-9 {

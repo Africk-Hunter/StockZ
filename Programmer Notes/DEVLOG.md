@@ -77,7 +77,7 @@ along the way.
 
 ---
 
-## 1.1 — Audit remediation _(in progress, uncommitted)_
+## 1.01 — Audit remediation _(in progress, uncommitted)_
 
 **Status:** working tree changes, not yet committed.
 
@@ -164,7 +164,7 @@ still needs a manual `firebase deploy --only firestore:rules` to take effect.
 
 ---
 
-## 1.2 — Mobile redesign _(in progress, uncommitted)_
+## 1.02 — Mobile redesign _(in progress, uncommitted)_
 
 **Status:** working tree changes, not yet committed.
 
@@ -234,7 +234,7 @@ conventions rather than the handoff mockup's literal palette — the desktop
 
 ---
 
-## 1.3 — Error reporting + dip-scoring bug fix _(in progress, uncommitted)_
+## 1.03 — Error reporting + dip-scoring bug fix _(in progress, uncommitted)_
 
 **Status:** working tree changes, not yet committed.
 
@@ -290,3 +290,44 @@ still no database or email provider), and fixed a real scoring bug in
 - `public/src/output.css` changes in this pass are just the regenerated
   Tailwind build output reflecting the new widget's classes — not a
   manual edit.
+
+---
+
+## 1.04 — Nav/UX polish _(in progress, uncommitted)_
+
+**Status:** working tree changes, not yet committed.
+
+### Summary
+
+Small follow-ups to the 1.3 bug-report widget and watchlist cards, plus a
+login-flow shortcut for already-authenticated users.
+
+### Bug-report button moved into the nav
+
+- The "Report a Problem" trigger is no longer a floating action button
+  injected by JS; it's now a `.nav-bug-report` button sitting next to
+  logout in both the desktop nav and the mobile header, on `main.html`,
+  `tickerInfo.html`, and `watchlist.html`.
+- `initBugReportWidget()` now wires up all `.nav-bug-report` elements on
+  the page (`querySelectorAll`) instead of creating and appending its own
+  trigger element; it no-ops if none are found, so the modal harmlessly
+  skips the login page, which has no nav.
+
+### Watch List mobile cards
+
+- `createStockCardItem()` now shows a current-price pill alongside the
+  existing GB/BB pills (falls back to "—" if `item.currentPrice` is
+  missing).
+
+### Login flow
+
+- `auth.onAuthStateChanged` now covers the login-page case: if a user is
+  already authenticated and lands on the page with `enterButton` (login),
+  their watchlist items and folders are fetched and cached to
+  `localStorage` before redirecting straight to `/main`, instead of
+  showing the login form to someone who's already signed in.
+
+### Not done here
+
+- `public/src/output.css` changes are the regenerated Tailwind build
+  output for the moved nav markup — not a manual edit.
