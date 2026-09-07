@@ -1,6 +1,6 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'
 import { getAuth, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'
-import { getFirestore, collection, setDoc, getDocs, doc, deleteDoc, updateDoc, writeBatch, arrayUnion, arrayRemove } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'
+import { getFirestore, collection, setDoc, getDocs, doc, deleteDoc, updateDoc, writeBatch, arrayRemove } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'
 
 const firebaseConfig = {
   apiKey: "AIzaSyAuxROpJhqJ4-fgIC4xwNYV5ycd0O_QCO4",
@@ -249,8 +249,24 @@ let folderModalCloseBtn     = document.getElementById("folderModalCloseBtn");
 let folderModalList         = document.getElementById("folderModalList");
 let folderModalNewFolderForm  = document.getElementById("folderModalNewFolderForm");
 let folderModalNewFolderInput = document.getElementById("folderModalNewFolderInput");
+let folderModalAddBtn       = document.getElementById("folderModalAddBtn");
 let currentFolderId         = null;
 let currentModalTicker      = null;
+let deleteConfirmModalOverlay    = document.getElementById("deleteConfirmModalOverlay");
+let deleteConfirmModalMessage    = document.getElementById("deleteConfirmModalMessage");
+let deleteConfirmModalCloseBtn   = document.getElementById("deleteConfirmModalCloseBtn");
+let deleteConfirmModalCancelBtn  = document.getElementById("deleteConfirmModalCancelBtn");
+let deleteConfirmModalConfirmBtn = document.getElementById("deleteConfirmModalConfirmBtn");
+// Holds the callback for whichever delete action is currently pending confirmation.
+let pendingDeleteAction     = null;
+// Watchlist selections made inside the folder modal are staged here and only
+// written to Firestore when folderModalAddBtn is clicked — checking/
+// unchecking a box no longer writes immediately.
+let pendingFolderIds        = new Set();
+// Set by openFolderModal() when the modal is adding a ticker that isn't on
+// the watchlist yet (see commitFolderSelection()); null while reorganizing
+// an existing item's watchlists.
+let pendingNewEntry         = null;
 
 auth.onAuthStateChanged(async (user) => {
     if (user) {
@@ -567,29 +583,34 @@ if (tickerLabelIP) {
         }
 
         if (isTickerInWatchlist(tickerToAdd)) {
-            addToWatchlist.disabled = true;
-            const success = await deleteFromFirebase(tickerToAdd);
-            addToWatchlist.disabled = false;
-            if (!success) {
-                alert(`Couldn't remove ${tickerToAdd} from your watchlist. Please try again.`);
-                return;
-            }
-            const updatedWatchList = getCachedWatchList().filter(item => item.ticker !== tickerToAdd);
-            localStorage.setItem('userWatchListData', JSON.stringify(updatedWatchList));
-            setAddToWatchlistButtonState(false);
+            openDeleteConfirmModal(tickerToAdd, async function () {
+                addToWatchlist.disabled = true;
+                const success = await deleteFromFirebase(tickerToAdd);
+                addToWatchlist.disabled = false;
+                if (!success) {
+                    alert(`Couldn't remove ${tickerToAdd} from your watchlist. Please try again.`);
+                    return;
+                }
+                const updatedWatchList = getCachedWatchList().filter(item => item.ticker !== tickerToAdd);
+                localStorage.setItem('userWatchListData', JSON.stringify(updatedWatchList));
+                setAddToWatchlistButtonState(false);
+            });
             return;
         }
 
-        fetchStockInfo(tickerToAdd)
-            .then((info) => {
-                addToWatchlistFunc(tickerToAdd, grBLonPage.textContent, bBHonPage.textContent, user.uid, info);
-                setAddToWatchlistButtonState(true);
-            })
-            .catch((error) => {
+        // Nothing is written to Firestore yet — the user picks which
+        // watchlist(s) first, and commitFolderSelection() does the actual
+        // write when "Add" is clicked inside the modal. Kick the stock-info
+        // fetch off now (in the background) so it's likely already resolved
+        // by the time they click Add, instead of blocking on it here.
+        openFolderModal(tickerToAdd, {
+            goodBuyPrice: grBLonPage.textContent.replace('$', ''),
+            badBuyPrice: bBHonPage.textContent.replace('$', ''),
+            infoPromise: fetchStockInfo(tickerToAdd).catch((error) => {
                 console.error('Error fetching stock info: ', error);
-                addToWatchlistFunc(tickerToAdd, grBLonPage.textContent, bBHonPage.textContent, user.uid, {});
-                setAddToWatchlistButtonState(true);
-            });
+                return {};
+            })
+        });
     });
 }
 
@@ -628,47 +649,6 @@ function fetchStockInfo(ticker) {
         xhttp.send();
     });
 }
-
-async function addToWatchlistFunc(ticker, goodBuyPrice, badBuyPrice, uid, info = {}) {
-    const safeTicker = sanitizeTicker(ticker);
-    if (!safeTicker) {
-        console.error('Refusing to write an invalid ticker to Firestore:', ticker);
-        return;
-    }
-    const userDocRef = doc(db, `users/${uid}/watchlist`, safeTicker);
-    const watchlistEntry = {
-        ticker: safeTicker,
-        goodBuyPrice: goodBuyPrice,
-        badBuyPrice: badBuyPrice,
-        name: info.name || null,
-        currentPrice: info.currentPrice ?? null,
-        dividendYield: info.dividendYield || null,
-        folderIds: []
-    };
-    try {
-        await setDoc(userDocRef, watchlistEntry);
-
-        let parsedWatchList = [];
-        try {
-            const watchListItems = localStorage.getItem('userWatchListData');
-            parsedWatchList = watchListItems ? JSON.parse(watchListItems) : [];
-        } catch (error) {
-            console.error('Error parsing cached watchlist: ', error);
-        }
-
-        const exists = parsedWatchList.some(item => item.ticker === safeTicker);
-
-        if (!exists) {
-            parsedWatchList.push(watchlistEntry);
-            localStorage.setItem('userWatchListData', JSON.stringify(parsedWatchList));
-        } else {
-            console.log(`Ticker ${safeTicker} is already in the watchlist.`);
-        }
-    } catch (e) {
-        console.error("Error adding document: ", e);
-    }
-}
-
 
 /* Watch List page*/
 if(watchlistItemsContainer){
@@ -710,7 +690,12 @@ if(watchlistItemsContainer){
             folderDropdownPanel.classList.add('hidden');
         }
     });
+}
 
+// Folder ("which watchlist?") picker modal — also opened from the Ticker
+// Info page right after adding a ticker, not just from the Watch List page,
+// so its wiring lives outside the watchlistItemsContainer guard above.
+if (folderModalOverlay) {
     folderModalCloseBtn.addEventListener('click', closeFolderModal);
     folderModalOverlay.addEventListener('click', function (event) {
         if (event.target === folderModalOverlay) {
@@ -725,11 +710,46 @@ if(watchlistItemsContainer){
 
         const folder = await createFolder(user.uid, name);
         if (!folder) return;
-        await toggleTickerFolder(user.uid, currentModalTicker, folder.id, true);
+        // Stage it as selected — actual ticker membership is only written
+        // when folderModalAddBtn is clicked, same as the existing checkboxes.
+        pendingFolderIds.add(folder.id);
         folderModalNewFolderInput.value = '';
         renderFolderModalList();
         renderFolderDropdown(getCachedFolders());
     });
+    folderModalAddBtn.addEventListener('click', commitFolderSelection);
+}
+
+// Generic "are you sure?" modal used before removing a ticker from the
+// watch list — `execute` performs the actual Firestore delete + DOM/cache
+// cleanup once the user confirms.
+if (deleteConfirmModalOverlay) {
+    deleteConfirmModalCloseBtn.addEventListener('click', closeDeleteConfirmModal);
+    deleteConfirmModalCancelBtn.addEventListener('click', closeDeleteConfirmModal);
+    deleteConfirmModalOverlay.addEventListener('click', function (event) {
+        if (event.target === deleteConfirmModalOverlay) {
+            closeDeleteConfirmModal();
+        }
+    });
+    deleteConfirmModalConfirmBtn.addEventListener('click', async function () {
+        if (!pendingDeleteAction) return;
+        const execute = pendingDeleteAction;
+        deleteConfirmModalConfirmBtn.disabled = true;
+        await execute();
+        deleteConfirmModalConfirmBtn.disabled = false;
+        closeDeleteConfirmModal();
+    });
+}
+
+function openDeleteConfirmModal(ticker, execute) {
+    pendingDeleteAction = execute;
+    deleteConfirmModalMessage.textContent = `Remove ${ticker} from your watch list?`;
+    deleteConfirmModalOverlay.classList.remove('hidden');
+}
+
+function closeDeleteConfirmModal() {
+    deleteConfirmModalOverlay.classList.add('hidden');
+    pendingDeleteAction = null;
 }
 
 // Runs the requested items through `mapper`, but never more than `limit` at
@@ -775,7 +795,7 @@ async function updateWatchListValues(user) {
 
             updatedItem = {
                 ticker: item.ticker,
-                goodBuyPrice: calculations.goodBRLow.toFixed(2),
+                goodBuyPrice: calculations.greatBRLow.toFixed(2),
                 badBuyPrice: calculations.badBRHigh.toFixed(2),
                 name: info.name || item.name || null,
                 currentPrice: info.currentPrice ?? item.currentPrice ?? null,
@@ -939,7 +959,7 @@ async function createFolder(uid, name) {
         await setDoc(newDocRef, { name: folder.name, createdAt: folder.createdAt });
     } catch (e) {
         console.error("Error creating folder: ", e);
-        alert("Couldn't save the new folder to your account. Please try again.");
+        alert("Couldn't save the new watchlist to your account. Please try again.");
         return null;
     }
     const folders = getCachedFolders();
@@ -964,7 +984,7 @@ async function deleteFolder(uid, folderId) {
         await Promise.all(removals);
     } catch (e) {
         console.error("Error deleting folder: ", e);
-        alert("Couldn't delete the folder. Please try again.");
+        alert("Couldn't delete the watchlist. Please try again.");
         return false;
     }
 
@@ -983,30 +1003,6 @@ async function deleteFolder(uid, folderId) {
         currentFolderId = null;
         folderDropdownLabel.textContent = 'All Stocks';
     }
-    return true;
-}
-
-async function toggleTickerFolder(uid, ticker, folderId, isChecked) {
-    const itemRef = doc(db, `users/${uid}/watchlist`, ticker);
-    try {
-        await updateDoc(itemRef, {
-            folderIds: isChecked ? arrayUnion(folderId) : arrayRemove(folderId)
-        });
-    } catch (e) {
-        console.error("Error updating ticker folders: ", e);
-        alert("Couldn't update folders for this stock. Please try again.");
-        return false;
-    }
-
-    const watchList = getCachedWatchList().map((item) => {
-        if (item.ticker !== ticker) return item;
-        const currentIds = Array.isArray(item.folderIds) ? item.folderIds : [];
-        const updatedIds = isChecked
-            ? Array.from(new Set([...currentIds, folderId]))
-            : currentIds.filter(id => id !== folderId);
-        return { ...item, folderIds: updatedIds };
-    });
-    localStorage.setItem('userWatchListData', JSON.stringify(watchList));
     return true;
 }
 
@@ -1051,12 +1047,12 @@ function renderFolderDropdown(folders) {
         deleteBtn.type = 'button';
         deleteBtn.className = 'flex-shrink-0 opacity-40 hover:opacity-100 hover:text-desperate-buy-one px-1';
         deleteBtn.textContent = '✕';
-        deleteBtn.title = `Delete folder "${folder.name}"`;
+        deleteBtn.title = `Delete watchlist "${folder.name}"`;
         deleteBtn.addEventListener('click', async (event) => {
             event.stopPropagation();
             const user = auth.currentUser;
             if (!user) return;
-            if (confirm(`Delete folder "${folder.name}"? Stocks will stay in your watchlist.`)) {
+            if (confirm(`Delete watchlist "${folder.name}"? Stocks will stay in your watchlist.`)) {
                 const wasActiveFilter = currentFolderId === folder.id;
                 const success = await deleteFolder(user.uid, folder.id);
                 if (!success) return;
@@ -1080,7 +1076,7 @@ function renderFolderDropdown(folders) {
     newFolderForm.className = 'flex gap-1 px-2 py-1';
     const newFolderInput = document.createElement('input');
     newFolderInput.type = 'text';
-    newFolderInput.placeholder = 'New folder';
+    newFolderInput.placeholder = 'New watchlist';
     newFolderInput.maxLength = 40;
     newFolderInput.autocomplete = 'off';
     newFolderInput.className = 'flex-1 min-w-0 bg-background rounded px-2 py-1 text-text-color placeholder-text-color placeholder-opacity-50 outline-none text-xs laptop:text-sm';
@@ -1110,14 +1106,22 @@ function selectFolder(folderId, label) {
     runWatchlist(auth.currentUser);
 }
 
-function openFolderModal(ticker) {
+// `newEntry`, when passed, means `ticker` isn't on the watchlist yet — the
+// modal is being used to add it for the first time (from the Ticker Info
+// page's "Add To Watchlist" button) rather than to reorganize an existing
+// item. Nothing is written to Firestore until commitFolderSelection() runs.
+function openFolderModal(ticker, newEntry = null) {
     const user = auth.currentUser;
     if (!user) {
         console.error("No user is signed in.");
         return;
     }
     currentModalTicker = ticker;
-    folderModalTitle.textContent = `Add ${ticker} to Folders`;
+    pendingNewEntry = newEntry;
+    const item = getCachedWatchList().find(watchListItem => watchListItem.ticker === ticker);
+    const itemFolderIds = (item && Array.isArray(item.folderIds)) ? item.folderIds : [];
+    pendingFolderIds = new Set(itemFolderIds);
+    folderModalTitle.textContent = `Add ${ticker} to a Watchlist`;
     renderFolderModalList();
     folderModalOverlay.classList.remove('hidden');
 }
@@ -1125,21 +1129,104 @@ function openFolderModal(ticker) {
 function closeFolderModal() {
     folderModalOverlay.classList.add('hidden');
     currentModalTicker = null;
+    pendingFolderIds = new Set();
+    pendingNewEntry = null;
+}
+
+// Writes the staged pendingFolderIds selection to Firestore in one shot,
+// then closes the modal — nothing is saved until this runs. For a brand new
+// ticker (pendingNewEntry set), this is also what actually adds it to the
+// watchlist in the first place.
+async function commitFolderSelection() {
+    const user = auth.currentUser;
+    if (!user || !currentModalTicker) return;
+
+    const ticker = currentModalTicker;
+    const folderIds = Array.from(pendingFolderIds);
+    const newEntry = pendingNewEntry;
+
+    folderModalAddBtn.disabled = true;
+    let newCacheEntry = null;
+    try {
+        if (newEntry) {
+            const info = await newEntry.infoPromise;
+            newCacheEntry = {
+                ticker,
+                goodBuyPrice: newEntry.goodBuyPrice,
+                badBuyPrice: newEntry.badBuyPrice,
+                name: info.name || null,
+                currentPrice: info.currentPrice ?? null,
+                dividendYield: info.dividendYield || null,
+                folderIds
+            };
+            await setDoc(doc(db, `users/${user.uid}/watchlist`, ticker), newCacheEntry);
+        } else {
+            await updateDoc(doc(db, `users/${user.uid}/watchlist`, ticker), { folderIds });
+        }
+    } catch (e) {
+        console.error("Error saving watchlist item: ", e);
+        alert("Couldn't save this stock to your watchlist. Please try again.");
+        folderModalAddBtn.disabled = false;
+        return;
+    }
+    folderModalAddBtn.disabled = false;
+
+    const existingList = getCachedWatchList();
+    const watchList = newCacheEntry
+        ? [...existingList.filter(item => item.ticker !== ticker), newCacheEntry]
+        : existingList.map((item) => item.ticker === ticker ? { ...item, folderIds } : item);
+    localStorage.setItem('userWatchListData', JSON.stringify(watchList));
+
+    if (newCacheEntry && addToWatchlist) {
+        setAddToWatchlistButtonState(true);
+    }
+
+    renderFolderDropdown(getCachedFolders());
+    if (watchlistItemsContainer) {
+        runWatchlist(user);
+    }
+    closeFolderModal();
+}
+
+// Every watchlist item always belongs to the unfiltered "All" list, so it's
+// shown here as a permanently-checked, disabled row rather than a real
+// folder — there's nothing to toggle since it can't be removed from it.
+function createAllWatchlistRow() {
+    const row = document.createElement('label');
+    row.className = 'flex items-center gap-2 px-2 py-2 rounded';
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className = 'accent-accent-color w-4 h-4 laptop:w-5 laptop:h-5 flex-shrink-0 opacity-60';
+    checkbox.checked = true;
+    checkbox.disabled = true;
+
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'truncate font-semibold';
+    nameSpan.textContent = 'All';
+
+    row.appendChild(checkbox);
+    row.appendChild(nameSpan);
+    return row;
 }
 
 function renderFolderModalList() {
     folderModalList.innerHTML = '';
     const folders = getCachedFolders();
-    const item = getCachedWatchList().find(watchListItem => watchListItem.ticker === currentModalTicker);
-    const itemFolderIds = (item && Array.isArray(item.folderIds)) ? item.folderIds : [];
+
+    folderModalList.appendChild(createAllWatchlistRow());
 
     if (folders.length === 0) {
         const empty = document.createElement('p');
         empty.className = 'text-text-color text-opacity-60 text-sm text-center py-2';
-        empty.textContent = 'No folders yet. Create one below.';
+        empty.textContent = 'No watchlists yet. Create one below.';
         folderModalList.appendChild(empty);
         return;
     }
+
+    const divider = document.createElement('div');
+    divider.className = 'border-t border-text-color border-opacity-20 my-1';
+    folderModalList.appendChild(divider);
 
     folders.forEach((folder) => {
         const row = document.createElement('label');
@@ -1148,19 +1235,12 @@ function renderFolderModalList() {
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.className = 'accent-accent-color w-4 h-4 laptop:w-5 laptop:h-5 flex-shrink-0';
-        checkbox.checked = itemFolderIds.includes(folder.id);
-        checkbox.addEventListener('change', async () => {
-            const user = auth.currentUser;
-            if (!user || !currentModalTicker) return;
-            const desiredState = checkbox.checked;
-            const success = await toggleTickerFolder(user.uid, currentModalTicker, folder.id, desiredState);
-            if (!success) {
-                checkbox.checked = !desiredState;
-                return;
-            }
-            renderFolderDropdown(getCachedFolders());
-            if (folder.id === currentFolderId) {
-                runWatchlist(user);
+        checkbox.checked = pendingFolderIds.has(folder.id);
+        checkbox.addEventListener('change', () => {
+            if (checkbox.checked) {
+                pendingFolderIds.add(folder.id);
+            } else {
+                pendingFolderIds.delete(folder.id);
             }
         });
 
@@ -1216,6 +1296,33 @@ function createEmptyWatchlistCard() {
 }
 
 
+// A watchlist item only stores the outer bounds of the buy-range (goodBuyPrice
+// = greatBRLow, badBuyPrice = badBRHigh), not the four individual bands —
+// but runStockCalculations() always splits that span into 8 equal steps
+// (great/good/okay bands each 1 step wide, separated by 1-step gaps, with the
+// bad band spanning the final 2 steps), so the bands can be reconstructed
+// from just those two bounds without re-fetching price history.
+function getCurrentPriceRangeColorClass(currentPrice, goodBuyPrice, badBuyPrice) {
+    const price = Number(currentPrice);
+    const min = Number(goodBuyPrice);
+    const max = Number(badBuyPrice);
+    if (!Number.isFinite(price) || !Number.isFinite(min) || !Number.isFinite(max) || max <= min) {
+        return null;
+    }
+
+    if (price < min) {
+        return 'bg-purple-500';
+    }
+
+    const step = (max - min) / 8;
+    if (price <= min + step) return 'bg-great-buy-one';
+    if (price >= min + 2 * step && price <= min + 3 * step) return 'bg-good-buy-one';
+    if (price >= min + 4 * step && price <= min + 5 * step) return 'bg-okay-buy-one';
+    if (price >= min + 6 * step && price <= max) return 'bg-desperate-buy-one';
+
+    return null;
+}
+
 function createStockContainerItem(item) {
     const container = document.createElement('div');
     container.className = 'stock-container';
@@ -1233,7 +1340,8 @@ function createStockContainerItem(item) {
     nameDiv.title = nameDiv.textContent;
 
     const priceDiv = document.createElement('div');
-    priceDiv.className = cellBaseClass + ' bg-secondary-color';
+    const priceRangeColorClass = getCurrentPriceRangeColorClass(item.currentPrice, item.goodBuyPrice, item.badBuyPrice);
+    priceDiv.className = cellBaseClass + ' ' + (priceRangeColorClass || 'bg-secondary-color');
     priceDiv.textContent = item.currentPrice != null ? `$${Number(item.currentPrice).toFixed(2)}` : '—';
 
     const gbPriceDiv = document.createElement('div');
@@ -1250,7 +1358,7 @@ function createStockContainerItem(item) {
 
     const folderIcon = document.createElement('button');
     folderIcon.className = cellBaseClass + ' group bg-secondary-color hover:bg-text-color text-text-color transition-colors duration-150';
-    folderIcon.title = 'Add to folders';
+    folderIcon.title = 'Add to watchlists';
     folderIcon.innerHTML = '<svg class="h-1/2 w-1/2 laptop:h-3/5 laptop:w-3/5 group-hover:text-background" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg>';
 
     const deleteIcon = document.createElement('button');
@@ -1270,27 +1378,27 @@ function createStockContainerItem(item) {
         });
     });
 
-    deleteIcon.addEventListener('click', async function () {
-        deleteIcon.disabled = true;
-        const success = await deleteFromFirebase(item.ticker);
-        if (!success) {
-            deleteIcon.disabled = false;
-            alert(`Couldn't delete ${item.ticker} from your watchlist. Please try again.`);
-            return;
-        }
+    deleteIcon.addEventListener('click', function () {
+        openDeleteConfirmModal(item.ticker, async function () {
+            const success = await deleteFromFirebase(item.ticker);
+            if (!success) {
+                alert(`Couldn't delete ${item.ticker} from your watchlist. Please try again.`);
+                return;
+            }
 
-        // Remove just this row instead of triggering a full watchlist rebuild.
-        stockItem.remove();
+            // Remove just this row instead of triggering a full watchlist rebuild.
+            stockItem.remove();
 
-        let parsedWatchList = [];
-        try {
-            const watchListItems = localStorage.getItem('userWatchListData');
-            parsedWatchList = watchListItems ? JSON.parse(watchListItems) : [];
-        } catch (error) {
-            console.error('Error parsing cached watchlist: ', error);
-        }
-        const updatedWatchList = parsedWatchList.filter(watchListItem => watchListItem.ticker !== item.ticker);
-        localStorage.setItem('userWatchListData', JSON.stringify(updatedWatchList));
+            let parsedWatchList = [];
+            try {
+                const watchListItems = localStorage.getItem('userWatchListData');
+                parsedWatchList = watchListItems ? JSON.parse(watchListItems) : [];
+            } catch (error) {
+                console.error('Error parsing cached watchlist: ', error);
+            }
+            const updatedWatchList = parsedWatchList.filter(watchListItem => watchListItem.ticker !== item.ticker);
+            localStorage.setItem('userWatchListData', JSON.stringify(updatedWatchList));
+        });
     });
 
     stockItem.appendChild(nameDiv);
@@ -1335,7 +1443,7 @@ function createStockCardItem(item) {
     const folderBtn = document.createElement('button');
     folderBtn.type = 'button';
     folderBtn.className = 'flex items-center justify-center w-7 h-7 rounded-md bg-secondary-color text-text-color flex-shrink-0';
-    folderBtn.title = 'Add to folders';
+    folderBtn.title = 'Add to watchlists';
     folderBtn.innerHTML = '<svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg>';
 
     const deleteBtn = document.createElement('button');
@@ -1354,7 +1462,8 @@ function createStockCardItem(item) {
     const pillRow = document.createElement('div');
     pillRow.className = 'flex gap-2';
     const currentPricePill = document.createElement('div');
-    currentPricePill.className = 'flex-1 text-center rounded-md py-1.5 bg-white text-background text-xs font-bold';
+    const priceRangeColorClass = getCurrentPriceRangeColorClass(item.currentPrice, item.goodBuyPrice, item.badBuyPrice);
+    currentPricePill.className = 'flex-1 text-center rounded-md py-1.5 text-background text-xs font-bold ' + (priceRangeColorClass || 'bg-white');
     currentPricePill.textContent = item.currentPrice != null ? `$${Number(item.currentPrice).toFixed(2)}` : '—';
     const gbPill = document.createElement('div');
     gbPill.className = 'flex-1 text-center rounded-md py-1.5 bg-great-buy-one text-background text-xs font-bold';
@@ -1374,27 +1483,27 @@ function createStockCardItem(item) {
         openFolderModal(item.ticker);
     });
 
-    deleteBtn.addEventListener('click', async function (event) {
+    deleteBtn.addEventListener('click', function (event) {
         event.stopPropagation();
-        deleteBtn.disabled = true;
-        const success = await deleteFromFirebase(item.ticker);
-        if (!success) {
-            deleteBtn.disabled = false;
-            alert(`Couldn't delete ${item.ticker} from your watchlist. Please try again.`);
-            return;
-        }
+        openDeleteConfirmModal(item.ticker, async function () {
+            const success = await deleteFromFirebase(item.ticker);
+            if (!success) {
+                alert(`Couldn't delete ${item.ticker} from your watchlist. Please try again.`);
+                return;
+            }
 
-        card.remove();
+            card.remove();
 
-        let parsedWatchList = [];
-        try {
-            const watchListItems = localStorage.getItem('userWatchListData');
-            parsedWatchList = watchListItems ? JSON.parse(watchListItems) : [];
-        } catch (error) {
-            console.error('Error parsing cached watchlist: ', error);
-        }
-        const updatedWatchList = parsedWatchList.filter(watchListItem => watchListItem.ticker !== item.ticker);
-        localStorage.setItem('userWatchListData', JSON.stringify(updatedWatchList));
+            let parsedWatchList = [];
+            try {
+                const watchListItems = localStorage.getItem('userWatchListData');
+                parsedWatchList = watchListItems ? JSON.parse(watchListItems) : [];
+            } catch (error) {
+                console.error('Error parsing cached watchlist: ', error);
+            }
+            const updatedWatchList = parsedWatchList.filter(watchListItem => watchListItem.ticker !== item.ticker);
+            localStorage.setItem('userWatchListData', JSON.stringify(updatedWatchList));
+        });
     });
 
     card.addEventListener('click', function () {
