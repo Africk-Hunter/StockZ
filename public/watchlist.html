@@ -9,26 +9,26 @@
     <link rel="stylesheet" href="/src/style.css">
     <link rel="icon" type="image/x-icon" href="/src/favicon.ico">
 </head>
-<body class="bg-background w-screen h-screen">
+<body class="bg-background w-screen min-h-screen">
 
-<div class="flex flex-col items-center font-poppins h-screen" id="mainWrapper">
+<div class="flex flex-col items-center font-poppins min-h-screen" id="mainWrapper">
 
     <nav class="hidden laptop:grid grid-rows-1 grid-cols-3 sized90 h-12 laptop:h-16 border-solid border-b border-text-color border-opacity-25">
         <div id="stockZLogo" class="nav-home flex justify-self-start bg-transparent font-semibold justify-center laptop:gap-1 self-center hover:cursor-pointer">
             <span class="text-text-color hidden laptop:flex laptop:text-5xl select-none">STOCK</span><span class="text-accent-color select-none text-4xl laptop:text-5xl ml-2">Z</span>
         </div>
 
-        <div class="flex justify-self-center justify-between items-center h-full w-5/6 desktop:w-5/6 laptop:w-full laptop:text-xl desktop:text-2xl self-center text-text-color font-medium">
-            <div id="tickerInfoBtn" class="nav-ticker-info"><img src="/src/tickerIcon.png" alt="Watch List" class="laptop:hidden h-6"><button class="hidden laptop:flex">Ticker Info</button></div>
-            <div id="homeBtn" class="nav-home"><img src="/src/houseIcon.svg" alt="Watch List" class="laptop:hidden h-6"><button class="hidden laptop:flex">Main</button></div>
-            <div id="watchListBtn" class="nav-watchlist"><img src="/src/listIcon.png" alt="Watch List" class="laptop:hidden h-6"><button class="hidden laptop:flex underline underline-offset-8">Watch List</button></div>
+        <div class="flex justify-self-center justify-between items-center h-full w-full laptop:text-xl desktop:text-2xl self-center text-text-color font-medium">
+            <div id="tickerInfoBtn" class="nav-ticker-info"><img src="/src/tickerIcon.png" alt="" class="laptop:hidden h-6"><button class="hidden laptop:flex hover:text-accent-color transition-colors duration-150">Ticker Info</button></div>
+            <div id="homeBtn" class="nav-home"><img src="/src/houseIcon.svg" alt="" class="laptop:hidden h-6"><button class="hidden laptop:flex hover:text-accent-color transition-colors duration-150">Main</button></div>
+            <div id="watchListBtn" class="nav-watchlist"><img src="/src/listIcon.png" alt="" class="laptop:hidden h-6"><button class="hidden laptop:flex underline underline-offset-8 decoration-accent-color">Watch List</button></div>
         </div>
 
         <div class="flex justify-self-end items-center gap-4 h-full mr-5">
             <button type="button" class="nav-bug-report flex items-center text-text-color hover:text-accent-color transition-colors duration-150" title="Report a problem" aria-label="Report a problem">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5 laptop:w-6 laptop:h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
             </button>
-            <button class="nav-logout flex items-center" id="logOutButton">
+            <button class="nav-logout flex items-center hover:opacity-70 transition-opacity duration-150" id="logOutButton">
                 <img src="/src/logOut.png" alt="Log Out" class="h-6 laptop:h-8">
             </button>
         </div>
@@ -63,20 +63,32 @@
         </div>
     </nav>
 
-    <main class="flex flex-grow w-full justify-center items-start mt-10 laptop:mt-16 desktop:mt-20 fade-in">
-        <section id="watchListContainerLarge" class="flex flex-col items-center justify-start w-11/12 h-5/6 laptop:w-4/5 desktop:w-3/5 desktop:h-3/4 desktopXL:w-1/2 rounded laptop:rounded-xl desktop:rounded-xl border-solid border border-text-color border-opacity-25">
-            <div class="laptop:hidden flex items-center justify-start w-72 mt-3 font-poppins font-bold text-xl text-text-color">Watch List</div>
-            <div class="flex justify-between items-center h-8 w-72 laptop:w-11/12 laptop:h-14 mt-2 laptop:mb-3">
+    <main class="flex flex-grow w-full justify-center items-start mt-10 laptop:mt-16 desktop:mt-20 pb-10 fade-in">
+        <section id="watchListContainerLarge" class="flex flex-col items-center justify-start w-11/12 laptop:w-4/5 desktop:w-3/5 desktopXL:w-1/2 rounded-xl min-h-[75vh] border-solid border border-text-color border-opacity-25">
+            <div class="laptop:hidden flex items-center justify-start w-11/12 mt-3 font-poppins font-bold text-xl text-text-color">Watch List</div>
+            <div class="flex justify-between items-center h-9 w-11/12 laptop:h-14 mt-2 laptop:mb-3">
                 <div id="folderDropdownWrapper" class="relative flex items-center h-full">
-                    <button id="folderDropdownBtn" type="button" class="flex items-center gap-1 laptop:gap-2 h-full px-2 laptop:px-4 text-text-color text-[9px] laptop:text-lg desktop:text-xl font-semibold bg-secondary-color rounded laptop:rounded-lg hover:bg-text-color hover:text-background transition-colors duration-150 select-none min-w-0 max-w-[8rem] laptop:max-w-xs">
+                    <button id="folderDropdownBtn" type="button" class="flex items-center gap-1 laptop:gap-2 h-full px-2 laptop:px-4 text-text-color text-xs laptop:text-lg desktop:text-xl font-semibold bg-secondary-color rounded-lg hover:bg-text-color hover:text-background transition-colors duration-150 select-none min-w-0 max-w-[8rem] laptop:max-w-xs">
                         <span id="folderDropdownLabel" class="truncate">All Stocks</span>
-                        <span class="text-[7px] laptop:text-xs flex-shrink-0">&#9660;</span>
+                        <span class="text-[8px] laptop:text-xs flex-shrink-0">&#9660;</span>
                     </button>
-                    <div id="folderDropdownPanel" class="hidden absolute left-0 top-full mt-1 w-48 laptop:w-64 bg-secondary-color rounded laptop:rounded-lg shadow-lg z-20 py-1 text-text-color text-xs laptop:text-base max-h-[70vh] overflow-y-auto no-scrollbar">
+                    <div id="folderDropdownPanel" class="hidden absolute left-0 top-full mt-1 w-48 laptop:w-64 bg-secondary-color rounded-lg shadow-lg z-20 py-1 text-text-color text-xs laptop:text-base max-h-[70vh] overflow-y-auto no-scrollbar">
                     </div>
                 </div>
+                <!-- Phone-only sort control (the column-header sort buttons are laptop+ only) -->
+                <div class="laptop:hidden flex items-center h-full gap-1 ml-auto mr-2">
+                    <select id="mobileSortSelect" aria-label="Sort by" class="h-full bg-secondary-color text-text-color text-xs font-semibold rounded-lg px-2 outline-none">
+                        <option value="">Sort</option>
+                        <option value="ticker">Name</option>
+                        <option value="currentPrice">Price</option>
+                        <option value="goodBuyPrice">GB</option>
+                        <option value="badBuyPrice">BB</option>
+                        <option value="dividendYield">Div</option>
+                    </select>
+                    <button id="mobileSortDir" type="button" aria-label="Toggle sort direction" class="h-full w-8 bg-secondary-color text-text-color rounded-lg select-none flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 transition-transform duration-150"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+                </div>
                 <!-- Small bar at top for refresh button to go in top right corner -->
-                <button id="refreshButton" class="h-full w-5 laptop:w-10 disabled:opacity-50 disabled:cursor-not-allowed"><img src="/src/refreshIcon.svg" alt="Refresh" class=""></button>
+                <button id="refreshButton" class="h-full w-6 laptop:w-10 hover:opacity-70 transition-opacity duration-150 disabled:opacity-50 disabled:cursor-not-allowed"><img src="/src/refreshIcon.svg" alt="Refresh" class=""></button>
             </div>
             <!-- Column widths (grid-cols) must stay in sync with the row template in createStockContainerItem() in javascript.mjs, including the two trailing action-icon tracks, or header/row columns drift out of alignment -->
             <div class="hidden laptop:grid grid-cols-[1.6fr_1fr_1fr_1fr_1fr_1.75rem_1.75rem] laptop:grid-cols-[1.6fr_1fr_1fr_1fr_1fr_2.5rem_2.5rem] w-11/12 h-8 laptop:h-14 rounded border-solid border text-text-color text-[9px] laptop:text-base desktop:text-lg desktopXL:text-xl border-text-color border-opacity-25 font-semibold">
@@ -87,43 +99,43 @@
                 <button id="sortByBB" class="flex justify-center items-center h-full border-r border-text-color border-opacity-25 hover:bg-text-color hover:bg-opacity-10 transition-colors duration-150 select-none px-1 min-w-0 truncate">BB<span id="sortByBBArrow" class="ml-1"></span></button>
                 <button id="sortByDividend" class="flex justify-center items-center h-full hover:bg-text-color hover:bg-opacity-10 transition-colors duration-150 select-none px-1 min-w-0 truncate">Div<span id="sortByDividendArrow" class="ml-1"></span></button>
             </div>
-            <div id="watchlistItemsContainer" class="hidden laptop:flex flex-col w-11/12 h-5/6 mt-3 overflow-y-auto overflow-x-hidden gap-2 no-scrollbar">
+            <div id="watchlistItemsContainer" class="hidden laptop:flex flex-col w-11/12 mt-3 overflow-x-hidden gap-2">
 
             </div>
 
-            <div id="watchlistCardsContainer" class="laptop:hidden flex flex-col w-11/12 flex-1 mt-3 overflow-y-auto no-scrollbar gap-3.5 pb-20">
+            <div id="watchlistCardsContainer" class="laptop:hidden flex flex-col w-11/12 mt-3 gap-3.5 pb-20">
 
             </div>
 
         </section>
     </main>
 
-    <div id="folderModalOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-30 flex items-center justify-center px-4">
-        <div id="folderModal" class="flex flex-col bg-background border border-text-color border-opacity-25 rounded-lg w-full max-w-xs laptop:max-w-md p-4 laptop:p-6 gap-3 text-text-color">
+    <div id="folderModalOverlay" class="hidden modal-overlay">
+        <div id="folderModal" class="modal-panel">
             <div class="flex justify-between items-center">
-                <h2 id="folderModalTitle" class="text-base laptop:text-2xl font-semibold truncate pr-2">Add to a Watchlist</h2>
-                <button id="folderModalCloseBtn" type="button" class="text-text-color text-2xl leading-none hover:text-accent-color flex-shrink-0">&times;</button>
+                <h2 id="folderModalTitle" class="modal-title">Add to a Watchlist</h2>
+                <button id="folderModalCloseBtn" type="button" class="modal-close">&times;</button>
             </div>
             <div id="folderModalList" class="flex flex-col gap-1 max-h-60 overflow-y-auto no-scrollbar">
             </div>
             <form id="folderModalNewFolderForm" class="flex gap-2 mt-2">
-                <input id="folderModalNewFolderInput" type="text" placeholder="New watchlist name" maxlength="40" autocomplete="off" class="flex-1 min-w-0 bg-secondary-color rounded px-2 py-1 text-text-color placeholder-text-color placeholder-opacity-50 outline-none text-sm laptop:text-base">
-                <button type="submit" class="bg-secondary-color text-text-color rounded px-3 py-1 font-semibold text-sm laptop:text-base hover:opacity-80 flex-shrink-0">Create</button>
+                <input id="folderModalNewFolderInput" type="text" placeholder="New watchlist name" maxlength="40" autocomplete="off" class="input-field flex-1 min-w-0">
+                <button type="submit" class="btn-secondary flex-shrink-0">Create</button>
             </form>
-            <button id="folderModalAddBtn" type="button" class="bg-accent-color text-background rounded desktopXL:rounded-lg py-2 laptop:py-3 font-semibold text-base laptop:text-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed">Add</button>
+            <button id="folderModalAddBtn" type="button" class="btn-primary">Add</button>
         </div>
     </div>
 
-    <div id="deleteConfirmModalOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-30 flex items-center justify-center px-4">
-        <div class="flex flex-col bg-background border border-text-color border-opacity-25 rounded-lg w-full max-w-xs laptop:max-w-sm p-4 laptop:p-6 gap-4 text-text-color">
+    <div id="deleteConfirmModalOverlay" class="hidden modal-overlay">
+        <div class="modal-panel laptop:max-w-sm gap-4">
             <div class="flex justify-between items-center">
-                <h2 class="text-base laptop:text-xl font-semibold truncate pr-2">Remove from Watch List</h2>
-                <button id="deleteConfirmModalCloseBtn" type="button" class="text-text-color text-2xl leading-none hover:text-accent-color flex-shrink-0">&times;</button>
+                <h2 class="modal-title">Remove from Watch List</h2>
+                <button id="deleteConfirmModalCloseBtn" type="button" class="modal-close">&times;</button>
             </div>
-            <p id="deleteConfirmModalMessage" class="text-sm laptop:text-base text-text-color text-opacity-80"></p>
+            <p id="deleteConfirmModalMessage" class="modal-text"></p>
             <div class="flex gap-3 justify-center mt-1">
-                <button id="deleteConfirmModalCancelBtn" type="button" class="flex-1 px-4 py-3 rounded-lg font-semibold text-base laptop:text-lg bg-secondary-color text-text-color hover:opacity-80">Cancel</button>
-                <button id="deleteConfirmModalConfirmBtn" type="button" class="flex-1 px-4 py-3 rounded-lg font-semibold text-base laptop:text-lg bg-desperate-buy-one text-background hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed">Remove</button>
+                <button id="deleteConfirmModalCancelBtn" type="button" class="btn-secondary flex-1">Cancel</button>
+                <button id="deleteConfirmModalConfirmBtn" type="button" class="btn-danger flex-1">Remove</button>
             </div>
         </div>
     </div>

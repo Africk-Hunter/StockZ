@@ -18,10 +18,10 @@
         <span class="text-text-color select-none">STOCK</span> <span class="text-accent-color select-none">Z</span>
     </div>
     <div class="flex flex-col laptop:flex-row gap-3 text-1xl laptop:gap-6 laptop:mb-6">
-        <input type="text" name="username" id="inputUsername" class=" bg-text-color flex rounded text-background py-1 px-2 laptop:py-2 laptop:px-3 laptop:text-1xl laptop:w-48" placeholder="Username">
-        <input type="password" name="password" id="inputPassword" class=" bg-text-color flex rounded text-background py-1 px-2 laptop:py-2 laptop:px-3 laptop:text-1xl laptop:w-48" placeholder="Password">
+        <input type="text" name="username" id="inputUsername" class="bg-text-color flex rounded-lg text-background placeholder-background placeholder-opacity-50 py-2 px-3 w-64 laptop:w-48 outline-none focus:ring-2 focus:ring-accent-color transition-shadow duration-150" placeholder="Username" autocomplete="username">
+        <input type="password" name="password" id="inputPassword" class="bg-text-color flex rounded-lg text-background placeholder-background placeholder-opacity-50 py-2 px-3 w-64 laptop:w-48 outline-none focus:ring-2 focus:ring-accent-color transition-shadow duration-150" placeholder="Password" autocomplete="current-password">
     </div>
-    <form id="enterButton" class="bg-text-color flex laptop:py-1 hover:cursor-pointer laptop:text-1xl laptop:w-40 laptop:h-10 laptop:mb-32 rounded text-background justify-center items-center hover:bg-accent-color hover:scale-110 transition-all duration-300 ease-in-out w-1/4 mt-3 laptop:mt-0">Enter</form>
+    <form id="enterButton" class="bg-text-color flex hover:cursor-pointer laptop:w-40 laptop:mb-32 rounded-lg text-background justify-center items-center hover:bg-accent-color hover:scale-105 active:scale-95 transition-all duration-300 ease-in-out w-64 h-10 mt-3 laptop:mt-0 font-semibold">Enter</form>
 </div>
 
 <script type="module" src="/src/javascript.mjs">

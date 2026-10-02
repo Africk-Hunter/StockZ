@@ -14,3 +14,64 @@
 .animate-spin-reverse {
     animation: spin-reverse 1s linear infinite;
 }
+
+/* Shared UI primitives. Keep modal/button/input styling here so every page
+   (and the JS-generated markup in javascript.mjs) stays visually consistent. */
+@layer base {
+    :focus-visible {
+        outline: 2px solid #44B735;
+        outline-offset: 2px;
+    }
+    input:focus-visible,
+    textarea:focus-visible {
+        outline: none;
+    }
+    button {
+        -webkit-tap-highlight-color: transparent;
+    }
+}
+
+@layer components {
+    .modal-overlay {
+        @apply fixed inset-0 z-30 flex items-center justify-center bg-black bg-opacity-60 px-4;
+    }
+    .modal-panel {
+        @apply flex w-full max-w-xs flex-col gap-3 rounded-lg border border-text-color border-opacity-25 bg-background p-4 text-text-color laptop:max-w-md laptop:p-6;
+    }
+    .modal-title {
+        @apply truncate pr-2 text-lg font-semibold laptop:text-xl;
+    }
+    .modal-close {
+        @apply flex-shrink-0 text-2xl leading-none text-text-color transition-colors duration-150 hover:text-accent-color;
+    }
+    .modal-text {
+        @apply text-sm text-text-color text-opacity-80 laptop:text-base;
+    }
+
+    .btn {
+        @apply flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-150 ease-in-out active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 laptop:text-base;
+    }
+    .btn-primary {
+        @apply btn bg-accent-color text-background hover:opacity-90;
+    }
+    .btn-secondary {
+        @apply btn bg-secondary-color text-text-color hover:bg-text-color hover:text-background;
+    }
+    .btn-danger {
+        @apply btn bg-desperate-buy-one text-background hover:opacity-90;
+    }
+    .btn-ghost {
+        @apply btn bg-transparent text-text-color text-opacity-70 hover:text-opacity-100;
+    }
+
+    .input-field {
+        @apply w-full rounded-lg bg-secondary-color bg-opacity-30 px-3 py-2 text-sm text-text-color placeholder-text-color placeholder-opacity-50 outline-none transition-shadow duration-150 focus:ring-2 focus:ring-accent-color laptop:text-base;
+    }
+
+    .section-label {
+        @apply text-xs font-bold uppercase tracking-wide text-text-color text-opacity-60;
+    }
+    .card {
+        @apply rounded-lg border border-text-color border-opacity-25 bg-secondary-color bg-opacity-20;
+    }
+}

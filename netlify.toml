@@ -46,6 +46,12 @@
   to = "/.netlify/functions/log-error"
   status = 200
 
+# Per-ticker URLs (/WFC). Must stay last: real files and the rules above win first.
+[[redirects]]
+  from = "/:ticker"
+  to = "/tickerInfo.html"
+  status = 200
+
 [[headers]]
   for = "/*"
   [headers.values]

@@ -129,19 +129,19 @@ function initBugReportWidget() {
     if (triggers.length === 0) return;
 
     const overlay = document.createElement('div');
-    overlay.className = 'hidden fixed inset-0 bg-black bg-opacity-50 z-30 flex items-center justify-center px-4';
+    overlay.className = 'hidden modal-overlay';
     overlay.innerHTML = `
-        <div class="flex flex-col bg-background border border-text-color border-opacity-25 rounded-lg w-full max-w-xs laptop:max-w-md p-4 laptop:p-6 gap-3 text-text-color">
+        <div class="modal-panel">
             <div class="flex justify-between items-center">
-                <h2 class="text-base laptop:text-xl font-semibold">Report a Problem</h2>
-                <button type="button" data-bug-report-close class="text-text-color text-2xl leading-none hover:text-accent-color flex-shrink-0">&times;</button>
+                <h2 class="modal-title">Report a Problem</h2>
+                <button type="button" data-bug-report-close class="modal-close">&times;</button>
             </div>
             <p class="text-xs laptop:text-sm text-text-color text-opacity-70">Tell me what happened — recent technical details from your session will be included automatically so I can look into it.</p>
-            <textarea data-bug-report-description rows="4" maxlength="1000" placeholder="What were you doing when something went wrong? (optional)" class="w-full bg-secondary-color bg-opacity-30 rounded px-2 py-2 text-text-color placeholder-text-color placeholder-opacity-50 outline-none text-sm resize-none"></textarea>
+            <textarea data-bug-report-description rows="4" maxlength="1000" placeholder="What were you doing when something went wrong? (optional)" class="input-field resize-none"></textarea>
             <div data-bug-report-status class="text-xs laptop:text-sm hidden"></div>
             <div class="flex justify-end gap-2">
-                <button type="button" data-bug-report-cancel class="px-3 py-1.5 rounded text-sm laptop:text-base text-text-color text-opacity-70 hover:text-opacity-100">Cancel</button>
-                <button type="button" data-bug-report-send class="px-3 py-1.5 rounded bg-accent-color text-background font-semibold text-sm laptop:text-base hover:opacity-90">Send Report</button>
+                <button type="button" data-bug-report-cancel class="btn-ghost">Cancel</button>
+                <button type="button" data-bug-report-send class="btn-primary">Send Report</button>
             </div>
         </div>
     `;
@@ -217,6 +217,9 @@ let epsChartLink            = document.getElementById("epsChartLink");
 let dividendYieldEl         = document.getElementById("dividendYield");
 let payoutRatioEl           = document.getElementById("payoutRatio");
 let lastPayoutAmountEl      = document.getElementById("lastPayoutAmount");
+let marketCapEl             = document.getElementById("marketCapValue");
+let capCategoryEl           = document.getElementById("capCategory");
+let sectorEl                = document.getElementById("sectorValue");
 let addToWatchlist          = document.getElementById("addToWatchlist");
 let grBLonPage              = document.getElementById("grBL");
 let bBHonPage                = document.getElementById("bBH");
@@ -267,6 +270,9 @@ let pendingFolderIds        = new Set();
 // the watchlist yet (see commitFolderSelection()); null while reorganizing
 // an existing item's watchlists.
 let pendingNewEntry         = null;
+// False once "All" is unchecked on an existing item — saving then removes the
+// ticker from the watchlist entirely (after a confirmation).
+let pendingKeepInAll        = true;
 
 auth.onAuthStateChanged(async (user) => {
     if (user) {
@@ -444,7 +450,7 @@ function renderMobileSearchSuggestions() {
 
 function createSearchResultRow(item) {
     const row = document.createElement('div');
-    row.className = 'flex items-center justify-between gap-3 bg-secondary-color bg-opacity-20 border border-text-color border-opacity-25 rounded-lg px-4 py-3 hover:cursor-pointer';
+    row.className = 'card flex items-center justify-between gap-3 px-4 py-3 hover:cursor-pointer transition duration-150 hover:bg-opacity-30 hover:border-opacity-50';
 
     const left = document.createElement('div');
     left.className = 'flex flex-col gap-0.5 min-w-0';
@@ -506,11 +512,50 @@ async function loadTickerAndNavigate(ticker, requestId) {
         return; // superseded by a newer submission — drop this result
     }
     runStockCalculations(data.prices, ticker, 'mostRecentCalculations');
-    window.location.href = ('/tickerInfo');
+    window.location.href = tickerPath(ticker);
+}
+
+// Shareable per-ticker URL, e.g. /WFC (rewritten to tickerInfo.html in netlify.toml).
+function tickerPath(ticker) {
+    return '/' + encodeURIComponent(ticker);
+}
+
+// The ticker in the current URL ("/WFC" → "WFC"), or null on /tickerInfo etc.
+function getTickerFromPath() {
+    let segment = '';
+    try {
+        segment = decodeURIComponent(window.location.pathname.replace(/^\/+|\/+$/g, ''));
+    } catch (error) {
+        return null;
+    }
+    if (/^tickerInfo(\.html)?$/i.test(segment)) return null;
+    return sanitizeTicker(segment);
 }
 
 /* Ticker Info Page */
-if (tickerLabelIP) {
+// Opened via /WFC (e.g. a middle-click from the watchlist) with nothing cached
+// for that ticker: fetch and calculate it, then reload so the normal page
+// setup below runs against the fresh cache.
+let tickerFromPath = tickerLabelIP ? getTickerFromPath() : null;
+if (tickerFromPath) {
+    let cachedTicker = null;
+    try {
+        cachedTicker = JSON.parse(localStorage.getItem('mostRecentCalculations'))?.ticker ?? null;
+    } catch (error) { /* treat as uncached */ }
+    if (cachedTicker === tickerFromPath) {
+        tickerFromPath = null; // already loaded, render normally
+    } else {
+        getStockData(tickerFromPath, 'mostRecentData').then(data => {
+            runStockCalculations(data.prices, tickerFromPath, 'mostRecentCalculations');
+            window.location.reload();
+        }).catch(error => {
+            console.error('Error occurred when retrieving stock data: ', error);
+            window.location.href = '/main';
+        });
+    }
+}
+
+if (tickerLabelIP && !tickerFromPath) {
     loadCalculatedValues();
     let ticker = "";
     var storageItem = localStorage.getItem('mostRecentCalculations');
@@ -558,6 +603,7 @@ if (tickerLabelIP) {
 
     if (ticker) {
         loadDividendInfo(ticker);
+        loadCompanyProfile(ticker);
     }
     tickerLabelIP.addEventListener('click', function() {
         document.getElementById('buyHolder').style.display = 'none';
@@ -583,18 +629,7 @@ if (tickerLabelIP) {
         }
 
         if (isTickerInWatchlist(tickerToAdd)) {
-            openDeleteConfirmModal(tickerToAdd, async function () {
-                addToWatchlist.disabled = true;
-                const success = await deleteFromFirebase(tickerToAdd);
-                addToWatchlist.disabled = false;
-                if (!success) {
-                    alert(`Couldn't remove ${tickerToAdd} from your watchlist. Please try again.`);
-                    return;
-                }
-                const updatedWatchList = getCachedWatchList().filter(item => item.ticker !== tickerToAdd);
-                localStorage.setItem('userWatchListData', JSON.stringify(updatedWatchList));
-                setAddToWatchlistButtonState(false);
-            });
+            openFolderModal(tickerToAdd);
             return;
         }
 
@@ -620,7 +655,7 @@ function isTickerInWatchlist(ticker) {
 
 function setAddToWatchlistButtonState(inWatchlist) {
     if (!addToWatchlist) return;
-    addToWatchlist.textContent = inWatchlist ? 'Remove from Watchlist' : 'Add To Watchlist';
+    addToWatchlist.textContent = inWatchlist ? 'Modify Watchlist(s)' : 'Add To Watchlist';
     addToWatchlist.classList.toggle('bg-accent-color', !inWatchlist);
     addToWatchlist.classList.toggle('bg-secondary-color', inWatchlist);
 }
@@ -680,6 +715,24 @@ if(watchlistItemsContainer){
     sortByGBBtn.addEventListener('click', () => sortWatchlist('goodBuyPrice'));
     sortByBBBtn.addEventListener('click', () => sortWatchlist('badBuyPrice'));
     sortByDividendBtn.addEventListener('click', () => sortWatchlist('dividendYield'));
+
+    const mobileSortSelect = document.getElementById('mobileSortSelect');
+    const mobileSortDir = document.getElementById('mobileSortDir');
+    mobileSortSelect.addEventListener('change', () => {
+        currentSortKey = mobileSortSelect.value || null;
+        currentSortDirection = 'asc';
+        runWatchlist(auth.currentUser);
+    });
+    mobileSortDir.addEventListener('click', () => {
+        if (!currentSortKey) {
+            // No sort chosen yet: start sorting by name, descending
+            currentSortKey = 'ticker';
+            currentSortDirection = 'desc';
+        } else {
+            currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+        }
+        runWatchlist(auth.currentUser);
+    });
 
     folderDropdownBtn.addEventListener('click', function (event) {
         event.stopPropagation();
@@ -886,6 +939,11 @@ function updateSortIndicators() {
         if (!el) return;
         el.textContent = key === currentSortKey ? (currentSortDirection === 'asc' ? '▲' : '▼') : '';
     });
+
+    const mobileSortSelect = document.getElementById('mobileSortSelect');
+    const mobileSortDir = document.getElementById('mobileSortDir');
+    if (mobileSortSelect) mobileSortSelect.value = currentSortKey || '';
+    if (mobileSortDir) mobileSortDir.querySelector('svg').style.transform = currentSortDirection === 'asc' ? '' : 'rotate(180deg)';
 }
 
 async function fetchWatchlistItems(uid) {
@@ -1121,7 +1179,9 @@ function openFolderModal(ticker, newEntry = null) {
     const item = getCachedWatchList().find(watchListItem => watchListItem.ticker === ticker);
     const itemFolderIds = (item && Array.isArray(item.folderIds)) ? item.folderIds : [];
     pendingFolderIds = new Set(itemFolderIds);
-    folderModalTitle.textContent = `Add ${ticker} to a Watchlist`;
+    pendingKeepInAll = true;
+    folderModalTitle.textContent = newEntry ? `Add ${ticker} to a Watchlist` : `Modify ${ticker} Watchlist(s)`;
+    folderModalAddBtn.textContent = newEntry ? 'Add' : 'Save';
     renderFolderModalList();
     folderModalOverlay.classList.remove('hidden');
 }
@@ -1131,6 +1191,7 @@ function closeFolderModal() {
     currentModalTicker = null;
     pendingFolderIds = new Set();
     pendingNewEntry = null;
+    pendingKeepInAll = true;
 }
 
 // Writes the staged pendingFolderIds selection to Firestore in one shot,
@@ -1144,6 +1205,26 @@ async function commitFolderSelection() {
     const ticker = currentModalTicker;
     const folderIds = Array.from(pendingFolderIds);
     const newEntry = pendingNewEntry;
+
+    if (!newEntry && !pendingKeepInAll) {
+        openDeleteConfirmModal(ticker, async function () {
+            const success = await deleteFromFirebase(ticker);
+            if (!success) {
+                alert(`Couldn't remove ${ticker} from your watchlist. Please try again.`);
+                return;
+            }
+            const updatedWatchList = getCachedWatchList().filter(item => item.ticker !== ticker);
+            localStorage.setItem('userWatchListData', JSON.stringify(updatedWatchList));
+            if (addToWatchlist) {
+                setAddToWatchlistButtonState(false);
+            }
+            if (watchlistItemsContainer) {
+                runWatchlist(user);
+            }
+            closeFolderModal();
+        });
+        return;
+    }
 
     folderModalAddBtn.disabled = true;
     let newCacheEntry = null;
@@ -1188,18 +1269,23 @@ async function commitFolderSelection() {
     closeFolderModal();
 }
 
-// Every watchlist item always belongs to the unfiltered "All" list, so it's
-// shown here as a permanently-checked, disabled row rather than a real
-// folder — there's nothing to toggle since it can't be removed from it.
+// Every watchlist item belongs to the unfiltered "All" list. For a ticker
+// that's already saved, unchecking "All" stages a full removal (confirmed in
+// commitFolderSelection()); for a ticker being added it stays locked on.
 function createAllWatchlistRow() {
+    const editable = !pendingNewEntry;
     const row = document.createElement('label');
-    row.className = 'flex items-center gap-2 px-2 py-2 rounded';
+    row.className = 'flex items-center gap-2 px-2 py-2 rounded' + (editable ? ' hover:bg-secondary-color cursor-pointer' : '');
 
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
-    checkbox.className = 'accent-accent-color w-4 h-4 laptop:w-5 laptop:h-5 flex-shrink-0 opacity-60';
-    checkbox.checked = true;
-    checkbox.disabled = true;
+    checkbox.className = 'accent-accent-color w-4 h-4 laptop:w-5 laptop:h-5 flex-shrink-0' + (editable ? '' : ' opacity-60');
+    checkbox.checked = pendingKeepInAll;
+    checkbox.disabled = !editable;
+    checkbox.addEventListener('change', () => {
+        pendingKeepInAll = checkbox.checked;
+        renderFolderModalList();
+    });
 
     const nameSpan = document.createElement('span');
     nameSpan.className = 'truncate font-semibold';
@@ -1230,12 +1316,13 @@ function renderFolderModalList() {
 
     folders.forEach((folder) => {
         const row = document.createElement('label');
-        row.className = 'flex items-center gap-2 px-2 py-2 rounded hover:bg-secondary-color cursor-pointer';
+        row.className = 'flex items-center gap-2 px-2 py-2 rounded ' + (pendingKeepInAll ? 'hover:bg-secondary-color cursor-pointer' : 'opacity-50');
 
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.className = 'accent-accent-color w-4 h-4 laptop:w-5 laptop:h-5 flex-shrink-0';
-        checkbox.checked = pendingFolderIds.has(folder.id);
+        checkbox.checked = pendingKeepInAll && pendingFolderIds.has(folder.id);
+        checkbox.disabled = !pendingKeepInAll;
         checkbox.addEventListener('change', () => {
             if (checkbox.checked) {
                 pendingFolderIds.add(folder.id);
@@ -1279,7 +1366,7 @@ function updateWatchlistUI(watchListItems) {
 
 function createEmptyWatchlistCard() {
     const card = document.createElement('div');
-    card.className = 'flex flex-col items-center gap-2 bg-secondary-color bg-opacity-20 border border-text-color border-opacity-25 rounded-lg p-6 text-center';
+    card.className = 'card flex flex-col items-center gap-2 p-6 text-center';
 
     const message = document.createElement('div');
     message.className = 'text-text-color font-semibold';
@@ -1330,11 +1417,13 @@ function createStockContainerItem(item) {
 
     const stockItem = document.createElement('div');
     // Column widths (grid-cols) must stay in sync with the header row template in watchlist.html, or header/row columns drift out of alignment
-    stockItem.className = 'stock-item grid grid-cols-[1.6fr_1fr_1fr_1fr_1fr_1.75rem_1.75rem] laptop:grid-cols-[1.6fr_1fr_1fr_1fr_1fr_2.5rem_2.5rem] w-full items-stretch min-h-7 laptop:min-h-9 text-background text-[10px] laptop:text-base desktop:text-lg desktopXL:text-xl select-none font-semibold';
+    stockItem.className = 'stock-item transition duration-150 hover:brightness-110 hover:drop-shadow-lg grid grid-cols-[1.6fr_1fr_1fr_1fr_1fr_1.75rem_1.75rem] laptop:grid-cols-[1.6fr_1fr_1fr_1fr_1fr_2.5rem_2.5rem] w-full items-stretch min-h-7 laptop:min-h-9 text-background text-[10px] laptop:text-base desktop:text-lg desktopXL:text-xl select-none font-semibold';
 
     const cellBaseClass = 'flex justify-center items-center text-center leading-tight px-1 py-1 select-none min-w-0 border-r border-background';
 
-    const nameDiv = document.createElement('div');
+    // A real link (/WFC) so middle-click / ctrl-click open the ticker in a new tab.
+    const nameDiv = document.createElement('a');
+    nameDiv.href = tickerPath(item.ticker);
     nameDiv.className = cellBaseClass + ' bg-text-color rounded-l hover:cursor-pointer';
     nameDiv.textContent = item.name ? `${item.name} (${item.ticker})` : item.ticker;
     nameDiv.title = nameDiv.textContent;
@@ -1371,7 +1460,10 @@ function createStockContainerItem(item) {
         openFolderModal(item.ticker);
     });
 
-    nameDiv.addEventListener('click', function () {
+    nameDiv.addEventListener('click', function (event) {
+        // Let the browser handle modified clicks (new tab/window) via the href.
+        if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
         watchListContainerLarge.classList.add("fadeAway");
         loadTickerAndNavigate(item.ticker).catch(error => {
             console.error('Error occurred when retrieving stock data: ', error);
@@ -1415,10 +1507,10 @@ function createStockContainerItem(item) {
 
 // Mobile card version of createStockContainerItem() — same item shape and
 // event handlers, laid out as a stacked card instead of a table row. Shows
-// price / GB / BB only (no dividend pill) per product direction.
+// price / GB / BB / dividend yield pills.
 function createStockCardItem(item) {
     const card = document.createElement('div');
-    card.className = 'flex flex-col gap-3 bg-secondary-color bg-opacity-20 border border-text-color border-opacity-25 rounded-lg p-4 hover:cursor-pointer';
+    card.className = 'card flex flex-col gap-3 p-4 hover:cursor-pointer transition duration-150 hover:bg-opacity-30 hover:border-opacity-50';
 
     const topRow = document.createElement('div');
     topRow.className = 'flex items-start justify-between gap-3';
@@ -1442,13 +1534,13 @@ function createStockCardItem(item) {
 
     const folderBtn = document.createElement('button');
     folderBtn.type = 'button';
-    folderBtn.className = 'flex items-center justify-center w-7 h-7 rounded-md bg-secondary-color text-text-color flex-shrink-0';
+    folderBtn.className = 'flex items-center justify-center w-7 h-7 rounded-lg bg-secondary-color text-text-color flex-shrink-0';
     folderBtn.title = 'Add to watchlists';
     folderBtn.innerHTML = '<svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg>';
 
     const deleteBtn = document.createElement('button');
     deleteBtn.type = 'button';
-    deleteBtn.className = 'flex items-center justify-center w-7 h-7 rounded-md bg-secondary-color flex-shrink-0';
+    deleteBtn.className = 'flex items-center justify-center w-7 h-7 rounded-lg bg-secondary-color flex-shrink-0';
     deleteBtn.title = 'Remove from watchlist';
     deleteBtn.innerHTML = '<img class="h-3.5 w-3.5" src="/src/trashcan.svg" alt="Delete">';
 
@@ -1463,17 +1555,21 @@ function createStockCardItem(item) {
     pillRow.className = 'flex gap-2';
     const currentPricePill = document.createElement('div');
     const priceRangeColorClass = getCurrentPriceRangeColorClass(item.currentPrice, item.goodBuyPrice, item.badBuyPrice);
-    currentPricePill.className = 'flex-1 text-center rounded-md py-1.5 text-background text-xs font-bold ' + (priceRangeColorClass || 'bg-white');
+    currentPricePill.className = 'flex-1 text-center rounded-lg py-1.5 text-background text-xs font-bold ' + (priceRangeColorClass || 'bg-white');
     currentPricePill.textContent = item.currentPrice != null ? `$${Number(item.currentPrice).toFixed(2)}` : '—';
     const gbPill = document.createElement('div');
-    gbPill.className = 'flex-1 text-center rounded-md py-1.5 bg-great-buy-one text-background text-xs font-bold';
+    gbPill.className = 'flex-1 text-center rounded-lg py-1.5 bg-great-buy-one text-background text-xs font-bold';
     gbPill.textContent = 'GB ' + item.goodBuyPrice;
     const bbPill = document.createElement('div');
-    bbPill.className = 'flex-1 text-center rounded-md py-1.5 bg-desperate-buy-one text-background text-xs font-bold';
+    bbPill.className = 'flex-1 text-center rounded-lg py-1.5 bg-desperate-buy-one text-background text-xs font-bold';
     bbPill.textContent = 'BB ' + item.badBuyPrice;
     pillRow.appendChild(currentPricePill);
     pillRow.appendChild(gbPill);
     pillRow.appendChild(bbPill);
+    const divPill = document.createElement('div');
+    divPill.className = 'flex-1 text-center rounded-lg py-1.5 bg-secondary-color text-text-color text-xs font-bold';
+    divPill.textContent = 'Div ' + (item.dividendYield || '—');
+    pillRow.appendChild(divPill);
 
     card.appendChild(topRow);
     card.appendChild(pillRow);
@@ -1564,7 +1660,16 @@ function getStockData(ticker, localStorageItem){
 // omit it for bulk/concurrent callers (like a watchlist refresh) so they
 // don't all fight over the same shared localStorage key. Either way, the
 // calculations are always returned directly.
-function runStockCalculations(data, ticker, localStorageItem) {
+function runStockCalculations(rawData, ticker, localStorageItem) {
+
+    // A $0 (or otherwise non-positive/non-finite) close is bad data or a
+    // delisting artifact. Every ratio in the dip/average math divides by an
+    // adjacent close, so a zero produces Infinity/NaN and poisons every
+    // band. Drop those months; currentPrice still reports the raw latest.
+    const data = rawData.filter((price) => Number.isFinite(price) && price > 0);
+    if (data.length === 0) {
+        data.push(rawData[0] > 0 ? rawData[0] : 0.01);
+    }
 
     var greatBRLow, greatBRHigh, goodBRLow, goodBRHigh, okayBRLow, okayBRHigh, badBRLow, badBRHigh,
         averageMonthlyChange, priceInMiddleOfDip, monthsInMiddleOfDip;
@@ -1607,7 +1712,7 @@ function runStockCalculations(data, ticker, localStorageItem) {
         badBRLow: badBRLow,
         badBRHigh: badBRHigh,
         dipPrice: recoveryLowPrice,
-        currentPrice: data[0]
+        currentPrice: rawData[0]
     };
 
     if (localStorageItem) {
@@ -1687,6 +1792,42 @@ function loadDividendInfo(ticker) {
         }
     };
     xhttp.open("GET", "/run-dividend-info?ticker=" + encodeURIComponent(ticker), true);
+    xhttp.send();
+}
+
+function formatMarketCap(cap) {
+    if (typeof cap !== 'number' || !Number.isFinite(cap)) return "N/A";
+    const units = [[1e12, "T"], [1e9, "B"], [1e6, "M"]];
+    for (const [size, suffix] of units) {
+        if (cap >= size) return "$" + (cap / size).toFixed(2) + suffix;
+    }
+    return "$" + cap.toLocaleString();
+}
+
+function loadCompanyProfile(ticker) {
+    var xhttp = new XMLHttpRequest();
+    xhttp.timeout = 15000;
+    function showNoProfileData() {
+        marketCapEl.innerHTML = "N/A";
+        capCategoryEl.innerHTML = "N/A";
+        sectorEl.innerHTML = "N/A";
+    }
+    xhttp.ontimeout = showNoProfileData;
+    xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            try {
+                var response = JSON.parse(this.responseText);
+                marketCapEl.textContent = formatMarketCap(response.marketCap);
+                capCategoryEl.textContent = response.capCategory ?? "N/A";
+                sectorEl.textContent = response.sector ?? "N/A";
+            } catch (error) {
+                showNoProfileData();
+            }
+        } else if (this.readyState == 4) {
+            showNoProfileData();
+        }
+    };
+    xhttp.open("GET", "/company-profile?ticker=" + encodeURIComponent(ticker), true);
     xhttp.send();
 }
 
@@ -1830,7 +1971,7 @@ function initChartRangeButtons(onRangeChange) {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.textContent = option.label;
-        btn.className = 'px-3 py-1 rounded desktopXL:rounded-lg text-sm laptop:text-md desktopXL:text-xl font-medium transition-all duration-150 ease-in-out hover:-translate-y-0.5';
+        btn.className = 'px-3 py-1 rounded-lg text-sm laptop:text-base desktopXL:text-xl font-medium transition-all duration-150 ease-in-out hover:-translate-y-0.5 active:scale-95';
         btn.classList.add(...(option.months === 'all' ? activeClasses : inactiveClasses));
 
         btn.addEventListener('click', function() {
