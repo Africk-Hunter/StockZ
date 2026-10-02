@@ -41,13 +41,15 @@ export function fetchTimeoutSignal(ms = 10000) {
 // limiting is configured at the platform/CDN level.
 const requestLog = new Map(); // ip -> recent request timestamps (ms)
 const RATE_LIMIT_WINDOW_MS = 60_000;
-const RATE_LIMIT_MAX_REQUESTS = 30;
+// Sized for a full watchlist refresh (one request per ticker, hundreds of
+// tickers), which a 30/min cap rejected most of.
+const RATE_LIMIT_MAX_REQUESTS = 300;
 
 // Identifies this warm function instance in the logs below, so a burst that
 // lands on one instance (and trips the limit) can be told apart from one
 // spread across many (each staying under it).
 export const INSTANCE_ID = Math.random().toString(36).slice(2, 8);
-const RATE_LIMIT_LOG_FROM = 20; // log near-limit traffic too, not just rejections
+const RATE_LIMIT_LOG_FROM = Math.floor(RATE_LIMIT_MAX_REQUESTS * 0.8); // log near-limit traffic too, not just rejections
 
 export function isRateLimited(ip) {
   const now = Date.now();

@@ -1187,9 +1187,11 @@ async function updateWatchListValues(user) {
             flushPendingRows();
         }, 400);
     };
-    const onItemDone = (updatedItem) => {
-        completed++;
-        setRefreshProgress(completed, watchlistItems.length);
+    const onItemDone = (updatedItem, isRetry) => {
+        if (!isRetry) {
+            completed++;
+            setRefreshProgress(completed, watchlistItems.length);
+        }
         const cached = getCachedWatchList();
         if (!cached.some((cachedItem) => cachedItem.ticker === updatedItem.ticker)) return;
         localStorage.setItem('userWatchListData', JSON.stringify(cached.map((cachedItem) => (
@@ -1209,14 +1211,20 @@ async function updateWatchListValues(user) {
     };
     setRefreshProgress(0, watchlistItems.length);
 
+    // Tickers that hit the server's rate limit (429) get one retry pass after
+    // the main pass, once the limit window has had a moment to ease.
+    const retryTickers = new Set();
     const tallyFailure = (kind, error, ticker) => {
         refreshStats[kind + 'Failed']++;
         failedTickers.add(ticker);
+        if (error && error.status === 429) retryTickers.add(ticker);
         const status = error && error.status ? error.status : 'none';
         refreshStats.statuses[status] = (refreshStats.statuses[status] || 0) + 1;
     };
 
-    const updateOne = async (item) => {
+    const updateOne = async (item, isRetry = false) => {
+        // A retry that succeeds should clear the ticker's earlier failure.
+        failedTickers.delete(item.ticker);
         let updatedItem = {
             ticker: item.ticker,
             goodBuyPrice: item.goodBuyPrice,
@@ -1263,12 +1271,14 @@ async function updateWatchListValues(user) {
                 refreshStats.historyOk++;
             } catch (error) {
                 tallyFailure('history', error, item.ticker);
-                console.error(`Error calculating ${item.ticker}: `, error);
+                console.warn(`Error calculating ${item.ticker}: `, error);
             }
         } else if (historyResult) {
             // bandsUpdatedAt is left unchanged so the next refresh retries.
             tallyFailure('history', historyResult.reason, item.ticker);
-            console.error(`Error refreshing ${item.ticker}: `, historyResult.reason);
+            // console.warn (not console.error): error calls are each reported
+            // to the server, and the [refresh-summary] already covers failures.
+            console.warn(`Error refreshing ${item.ticker}: `, historyResult.reason);
         }
 
         // Each half updates independently: a failed history fetch no longer
@@ -1281,15 +1291,30 @@ async function updateWatchListValues(user) {
             refreshStats.infoOk++;
         } else {
             tallyFailure('info', infoResult.reason, item.ticker);
-            console.error(`Error fetching stock info for ${item.ticker}: `, infoResult.reason);
+            console.warn(`Error fetching stock info for ${item.ticker}: `, infoResult.reason);
         }
-        onItemDone(updatedItem);
+        onItemDone(updatedItem, isRetry);
         return updatedItem;
     };
 
     // Cap concurrency (instead of firing every item's requests at once) and
     // batch the Firestore writes into one round trip instead of N.
-    const updatedWatchlistItems = await mapWithConcurrencyLimit(watchlistItems, 8, updateOne);
+    const updatedWatchlistItems = await mapWithConcurrencyLimit(watchlistItems, 8, (item) => updateOne(item));
+
+    // One gentler retry pass for tickers the server rate-limited. The first
+    // pass's result is retried (not the original), so a ticker whose history
+    // already succeeded is fresh and only re-fetches its price.
+    const toRetry = updatedWatchlistItems.filter((updatedItem) => retryTickers.has(updatedItem.ticker));
+    retryTickers.clear();
+    if (toRetry.length > 0) {
+        refreshStats.retried = toRetry.length;
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+        const retried = await mapWithConcurrencyLimit(toRetry, 4, (item) => updateOne(item, true));
+        retried.forEach((retriedItem) => {
+            const index = updatedWatchlistItems.findIndex((updatedItem) => updatedItem.ticker === retriedItem.ticker);
+            if (index !== -1) updatedWatchlistItems[index] = retriedItem;
+        });
+    }
     clearTimeout(renderTimer);
     renderTimer = null;
     flushPendingRows();
