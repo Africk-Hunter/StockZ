@@ -4,6 +4,7 @@ import {
   agent,
   REQUEST_HEADERS,
   START_TIME,
+  INSTANCE_ID,
   sanitizeTicker,
   fetchTimeoutSignal,
   isRateLimited,
@@ -103,13 +104,16 @@ export default async (req) => {
     return missingTickerResponse();
   }
 
+  const startedAt = Date.now();
   try {
     const { prices, dates } = await scrapeStockData(ticker);
+    console.log("[req]", JSON.stringify({ fn: "run-calculations", ticker, instance: INSTANCE_ID, ms: Date.now() - startedAt, status: 200 }));
     return new Response(JSON.stringify({ prices, dates }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
+    console.log("[req]", JSON.stringify({ fn: "run-calculations", ticker, instance: INSTANCE_ID, ms: Date.now() - startedAt, status: 502 }));
     console.error(`Error scraping ${ticker}:`, error);
     return new Response(JSON.stringify({ error: "Failed to retrieve stock data.", prices: [], dates: [] }), {
       status: 502,

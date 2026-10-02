@@ -94,6 +94,7 @@
                 <!-- Small bar at top for refresh button to go in top right corner -->
                 <button id="refreshButton" class="h-full w-6 laptop:w-10 hover:opacity-70 transition-opacity duration-150 disabled:opacity-50 disabled:cursor-not-allowed"><img src="/src/refreshIcon.svg" alt="Refresh" class=""></button>
             </div>
+            <p id="refreshStatus" role="status" class="hidden w-11/12 mb-2 text-xs laptop:text-sm text-text-color text-opacity-70"></p>
             <!-- Column widths (grid-cols) must stay in sync with the row template in createStockContainerItem() in javascript.mjs, including the two trailing action-icon tracks, or header/row columns drift out of alignment -->
             <div class="hidden laptop:grid grid-cols-[1.6fr_1fr_1fr_1fr_1fr_1.75rem_1.75rem] laptop:grid-cols-[1.6fr_1fr_1fr_1fr_1fr_2.5rem_2.5rem] w-11/12 h-8 laptop:h-14 rounded border-solid border text-text-color text-[9px] laptop:text-base desktop:text-lg desktopXL:text-xl border-text-color border-opacity-25 font-semibold">
                 <!-- Column Names -->

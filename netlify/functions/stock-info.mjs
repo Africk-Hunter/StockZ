@@ -2,6 +2,7 @@ import * as cheerio from "cheerio";
 import { fetch as undiciFetch } from "undici";
 import {
   agent,
+  INSTANCE_ID,
   REQUEST_HEADERS,
   sanitizeTicker,
   fetchTimeoutSignal,
@@ -82,13 +83,16 @@ export default async (req) => {
     return missingTickerResponse();
   }
 
+  const startedAt = Date.now();
   try {
     const info = await scrapeStockInfo(ticker);
+    console.log("[req]", JSON.stringify({ fn: "stock-info", ticker, instance: INSTANCE_ID, ms: Date.now() - startedAt, status: 200 }));
     return new Response(JSON.stringify(info), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
+    console.log("[req]", JSON.stringify({ fn: "stock-info", ticker, instance: INSTANCE_ID, ms: Date.now() - startedAt, status: 502 }));
     console.error(`Error scraping stock info for ${ticker}:`, error);
     return new Response(
       JSON.stringify({ error: "Failed to retrieve stock info.", name: null, currentPrice: null, dividendYield: null }),

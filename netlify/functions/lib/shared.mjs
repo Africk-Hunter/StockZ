@@ -43,13 +43,23 @@ const requestLog = new Map(); // ip -> recent request timestamps (ms)
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 30;
 
+// Identifies this warm function instance in the logs below, so a burst that
+// lands on one instance (and trips the limit) can be told apart from one
+// spread across many (each staying under it).
+export const INSTANCE_ID = Math.random().toString(36).slice(2, 8);
+const RATE_LIMIT_LOG_FROM = 20; // log near-limit traffic too, not just rejections
+
 export function isRateLimited(ip) {
   const now = Date.now();
   const key = ip || "unknown";
   const timestamps = (requestLog.get(key) || []).filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
   timestamps.push(now);
   requestLog.set(key, timestamps);
-  return timestamps.length > RATE_LIMIT_MAX_REQUESTS;
+  const limited = timestamps.length > RATE_LIMIT_MAX_REQUESTS;
+  if (timestamps.length >= RATE_LIMIT_LOG_FROM) {
+    console.log("[rate-limit]", JSON.stringify({ instance: INSTANCE_ID, ip: key, countInWindow: timestamps.length, limited }));
+  }
+  return limited;
 }
 
 export function clientIp(req) {

@@ -239,7 +239,7 @@ let sortByPriceArrow        = document.getElementById("sortByPriceArrow");
 let sortByGBArrow           = document.getElementById("sortByGBArrow");
 let sortByBBArrow           = document.getElementById("sortByBBArrow");
 let sortByDividendArrow     = document.getElementById("sortByDividendArrow");
-let currentSortKey          = null;
+let currentSortKey          = 'priceTier';
 let currentSortDirection    = 'asc';
 /* Watch List Folders */
 let folderDropdownWrapper   = document.getElementById("folderDropdownWrapper");
@@ -696,13 +696,40 @@ function fetchStockInfo(ticker) {
                         reject(error);
                     }
                 } else {
-                    reject(new Error('Failed to fetch stock info for ' + ticker));
+                    const failure = new Error('Failed to fetch stock info for ' + ticker + ' (status ' + this.status + ')');
+                    failure.status = this.status;
+                    reject(failure);
                 }
             }
         };
         xhttp.open("GET", "/stock-info?ticker=" + encodeURIComponent(ticker), true);
         xhttp.send();
     });
+}
+
+// Tells the user which tickers a refresh couldn't update (their old values are
+// kept) instead of failing silently; clears itself when everything succeeded.
+function setRefreshProgress(done, total) {
+    const statusEl = document.getElementById('refreshStatus');
+    if (!statusEl) return;
+    statusEl.dataset.progress = '1';
+    statusEl.textContent = `Refreshing ${done} of ${total}…`;
+    statusEl.classList.remove('hidden');
+}
+
+function showRefreshStatus(failedTickers) {
+    const statusEl = document.getElementById('refreshStatus');
+    if (!statusEl) return;
+    statusEl.dataset.progress = '';
+    if (!failedTickers || failedTickers.length === 0) {
+        statusEl.classList.add('hidden');
+        statusEl.textContent = '';
+        return;
+    }
+    const shown = failedTickers.slice(0, 5).join(', ');
+    const extra = failedTickers.length > 5 ? ` and ${failedTickers.length - 5} more` : '';
+    statusEl.textContent = `Couldn't fully refresh ${failedTickers.length} ${failedTickers.length === 1 ? 'ticker' : 'tickers'} (${shown}${extra}). Showing previous values; try again in a minute.`;
+    statusEl.classList.remove('hidden');
 }
 
 /* Watch List page*/
@@ -715,13 +742,17 @@ if(watchlistItemsContainer){
             refreshButton.disabled = true;
             refreshIcon.classList.add('animate-spin-reverse');
             try {
-                const [, folders] = await Promise.all([
+                const [result, folders] = await Promise.all([
                     updateWatchListValues(user),
                     fetchWatchlistFolders(user.uid)
                 ]);
                 localStorage.setItem('userWatchlistFolders', JSON.stringify(folders));
                 renderFolderDropdown(folders);
+                showRefreshStatus(result.failed);
             } finally {
+                // If the refresh threw, don't leave "Refreshing n of N…" stuck.
+                const statusEl = document.getElementById('refreshStatus');
+                if (statusEl && statusEl.dataset.progress === '1') showRefreshStatus([]);
                 refreshIcon.classList.remove('animate-spin-reverse');
                 refreshButton.disabled = false;
             }
@@ -967,6 +998,7 @@ async function bulkAddTickers(user, rawText) {
                 name: info.name || null,
                 currentPrice: info.currentPrice ?? null,
                 dividendYield: info.dividendYield || null,
+                bandsUpdatedAt: Date.now(),
                 folderIds
             };
         } catch (error) {
@@ -1065,6 +1097,44 @@ function closeDeleteConfirmModal() {
     pendingDeleteAction = null;
 }
 
+// Buy ranges are built only from monthly closes (the scraper keeps rows dated
+// the 1st), so within a month a fresh scrape returns the same numbers. A
+// refresh therefore skips the history fetch while an item's ranges are
+// "fresh" and only updates the live price.
+const BANDS_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // backstop, mainly for splits
+const SPLIT_JUMP_RATIO = 1.3; // price moved >30% since the last refresh
+
+// Calendar date in New York, the timezone Yahoo's history dates use.
+function newYorkDate(ms) {
+    const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/New_York', year: 'numeric', month: 'numeric', day: 'numeric'
+    }).formatToParts(new Date(ms));
+    const part = (type) => Number(parts.find((p) => p.type === type).value);
+    return { year: part('year'), month: part('month'), day: part('day') };
+}
+
+function bandsAreFresh(item, now = Date.now()) {
+    if (!item.bandsUpdatedAt) return false;
+    if (now - item.bandsUpdatedAt > BANDS_MAX_AGE_MS) return false;
+    const calculated = newYorkDate(item.bandsUpdatedAt);
+    const current = newYorkDate(now);
+    if (calculated.year !== current.year || calculated.month !== current.month) return false;
+    // The 1st's close is still moving that day, so ranges calculated then
+    // are recalculated once on a later day.
+    if (calculated.day === 1 && current.day > 1) return false;
+    return true;
+}
+
+// A sudden large price change since the last refresh usually means a stock
+// split (which rewrites all past prices), so the ranges must be recalculated.
+function priceJumped(oldPrice, newPrice) {
+    const before = Number(oldPrice);
+    const after = Number(newPrice);
+    if (!(before > 0) || !(after > 0)) return false;
+    const ratio = after / before;
+    return ratio > SPLIT_JUMP_RATIO || ratio < 1 / SPLIT_JUMP_RATIO;
+}
+
 // Runs the requested items through `mapper`, but never more than `limit` at
 // once — used to cap how many concurrent requests a watchlist refresh can
 // fire at the backend (and, behind it, at Yahoo).
@@ -1085,6 +1155,67 @@ async function mapWithConcurrencyLimit(items, limit, mapper) {
 async function updateWatchListValues(user) {
     const watchlistItems = await fetchWatchlistItems(user.uid);
 
+    // Per-refresh tallies, summarised once at the end (see below) so a
+    // failure burst shows up as one log line instead of N.
+    const refreshStats = { historyOk: 0, historyFailed: 0, historySkipped: 0, splitSuspected: 0, infoOk: 0, infoFailed: 0, statuses: {} };
+    const failedTickers = new Set();
+    const refreshStartedAt = Date.now();
+
+    // Progressive rendering: as each ticker finishes, write just its refreshed
+    // fields into the cached list and repaint (throttled), so rows update as
+    // they arrive instead of all at once after the slowest ticker. Tickers
+    // removed from the cache mid-refresh are not resurrected, and folderIds
+    // are left as the cache has them.
+    let completed = 0;
+    let renderTimer = null;
+    const pendingTickers = new Set();
+    // Repaints only the rows whose data changed since the last flush, in place.
+    const flushPendingRows = () => {
+        const tickers = Array.from(pendingTickers);
+        pendingTickers.clear();
+        const cachedByTicker = new Map(getCachedWatchList().map((cachedItem) => [cachedItem.ticker, cachedItem]));
+        tickers.forEach((ticker) => {
+            const cachedItem = cachedByTicker.get(ticker);
+            if (cachedItem) updateWatchlistRowInPlace(cachedItem);
+        });
+    };
+    const scheduleRender = (ticker) => {
+        pendingTickers.add(ticker);
+        if (renderTimer) return;
+        renderTimer = setTimeout(() => {
+            renderTimer = null;
+            flushPendingRows();
+        }, 400);
+    };
+    const onItemDone = (updatedItem) => {
+        completed++;
+        setRefreshProgress(completed, watchlistItems.length);
+        const cached = getCachedWatchList();
+        if (!cached.some((cachedItem) => cachedItem.ticker === updatedItem.ticker)) return;
+        localStorage.setItem('userWatchListData', JSON.stringify(cached.map((cachedItem) => (
+            cachedItem.ticker === updatedItem.ticker
+                ? {
+                    ...cachedItem,
+                    goodBuyPrice: updatedItem.goodBuyPrice,
+                    badBuyPrice: updatedItem.badBuyPrice,
+                    name: updatedItem.name,
+                    currentPrice: updatedItem.currentPrice,
+                    dividendYield: updatedItem.dividendYield,
+                    bandsUpdatedAt: updatedItem.bandsUpdatedAt
+                }
+                : cachedItem
+        ))));
+        scheduleRender(updatedItem.ticker);
+    };
+    setRefreshProgress(0, watchlistItems.length);
+
+    const tallyFailure = (kind, error, ticker) => {
+        refreshStats[kind + 'Failed']++;
+        failedTickers.add(ticker);
+        const status = error && error.status ? error.status : 'none';
+        refreshStats.statuses[status] = (refreshStats.statuses[status] || 0) + 1;
+    };
+
     const updateOne = async (item) => {
         let updatedItem = {
             ticker: item.ticker,
@@ -1093,37 +1224,87 @@ async function updateWatchListValues(user) {
             name: item.name || null,
             currentPrice: item.currentPrice ?? null,
             dividendYield: item.dividendYield ?? null,
+            bandsUpdatedAt: item.bandsUpdatedAt ?? null,
             folderIds: Array.isArray(item.folderIds) ? item.folderIds : []
         };
-        try {
-            const data = await getStockData(item.ticker, 'mostRecentData');
-            const calculations = runStockCalculations(data.prices, item.ticker);
+        // No cache key is passed to getStockData: concurrent bulk callers
+        // would overwrite the shared mostRecentData the ticker page reads.
+        const settle = (promise) => promise.then(
+            (value) => ({ status: 'fulfilled', value }),
+            (reason) => ({ status: 'rejected', reason })
+        );
 
-            let info = {};
-            try {
-                info = await fetchStockInfo(item.ticker);
-            } catch (error) {
-                console.error(`Error fetching stock info for ${item.ticker}: `, error);
+        let historyResult = null;
+        let infoResult;
+        if (bandsAreFresh(item)) {
+            // Ranges are still valid: fetch only the price, and fetch history
+            // too only if the price jumped enough to suggest a split.
+            infoResult = await settle(fetchStockInfo(item.ticker));
+            if (infoResult.status === 'fulfilled' && priceJumped(item.currentPrice, infoResult.value.currentPrice)) {
+                refreshStats.splitSuspected++;
+                historyResult = await settle(getStockData(item.ticker));
+            } else {
+                refreshStats.historySkipped++;
             }
-
-            updatedItem = {
-                ticker: item.ticker,
-                goodBuyPrice: calculations.greatBRLow.toFixed(2),
-                badBuyPrice: calculations.badBRHigh.toFixed(2),
-                name: info.name || item.name || null,
-                currentPrice: info.currentPrice ?? item.currentPrice ?? null,
-                dividendYield: info.dividendYield ?? item.dividendYield ?? null,
-                folderIds: Array.isArray(item.folderIds) ? item.folderIds : []
-            };
-        } catch (error) {
-            console.error(`Error refreshing ${item.ticker}: `, error);
+        } else {
+            // History and price don't depend on each other, so fetch both at once.
+            [historyResult, infoResult] = await Promise.all([
+                settle(getStockData(item.ticker)),
+                settle(fetchStockInfo(item.ticker))
+            ]);
         }
+
+        if (historyResult && historyResult.status === 'fulfilled') {
+            try {
+                const calculations = runStockCalculations(historyResult.value.prices, item.ticker);
+                updatedItem.goodBuyPrice = calculations.greatBRLow.toFixed(2);
+                updatedItem.badBuyPrice = calculations.badBRHigh.toFixed(2);
+                updatedItem.bandsUpdatedAt = Date.now();
+                refreshStats.historyOk++;
+            } catch (error) {
+                tallyFailure('history', error, item.ticker);
+                console.error(`Error calculating ${item.ticker}: `, error);
+            }
+        } else if (historyResult) {
+            // bandsUpdatedAt is left unchanged so the next refresh retries.
+            tallyFailure('history', historyResult.reason, item.ticker);
+            console.error(`Error refreshing ${item.ticker}: `, historyResult.reason);
+        }
+
+        // Each half updates independently: a failed history fetch no longer
+        // blocks a fresh price, and vice versa.
+        if (infoResult.status === 'fulfilled') {
+            const info = infoResult.value;
+            updatedItem.name = info.name || item.name || null;
+            updatedItem.currentPrice = info.currentPrice ?? item.currentPrice ?? null;
+            updatedItem.dividendYield = info.dividendYield ?? item.dividendYield ?? null;
+            refreshStats.infoOk++;
+        } else {
+            tallyFailure('info', infoResult.reason, item.ticker);
+            console.error(`Error fetching stock info for ${item.ticker}: `, infoResult.reason);
+        }
+        onItemDone(updatedItem);
         return updatedItem;
     };
 
     // Cap concurrency (instead of firing every item's requests at once) and
     // batch the Firestore writes into one round trip instead of N.
-    const updatedWatchlistItems = await mapWithConcurrencyLimit(watchlistItems, 4, updateOne);
+    const updatedWatchlistItems = await mapWithConcurrencyLimit(watchlistItems, 8, updateOne);
+    clearTimeout(renderTimer);
+    renderTimer = null;
+    flushPendingRows();
+
+    // One-line outcome for the whole refresh. Failures (e.g. 429s from the
+    // server rate limiter) are also sent to the server log via recordError.
+    const refreshSummary = JSON.stringify({
+        tickers: watchlistItems.length,
+        ...refreshStats,
+        ms: Date.now() - refreshStartedAt
+    });
+    console.warn('[refresh-summary]', refreshSummary);
+    if (refreshStats.historyFailed + refreshStats.infoFailed > 0) {
+        recordError('refresh-summary', refreshSummary);
+    }
 
     const batch = writeBatch(db);
     updatedWatchlistItems.forEach((updatedItem) => {
@@ -1133,13 +1314,19 @@ async function updateWatchListValues(user) {
             badBuyPrice: updatedItem.badBuyPrice,
             name: updatedItem.name,
             currentPrice: updatedItem.currentPrice,
-            dividendYield: updatedItem.dividendYield
+            dividendYield: updatedItem.dividendYield,
+            bandsUpdatedAt: updatedItem.bandsUpdatedAt ?? null
         });
     });
     await batch.commit();
 
     localStorage.setItem('userWatchListData', JSON.stringify(updatedWatchlistItems));
-    runWatchlist(user);
+    // Rows were already updated in place as they arrived. A full rebuild is
+    // only needed to re-sort, since refreshed prices can change the order.
+    if (currentSortKey) {
+        runWatchlist(user);
+    }
+    return { failed: Array.from(failedTickers) };
 }
 
 
@@ -1158,6 +1345,13 @@ async function runWatchlist(user) {
 
     if (currentSortKey) {
         visibleWatchList.sort((a, b) => {
+            // Price sort only orders stocks inside their buy range; the rest stay last
+            if (currentSortKey === 'currentPrice') {
+                const inRangeA = isWithinBuyRange(a);
+                const inRangeB = isWithinBuyRange(b);
+                if (inRangeA !== inRangeB) return inRangeA ? -1 : 1;
+                if (!inRangeA) return 0;
+            }
             const comparison = currentSortKey === 'priceTier'
                 ? getBuyTierPosition(a) - getBuyTierPosition(b)
                 : compareWatchlistValues(a[currentSortKey], b[currentSortKey], currentSortKey);
@@ -1171,10 +1365,16 @@ async function runWatchlist(user) {
 
 function sortWatchlist(key) {
     if (key === 'currentPrice') {
-        // Price column toggles: price high -> low <-> buy tier (best first)
-        const toTier = currentSortKey === 'currentPrice';
-        currentSortKey = toTier ? 'priceTier' : 'currentPrice';
-        currentSortDirection = toTier ? 'asc' : 'desc';
+        // Price column cycles: price high -> low, price low -> high, buy tier (best first)
+        if (currentSortKey === 'currentPrice' && currentSortDirection === 'desc') {
+            currentSortDirection = 'asc';
+        } else if (currentSortKey === 'currentPrice') {
+            currentSortKey = 'priceTier';
+            currentSortDirection = 'asc';
+        } else {
+            currentSortKey = 'currentPrice';
+            currentSortDirection = 'desc';
+        }
     } else if (currentSortKey === key) {
         currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
     } else {
@@ -1195,6 +1395,11 @@ function getBuyTierPosition(item) {
         return Infinity;
     }
     return (price - min) / (max - min);
+}
+
+function isWithinBuyRange(item) {
+    const position = getBuyTierPosition(item);
+    return position >= 0 && position <= 1;
 }
 
 function compareWatchlistValues(valueA, valueB, key) {
@@ -1245,6 +1450,7 @@ async function fetchWatchlistItems(uid) {
                 name: data.name || null,
                 currentPrice: data.currentPrice ?? null,
                 dividendYield: data.dividendYield || null,
+                bandsUpdatedAt: data.bandsUpdatedAt ?? null,
                 folderIds: Array.isArray(data.folderIds) ? data.folderIds : []
             });
         });
@@ -1551,6 +1757,7 @@ async function commitFolderSelection() {
                 name: info.name || null,
                 currentPrice: info.currentPrice ?? null,
                 dividendYield: info.dividendYield || null,
+                bandsUpdatedAt: Date.now(),
                 folderIds
             };
             await setDoc(doc(db, `users/${user.uid}/watchlist`, ticker), newCacheEntry);
@@ -1667,6 +1874,8 @@ function updateWatchlistUI(watchListItems) {
     watchListItems.forEach((item, index) => {
         const stockContainer = createStockContainerItem(item);
         const stockCard = createStockCardItem(item);
+        stockContainer.dataset.ticker = item.ticker;
+        stockCard.dataset.ticker = item.ticker;
         setTimeout(() => {
             stockContainer.classList.add('fade-in-slow');
             stockCard.classList.add('fade-in-slow');
@@ -1675,6 +1884,27 @@ function updateWatchlistUI(watchListItems) {
         watchlistItemsContainer.appendChild(stockContainer);
         watchlistCardsContainer.appendChild(stockCard);
     });
+}
+
+// Swaps one ticker's already-rendered row/card for a fresh one built from
+// `item`, leaving every other row untouched (no clear, no re-fade). Used for
+// progressive refresh updates; a ticker that isn't on screen (e.g. filtered
+// out by the current folder) is simply skipped.
+function updateWatchlistRowInPlace(item) {
+    const selector = `[data-ticker="${CSS.escape(item.ticker)}"]`;
+    const oldContainer = document.querySelector('#watchlistItemsContainer ' + selector);
+    const oldCard = document.querySelector('#watchlistCardsContainer ' + selector);
+    if (oldContainer) {
+        const stockContainer = createStockContainerItem(item);
+        stockContainer.dataset.ticker = item.ticker;
+        stockContainer.style.opacity = 1; // createStockContainerItem starts at 0, waiting on the fade-in
+        oldContainer.replaceWith(stockContainer);
+    }
+    if (oldCard) {
+        const stockCard = createStockCardItem(item);
+        stockCard.dataset.ticker = item.ticker;
+        oldCard.replaceWith(stockCard);
+    }
 }
 
 function createEmptyWatchlistCard() {
@@ -1715,10 +1945,12 @@ function getCurrentPriceRangeColorClass(currentPrice, goodBuyPrice, badBuyPrice)
     }
 
     const step = (max - min) / 8;
-    if (price <= min + step) return 'bg-great-buy-one';
-    if (price >= min + 2 * step && price <= min + 3 * step) return 'bg-good-buy-one';
-    if (price >= min + 4 * step && price <= min + 5 * step) return 'bg-okay-buy-one';
-    if (price >= min + 6 * step && price <= max) return 'bg-desperate-buy-one';
+    // The 1-step gaps between bands belong to the cheaper band below them, so a
+    // price that falls in a gap still gets a tier color instead of none.
+    if (price < min + 2 * step) return 'bg-great-buy-one';
+    if (price < min + 4 * step) return 'bg-good-buy-one';
+    if (price < min + 6 * step) return 'bg-okay-buy-one';
+    if (price <= max) return 'bg-desperate-buy-one';
 
     return null;
 }
@@ -1959,7 +2191,9 @@ function getStockData(ticker, localStorageItem){
                         reject(error);
                     }
                 } else {
-                    reject(new Error(`Failed to fetch stock data for ${ticker} (status ${this.status})`));
+                    const failure = new Error(`Failed to fetch stock data for ${ticker} (status ${this.status})`);
+                    failure.status = this.status;
+                    reject(failure);
                 }
             }
         };
@@ -2081,7 +2315,14 @@ function loadCalculatedValues() {
     activeWarningOnScreen();
 }
 
+function showSpinner(...elements) {
+    elements.forEach(el => {
+        el.innerHTML = '<span class="spinner" role="status" aria-label="Loading"></span>';
+    });
+}
+
 function loadDividendInfo(ticker) {
+    showSpinner(dividendYieldEl, payoutRatioEl, lastPayoutAmountEl);
     var xhttp = new XMLHttpRequest();
     xhttp.timeout = 15000;
     function showNoDividendData() {
@@ -2118,6 +2359,7 @@ function formatMarketCap(cap) {
 }
 
 function loadCompanyProfile(ticker) {
+    showSpinner(marketCapEl, capCategoryEl, sectorEl);
     var xhttp = new XMLHttpRequest();
     xhttp.timeout = 15000;
     function showNoProfileData() {
