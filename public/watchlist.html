@@ -67,13 +67,16 @@
         <section id="watchListContainerLarge" class="flex flex-col items-center justify-start w-11/12 laptop:w-4/5 desktop:w-3/5 desktopXL:w-1/2 rounded-xl min-h-[75vh] border-solid border border-text-color border-opacity-25">
             <div class="laptop:hidden flex items-center justify-start w-11/12 mt-3 font-poppins font-bold text-xl text-text-color">Watch List</div>
             <div class="flex justify-between items-center h-9 w-11/12 laptop:h-14 mt-2 laptop:mb-3">
-                <div id="folderDropdownWrapper" class="relative flex items-center h-full">
-                    <button id="folderDropdownBtn" type="button" class="flex items-center gap-1 laptop:gap-2 h-full px-2 laptop:px-4 text-text-color text-xs laptop:text-lg desktop:text-xl font-semibold bg-secondary-color rounded-lg hover:bg-text-color hover:text-background transition-colors duration-150 select-none min-w-0 max-w-[8rem] laptop:max-w-xs">
-                        <span id="folderDropdownLabel" class="truncate">All Stocks</span>
-                        <span class="text-[8px] laptop:text-xs flex-shrink-0">&#9660;</span>
-                    </button>
-                    <div id="folderDropdownPanel" class="hidden absolute left-0 top-full mt-1 w-48 laptop:w-64 bg-secondary-color rounded-lg shadow-lg z-20 py-1 text-text-color text-xs laptop:text-base max-h-[70vh] overflow-y-auto no-scrollbar">
+                <div class="flex items-center gap-2 h-full min-w-0">
+                    <div id="folderDropdownWrapper" class="relative flex items-center h-full min-w-0">
+                        <button id="folderDropdownBtn" type="button" class="flex items-center gap-1 laptop:gap-2 h-full px-2 laptop:px-4 text-text-color text-xs laptop:text-lg desktop:text-xl font-semibold bg-secondary-color rounded-lg hover:bg-text-color hover:text-background transition-colors duration-150 select-none min-w-0 max-w-[8rem] laptop:max-w-xs">
+                            <span id="folderDropdownLabel" class="truncate">All Stocks</span>
+                            <span class="text-[8px] laptop:text-xs flex-shrink-0">&#9660;</span>
+                        </button>
+                        <div id="folderDropdownPanel" class="hidden absolute left-0 top-full mt-1 w-48 laptop:w-64 bg-secondary-color rounded-lg shadow-lg z-20 py-1 text-text-color text-xs laptop:text-base max-h-[70vh] overflow-y-auto no-scrollbar">
+                        </div>
                     </div>
+                    <button id="bulkAddBtn" type="button" class="flex items-center h-full px-2 laptop:px-4 text-text-color text-xs laptop:text-lg desktop:text-xl font-semibold bg-secondary-color rounded-lg hover:bg-text-color hover:text-background transition-colors duration-150 select-none flex-shrink-0">Bulk Add</button>
                 </div>
                 <!-- Phone-only sort control (the column-header sort buttons are laptop+ only) -->
                 <div class="laptop:hidden flex items-center h-full gap-1 ml-auto mr-2">
@@ -81,6 +84,7 @@
                         <option value="">Sort</option>
                         <option value="ticker">Name</option>
                         <option value="currentPrice">Price</option>
+                        <option value="priceTier">Tier</option>
                         <option value="goodBuyPrice">GB</option>
                         <option value="badBuyPrice">BB</option>
                         <option value="dividendYield">Div</option>
@@ -124,6 +128,37 @@
             </form>
             <button id="folderModalAddBtn" type="button" class="btn-primary">Add</button>
         </div>
+    </div>
+
+    <div id="renameFolderModalOverlay" class="hidden modal-overlay">
+        <form id="renameFolderModalForm" class="modal-panel laptop:max-w-sm gap-4">
+            <div class="flex justify-between items-center">
+                <h2 class="modal-title">Rename Watchlist</h2>
+                <button id="renameFolderModalCloseBtn" type="button" class="modal-close">&times;</button>
+            </div>
+            <input id="renameFolderModalInput" type="text" placeholder="Watchlist name" maxlength="40" autocomplete="off" aria-label="Watchlist name" class="input-field">
+            <div class="flex gap-3 justify-center mt-1">
+                <button id="renameFolderModalCancelBtn" type="button" class="btn-secondary flex-1">Cancel</button>
+                <button id="renameFolderModalSaveBtn" type="submit" class="btn-primary flex-1">Save</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="bulkAddModalOverlay" class="hidden modal-overlay">
+        <form id="bulkAddModalForm" class="modal-panel laptop:max-w-md gap-4">
+            <div class="flex justify-between items-center">
+                <h2 class="modal-title">Bulk Add Stocks</h2>
+                <button id="bulkAddModalCloseBtn" type="button" class="modal-close">&times;</button>
+            </div>
+            <textarea id="bulkAddModalInput" rows="5" placeholder="AAPL, MSFT, WFC" aria-label="Tickers to add" autocomplete="off" spellcheck="false" class="input-field resize-none uppercase"></textarea>
+            <p class="modal-text text-sm text-text-color text-opacity-60">Separate tickers with commas, spaces or new lines (max 50).</p>
+            <div id="bulkAddModalFolders" class="flex flex-col gap-1 max-h-40 overflow-y-auto no-scrollbar"></div>
+            <p id="bulkAddModalStatus"class="modal-text text-sm hidden"></p>
+            <div class="flex gap-3 justify-center mt-1">
+                <button id="bulkAddModalCancelBtn" type="button" class="btn-secondary flex-1">Cancel</button>
+                <button id="bulkAddModalSubmitBtn" type="submit" class="btn-primary flex-1">Add</button>
+            </div>
+        </form>
     </div>
 
     <div id="deleteConfirmModalOverlay" class="hidden modal-overlay">

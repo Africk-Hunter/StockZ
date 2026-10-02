@@ -260,6 +260,26 @@ let deleteConfirmModalMessage    = document.getElementById("deleteConfirmModalMe
 let deleteConfirmModalCloseBtn   = document.getElementById("deleteConfirmModalCloseBtn");
 let deleteConfirmModalCancelBtn  = document.getElementById("deleteConfirmModalCancelBtn");
 let deleteConfirmModalConfirmBtn = document.getElementById("deleteConfirmModalConfirmBtn");
+let renameFolderModalOverlay   = document.getElementById("renameFolderModalOverlay");
+let renameFolderModalForm      = document.getElementById("renameFolderModalForm");
+let renameFolderModalInput     = document.getElementById("renameFolderModalInput");
+let renameFolderModalCloseBtn  = document.getElementById("renameFolderModalCloseBtn");
+let renameFolderModalCancelBtn = document.getElementById("renameFolderModalCancelBtn");
+let renameFolderModalSaveBtn   = document.getElementById("renameFolderModalSaveBtn");
+let bulkAddBtn                 = document.getElementById("bulkAddBtn");
+let bulkAddModalOverlay        = document.getElementById("bulkAddModalOverlay");
+let bulkAddModalForm           = document.getElementById("bulkAddModalForm");
+let bulkAddModalInput          = document.getElementById("bulkAddModalInput");
+let bulkAddModalStatus         = document.getElementById("bulkAddModalStatus");
+let bulkAddModalCloseBtn       = document.getElementById("bulkAddModalCloseBtn");
+let bulkAddModalCancelBtn      = document.getElementById("bulkAddModalCancelBtn");
+let bulkAddModalSubmitBtn      = document.getElementById("bulkAddModalSubmitBtn");
+const BULK_ADD_MAX_TICKERS     = 50;
+let bulkAddRunning             = false;
+let bulkAddFolders             = document.getElementById("bulkAddModalFolders");
+let bulkAddFolderIds           = new Set();
+// The folder currently being renamed in the rename modal.
+let renamingFolder             = null;
 // Holds the callback for whichever delete action is currently pending confirmation.
 let pendingDeleteAction     = null;
 // Watchlist selections made inside the folder modal are staged here and only
@@ -720,7 +740,7 @@ if(watchlistItemsContainer){
     const mobileSortDir = document.getElementById('mobileSortDir');
     mobileSortSelect.addEventListener('change', () => {
         currentSortKey = mobileSortSelect.value || null;
-        currentSortDirection = 'asc';
+        currentSortDirection = currentSortKey === 'currentPrice' ? 'desc' : 'asc';
         runWatchlist(auth.currentUser);
     });
     mobileSortDir.addEventListener('click', () => {
@@ -771,6 +791,246 @@ if (folderModalOverlay) {
         renderFolderDropdown(getCachedFolders());
     });
     folderModalAddBtn.addEventListener('click', commitFolderSelection);
+}
+
+// Rename-watchlist modal, opened from the ✎ button in the folder dropdown.
+if (renameFolderModalOverlay) {
+    renameFolderModalCloseBtn.addEventListener('click', closeRenameFolderModal);
+    renameFolderModalCancelBtn.addEventListener('click', closeRenameFolderModal);
+    renameFolderModalOverlay.addEventListener('click', function (event) {
+        if (event.target === renameFolderModalOverlay) {
+            closeRenameFolderModal();
+        }
+    });
+    renameFolderModalForm.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        const user = auth.currentUser;
+        const name = renameFolderModalInput.value.trim();
+        if (!renamingFolder || !user) return;
+        if (!name || name === renamingFolder.name) {
+            closeRenameFolderModal();
+            return;
+        }
+        renameFolderModalSaveBtn.disabled = true;
+        const success = await renameFolder(user.uid, renamingFolder.id, name);
+        renameFolderModalSaveBtn.disabled = false;
+        if (!success) return;
+        renderFolderDropdown(getCachedFolders());
+        closeRenameFolderModal();
+    });
+}
+
+// Bulk-add modal, opened from the "Bulk Add" button next to the folder dropdown.
+if (bulkAddModalOverlay) {
+    bulkAddBtn.addEventListener('click', openBulkAddModal);
+    bulkAddModalCloseBtn.addEventListener('click', closeBulkAddModal);
+    bulkAddModalCancelBtn.addEventListener('click', closeBulkAddModal);
+    bulkAddModalOverlay.addEventListener('click', function (event) {
+        if (event.target === bulkAddModalOverlay) {
+            closeBulkAddModal();
+        }
+    });
+    bulkAddModalForm.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        const user = auth.currentUser;
+        if (!user || bulkAddRunning) return;
+        await bulkAddTickers(user, bulkAddModalInput.value);
+    });
+}
+
+function openBulkAddModal() {
+    bulkAddModalInput.value = '';
+    setBulkAddStatus('');
+    bulkAddFolderIds = new Set(currentFolderId ? [currentFolderId] : []);
+    renderBulkAddFolders();
+    bulkAddModalOverlay.classList.remove('hidden');
+    bulkAddModalInput.focus();
+}
+
+function closeBulkAddModal() {
+    if (bulkAddRunning) return; // don't orphan an in-flight batch
+    bulkAddModalOverlay.classList.add('hidden');
+}
+
+// Checkbox list of the user's watchlists. "All" is shown locked on (same as
+// the single-stock folder modal) since every saved stock appears in All Stocks.
+function renderBulkAddFolders() {
+    bulkAddFolders.innerHTML = '';
+    const folders = getCachedFolders();
+
+    const heading = document.createElement('p');
+    heading.className = 'text-text-color text-opacity-60 text-sm';
+    heading.textContent = 'Add to:';
+    bulkAddFolders.appendChild(heading);
+
+    const allRow = document.createElement('label');
+    allRow.className = 'flex items-center gap-2 px-2 py-2 rounded';
+    const allCheckbox = document.createElement('input');
+    allCheckbox.type = 'checkbox';
+    allCheckbox.className = 'accent-accent-color w-4 h-4 laptop:w-5 laptop:h-5 flex-shrink-0 opacity-60';
+    allCheckbox.checked = true;
+    allCheckbox.disabled = true;
+    const allName = document.createElement('span');
+    allName.className = 'truncate font-semibold';
+    allName.textContent = 'All';
+    allRow.appendChild(allCheckbox);
+    allRow.appendChild(allName);
+    bulkAddFolders.appendChild(allRow);
+
+    folders.forEach((folder) => {
+        const row = document.createElement('label');
+        row.className = 'flex items-center gap-2 px-2 py-2 rounded hover:bg-secondary-color cursor-pointer';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'accent-accent-color w-4 h-4 laptop:w-5 laptop:h-5 flex-shrink-0';
+        checkbox.checked = bulkAddFolderIds.has(folder.id);
+        checkbox.addEventListener('change', () => {
+            if (checkbox.checked) {
+                bulkAddFolderIds.add(folder.id);
+            } else {
+                bulkAddFolderIds.delete(folder.id);
+            }
+        });
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'truncate';
+        nameSpan.textContent = folder.name;
+
+        row.appendChild(checkbox);
+        row.appendChild(nameSpan);
+        bulkAddFolders.appendChild(row);
+    });
+}
+
+function setBulkAddStatus(text) {
+    bulkAddModalStatus.textContent = text;
+    bulkAddModalStatus.classList.toggle('hidden', !text);
+}
+
+// Adds every ticker in `rawText` to the watchlist (and to the currently
+// watchlist folders ticked in the modal). Each ticker goes through the same
+// fetch → calculate → stock-info steps as a refresh in updateWatchListValues(),
+// then all successes are written to Firestore in a single batch.
+async function bulkAddTickers(user, rawText) {
+    const tokens = rawText.split(/[\s,;]+/).filter(Boolean);
+    const invalid = [];
+    const alreadyAdded = [];
+    const toAdd = [];
+    const existing = new Set(getCachedWatchList().map(item => item.ticker));
+    tokens.forEach((token) => {
+        const ticker = sanitizeTicker(token);
+        if (!ticker) {
+            invalid.push(token);
+        } else if (existing.has(ticker)) {
+            if (!alreadyAdded.includes(ticker)) alreadyAdded.push(ticker);
+        } else if (!toAdd.includes(ticker)) {
+            toAdd.push(ticker);
+        }
+    });
+
+    if (toAdd.length > BULK_ADD_MAX_TICKERS) {
+        setBulkAddStatus(`Too many tickers (${toAdd.length}). Please add at most ${BULK_ADD_MAX_TICKERS} at a time.`);
+        return;
+    }
+    if (toAdd.length === 0) {
+        const problems = [];
+        if (invalid.length) problems.push(`Invalid: ${invalid.join(', ')}`);
+        if (alreadyAdded.length) problems.push(`Already on your watch list: ${alreadyAdded.join(', ')}`);
+        setBulkAddStatus(problems.length ? problems.join('. ') : 'Enter at least one ticker.');
+        return;
+    }
+
+    bulkAddRunning = true;
+    bulkAddModalSubmitBtn.disabled = true;
+    bulkAddModalInput.disabled = true;
+
+    const folderIds = Array.from(bulkAddFolderIds);
+    const failed = [];
+    let finished = 0;
+    setBulkAddStatus(`Adding 0/${toAdd.length}…`);
+
+    const results = await mapWithConcurrencyLimit(toAdd, 4, async (ticker) => {
+        try {
+            const data = await getStockData(ticker, 'mostRecentData');
+            const calculations = runStockCalculations(data.prices, ticker);
+            let info = {};
+            try {
+                info = await fetchStockInfo(ticker);
+            } catch (error) {
+                console.error(`Error fetching stock info for ${ticker}: `, error);
+            }
+            return {
+                ticker,
+                goodBuyPrice: calculations.greatBRLow.toFixed(2),
+                badBuyPrice: calculations.badBRHigh.toFixed(2),
+                name: info.name || null,
+                currentPrice: info.currentPrice ?? null,
+                dividendYield: info.dividendYield || null,
+                folderIds
+            };
+        } catch (error) {
+            console.error(`Error adding ${ticker} in bulk: `, error);
+            failed.push(ticker);
+            return null;
+        } finally {
+            finished++;
+            setBulkAddStatus(`Adding ${finished}/${toAdd.length}…`);
+        }
+    });
+
+    const entries = results.filter(Boolean);
+    let saveFailed = false;
+    if (entries.length > 0) {
+        try {
+            const batch = writeBatch(db);
+            entries.forEach((entry) => {
+                batch.set(doc(db, `users/${user.uid}/watchlist`, entry.ticker), entry);
+            });
+            await batch.commit();
+
+            const addedTickers = new Set(entries.map(entry => entry.ticker));
+            const watchList = [...getCachedWatchList().filter(item => !addedTickers.has(item.ticker)), ...entries];
+            localStorage.setItem('userWatchListData', JSON.stringify(watchList));
+            renderFolderDropdown(getCachedFolders());
+            runWatchlist(user);
+        } catch (error) {
+            console.error('Error saving bulk-added watchlist items: ', error);
+            saveFailed = true;
+        }
+    }
+
+    bulkAddRunning = false;
+    bulkAddModalSubmitBtn.disabled = false;
+    bulkAddModalInput.disabled = false;
+
+    if (saveFailed) {
+        setBulkAddStatus("Couldn't save these stocks to your watch list. Please try again.");
+        return;
+    }
+
+    const notes = [`Added ${entries.length}.`];
+    if (failed.length) notes.push(`Couldn't load: ${failed.join(', ')}.`);
+    if (invalid.length) notes.push(`Invalid: ${invalid.join(', ')}.`);
+    if (alreadyAdded.length) notes.push(`Already on your watch list: ${alreadyAdded.join(', ')}.`);
+    if (notes.length === 1) {
+        closeBulkAddModal();
+    } else {
+        setBulkAddStatus(notes.join(' '));
+    }
+}
+
+function openRenameFolderModal(folder) {
+    renamingFolder = folder;
+    renameFolderModalInput.value = folder.name;
+    renameFolderModalOverlay.classList.remove('hidden');
+    renameFolderModalInput.focus();
+    renameFolderModalInput.select();
+}
+
+function closeRenameFolderModal() {
+    renameFolderModalOverlay.classList.add('hidden');
+    renamingFolder = null;
 }
 
 // Generic "are you sure?" modal used before removing a ticker from the
@@ -898,7 +1158,9 @@ async function runWatchlist(user) {
 
     if (currentSortKey) {
         visibleWatchList.sort((a, b) => {
-            const comparison = compareWatchlistValues(a[currentSortKey], b[currentSortKey], currentSortKey);
+            const comparison = currentSortKey === 'priceTier'
+                ? getBuyTierPosition(a) - getBuyTierPosition(b)
+                : compareWatchlistValues(a[currentSortKey], b[currentSortKey], currentSortKey);
             return currentSortDirection === 'asc' ? comparison : -comparison;
         });
     }
@@ -908,13 +1170,31 @@ async function runWatchlist(user) {
 }
 
 function sortWatchlist(key) {
-    if (currentSortKey === key) {
+    if (key === 'currentPrice') {
+        // Price column toggles: price high -> low <-> buy tier (best first)
+        const toTier = currentSortKey === 'currentPrice';
+        currentSortKey = toTier ? 'priceTier' : 'currentPrice';
+        currentSortDirection = toTier ? 'asc' : 'desc';
+    } else if (currentSortKey === key) {
         currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
     } else {
         currentSortKey = key;
         currentSortDirection = 'asc';
     }
     runWatchlist(auth.currentUser);
+}
+
+// Where the current price sits within the item's good-to-bad buy span (0 = at the
+// great-buy end, 1 = at the bad-buy end). Below the span is negative (best), and
+// items with missing data sort last. Ordering by this orders by buy tier.
+function getBuyTierPosition(item) {
+    const price = Number(item.currentPrice);
+    const min = Number(item.goodBuyPrice);
+    const max = Number(item.badBuyPrice);
+    if (!Number.isFinite(price) || !Number.isFinite(min) || !Number.isFinite(max) || max <= min) {
+        return Infinity;
+    }
+    return (price - min) / (max - min);
 }
 
 function compareWatchlistValues(valueA, valueB, key) {
@@ -937,7 +1217,12 @@ function updateSortIndicators() {
 
     Object.entries(arrowByKey).forEach(([key, el]) => {
         if (!el) return;
-        el.textContent = key === currentSortKey ? (currentSortDirection === 'asc' ? '▲' : '▼') : '';
+        const arrow = currentSortDirection === 'asc' ? '▲' : '▼';
+        if (key === 'currentPrice' && currentSortKey === 'priceTier') {
+            el.textContent = '★';
+        } else {
+            el.textContent = key === currentSortKey ? arrow : '';
+        }
     });
 
     const mobileSortSelect = document.getElementById('mobileSortSelect');
@@ -1026,6 +1311,22 @@ async function createFolder(uid, name) {
     return folder;
 }
 
+async function renameFolder(uid, folderId, name) {
+    try {
+        await updateDoc(doc(db, `users/${uid}/watchlistFolders`, folderId), { name: name });
+    } catch (e) {
+        console.error("Error renaming folder: ", e);
+        alert("Couldn't rename the watchlist. Please try again.");
+        return false;
+    }
+    const folders = getCachedFolders().map(folder => folder.id === folderId ? { ...folder, name: name } : folder);
+    localStorage.setItem('userWatchlistFolders', JSON.stringify(folders));
+    if (currentFolderId === folderId) {
+        folderDropdownLabel.textContent = name;
+    }
+    return true;
+}
+
 async function deleteFolder(uid, folderId) {
     try {
         await deleteDoc(doc(db, `users/${uid}/watchlistFolders`, folderId));
@@ -1101,6 +1402,17 @@ function renderFolderDropdown(folders) {
         selectBtn.appendChild(countSpan);
         selectBtn.addEventListener('click', () => selectFolder(folder.id, folder.name));
 
+        const renameBtn = document.createElement('button');
+        renameBtn.type = 'button';
+        renameBtn.className = 'flex-shrink-0 opacity-40 hover:opacity-100 hover:text-accent-color px-1';
+        renameBtn.textContent = '✎';
+        renameBtn.title = `Rename watchlist "${folder.name}"`;
+        renameBtn.addEventListener('click', (event) => {
+            event.stopPropagation();
+            folderDropdownPanel.classList.add('hidden');
+            openRenameFolderModal(folder);
+        });
+
         const deleteBtn = document.createElement('button');
         deleteBtn.type = 'button';
         deleteBtn.className = 'flex-shrink-0 opacity-40 hover:opacity-100 hover:text-desperate-buy-one px-1';
@@ -1122,6 +1434,7 @@ function renderFolderDropdown(folders) {
         });
 
         row.appendChild(selectBtn);
+        row.appendChild(renameBtn);
         row.appendChild(deleteBtn);
         folderDropdownPanel.appendChild(row);
     });
@@ -1417,7 +1730,7 @@ function createStockContainerItem(item) {
 
     const stockItem = document.createElement('div');
     // Column widths (grid-cols) must stay in sync with the header row template in watchlist.html, or header/row columns drift out of alignment
-    stockItem.className = 'stock-item transition duration-150 hover:brightness-110 hover:drop-shadow-lg grid grid-cols-[1.6fr_1fr_1fr_1fr_1fr_1.75rem_1.75rem] laptop:grid-cols-[1.6fr_1fr_1fr_1fr_1fr_2.5rem_2.5rem] w-full items-stretch min-h-7 laptop:min-h-9 text-background text-[10px] laptop:text-base desktop:text-lg desktopXL:text-xl select-none font-semibold';
+    stockItem.className = 'stock-item transition duration-150 hover:brightness-125 hover:drop-shadow-xl hover:-translate-y-0.5 grid grid-cols-[1.6fr_1fr_1fr_1fr_1fr_1.75rem_1.75rem] laptop:grid-cols-[1.6fr_1fr_1fr_1fr_1fr_2.5rem_2.5rem] w-full items-stretch min-h-7 laptop:min-h-9 text-background text-[10px] laptop:text-base desktop:text-lg desktopXL:text-xl select-none font-semibold';
 
     const cellBaseClass = 'flex justify-center items-center text-center leading-tight px-1 py-1 select-none min-w-0 border-r border-background';
 

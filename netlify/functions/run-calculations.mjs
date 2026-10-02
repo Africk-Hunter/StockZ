@@ -75,6 +75,11 @@ async function scrapeStockData(ticker) {
     .each((_, row) => {
       const cells = $(row).find("td");
       if (cells.length > closeIndex) {
+        // Yahoo returns the current month as extra daily rows (e.g. "Oct 2",
+        // "Oct 1") alongside the monthly bars dated the 1st. Keep only rows
+        // dated the 1st so each month appears exactly once.
+        const dateText = dateIndex !== -1 ? $(cells[dateIndex]).text().trim() : "";
+        if (dateIndex !== -1 && !/^[A-Za-z]{3,9}\s+1,\s*\d{4}$/.test(dateText)) return;
         const rawText = $(cells[closeIndex]).text().replace(/,/g, "").trim();
         const value = parseFloat(rawText);
         if (!Number.isNaN(value)) {
