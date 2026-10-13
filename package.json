@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test \"tests/**/*.test.mjs\"",
     "dev": "concurrently -n css,netlify -c yellow,cyan \"npm:css:watch\" \"netlify dev\"",
     "css:watch": "tailwindcss -i ./public/src/input.css -o ./public/src/output.css --watch",
     "build": "tailwindcss -i ./public/src/input.css -o ./public/src/output.css --minify"
@@ -22,7 +22,6 @@
   },
   "dependencies": {
     "cheerio": "^1.0.0",
-    "firebase": "^10.12.0",
     "undici": "^8.10.0"
   }
 }

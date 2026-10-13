@@ -1,20 +1,9 @@
-import * as cheerio from "cheerio";
-import { fetch as undiciFetch } from "undici";
-import {
-  agent,
-  REQUEST_HEADERS,
-  sanitizeTicker,
-  fetchTimeoutSignal,
-  isRateLimited,
-  clientIp,
-  rateLimitResponse,
-  missingTickerResponse,
-} from "./lib/shared.mjs";
+import { fetchHtml, guardTickerRequest, jsonResponse } from "./lib/shared.mjs";
 
 // Yahoo renders market cap as a short string ("243.281B"); convert to dollars.
 const CAP_SUFFIXES = { K: 1e3, M: 1e6, B: 1e9, T: 1e12 };
 
-function parseMarketCap(text) {
+export function parseMarketCap(text) {
   const match = String(text ?? "").replace(/,/g, "").trim().match(/^([\d.]+)\s*([KMBT])?$/i);
   if (!match) return null;
   const value = parseFloat(match[1]) * (CAP_SUFFIXES[(match[2] || "").toUpperCase()] || 1);
@@ -22,21 +11,13 @@ function parseMarketCap(text) {
 }
 
 // Buckets match the user's portfolio sheet.
-function capCategory(cap) {
+export function capCategory(cap) {
   if (cap === null) return null;
   if (cap > 200e9) return "Mega-cap";
   if (cap >= 10e9) return "Large-cap";
   if (cap >= 2e9) return "Mid-cap";
   if (cap >= 250e6) return "Small-cap";
   return "Micro-cap";
-}
-
-async function fetchHtml(url) {
-  const response = await undiciFetch(url, { dispatcher: agent, headers: REQUEST_HEADERS, signal: fetchTimeoutSignal() });
-  if (!response.ok) {
-    throw new Error(`Status code: ${response.status} for ${url}`);
-  }
-  return cheerio.load(await response.text());
 }
 
 async function fetchMarketCap(ticker) {
@@ -65,22 +46,13 @@ async function fetchSector(ticker) {
 }
 
 export default async (req) => {
-  if (isRateLimited(clientIp(req))) {
-    return rateLimitResponse();
-  }
-
-  const ticker = sanitizeTicker(new URL(req.url).searchParams.get("ticker"));
-
-  if (!ticker) {
-    return missingTickerResponse();
-  }
+  const guard = guardTickerRequest(req);
+  if (guard.response) return guard.response;
+  const { ticker } = guard;
 
   const [marketCap, sector] = await Promise.all([fetchMarketCap(ticker), fetchSector(ticker)]);
 
-  return new Response(JSON.stringify({ marketCap, capCategory: capCategory(marketCap), sector }), {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-  });
+  return jsonResponse({ marketCap, capCategory: capCategory(marketCap), sector });
 };
 
 export const config = {

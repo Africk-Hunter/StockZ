@@ -1,4 +1,5 @@
-import { Agent } from "undici";
+import * as cheerio from "cheerio";
+import { Agent, fetch as undiciFetch } from "undici";
 
 // Yahoo's response headers (cookies etc.) exceed Node's built-in fetch
 // default header-size limit (UND_ERR_HEADERS_OVERFLOW), so use a dedicated
@@ -89,16 +90,56 @@ export function setCached(key, value, ttlMs = 60_000) {
   responseCache.set(key, { value, expiresAt: Date.now() + ttlMs });
 }
 
-export function rateLimitResponse() {
-  return new Response(JSON.stringify({ error: "Too many requests. Please slow down." }), {
-    status: 429,
+export function jsonResponse(body, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
     headers: { "Content-Type": "application/json" },
   });
 }
 
+export function rateLimitResponse() {
+  return jsonResponse({ error: "Too many requests. Please slow down." }, 429);
+}
+
 export function missingTickerResponse() {
-  return new Response(JSON.stringify({ error: "Ticker symbol not provided or invalid." }), {
-    status: 400,
-    headers: { "Content-Type": "application/json" },
+  return jsonResponse({ error: "Ticker symbol not provided or invalid." }, 400);
+}
+
+// Shared entry guard for the ticker-based functions: applies the rate limit,
+// then validates the ticker query param. Returns { ticker } on success or
+// { response } with the error Response to send back.
+export function guardTickerRequest(req) {
+  if (isRateLimited(clientIp(req))) {
+    return { response: rateLimitResponse() };
+  }
+  const ticker = sanitizeTicker(new URL(req.url).searchParams.get("ticker"));
+  if (!ticker) {
+    return { response: missingTickerResponse() };
+  }
+  return { ticker };
+}
+
+// GETs a Yahoo page with the shared agent/headers/timeout and returns it
+// parsed by cheerio. Throws on a non-2xx status.
+export async function fetchHtml(url) {
+  const response = await undiciFetch(url, { dispatcher: agent, headers: REQUEST_HEADERS, signal: fetchTimeoutSignal() });
+  if (!response.ok) {
+    throw new Error(`Status code: ${response.status} for ${url}`);
+  }
+  return cheerio.load(await response.text());
+}
+
+// Finds the first table whose <thead> text contains every given label
+// (e.g. "Date", "Close"), or null. Matches on header text rather than CSS
+// classes, which Yahoo changes often.
+export function findTableByHeaders($, ...labels) {
+  let found = null;
+  $("table").each((_, table) => {
+    const theadText = $(table).find("thead").text();
+    if (labels.every((label) => theadText.includes(label))) {
+      found = table;
+      return false; // break
+    }
   });
+  return found;
 }

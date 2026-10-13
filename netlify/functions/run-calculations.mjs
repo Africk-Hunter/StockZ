@@ -1,43 +1,16 @@
-import * as cheerio from "cheerio";
-import { fetch as undiciFetch } from "undici";
 import {
-  agent,
-  REQUEST_HEADERS,
   START_TIME,
   INSTANCE_ID,
-  sanitizeTicker,
-  fetchTimeoutSignal,
-  isRateLimited,
-  clientIp,
-  rateLimitResponse,
-  missingTickerResponse,
+  fetchHtml,
+  findTableByHeaders,
+  guardTickerRequest,
+  jsonResponse,
 } from "./lib/shared.mjs";
 
-async function scrapeStockData(ticker) {
-  const currentTime = String(Math.floor(Date.now() / 1000));
-  const url = `https://finance.yahoo.com/quote/${encodeURIComponent(ticker)}/history/?frequency=1mo&period1=${START_TIME}&period2=${currentTime}`;
-
-  const response = await undiciFetch(url, {
-    dispatcher: agent,
-    headers: REQUEST_HEADERS,
-    signal: fetchTimeoutSignal(),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to retrieve data. Status code: ${response.status}`);
-  }
-
-  const html = await response.text();
-  const $ = cheerio.load(html);
-
-  let historicalTable = null;
-  $("table").each((_, table) => {
-    const theadText = $(table).find("thead").text();
-    if (theadText.includes("Date") && theadText.includes("Close")) {
-      historicalTable = table;
-      return false; // break
-    }
-  });
+// Parses the monthly history table into parallel prices/dates arrays, most
+// recent first. Takes a cheerio-loaded page so it can be tested offline.
+export function parseHistoricalPrices($) {
+  const historicalTable = findTableByHeaders($, "Date", "Close");
 
   if (!historicalTable) {
     throw new Error("Historical data not found on the page.");
@@ -93,32 +66,27 @@ async function scrapeStockData(ticker) {
   return { prices, dates };
 }
 
+async function scrapeStockData(ticker) {
+  const currentTime = String(Math.floor(Date.now() / 1000));
+  const url = `https://finance.yahoo.com/quote/${encodeURIComponent(ticker)}/history/?frequency=1mo&period1=${START_TIME}&period2=${currentTime}`;
+
+  return parseHistoricalPrices(await fetchHtml(url));
+}
+
 export default async (req) => {
-  if (isRateLimited(clientIp(req))) {
-    return rateLimitResponse();
-  }
-
-  const ticker = sanitizeTicker(new URL(req.url).searchParams.get("ticker"));
-
-  if (!ticker) {
-    return missingTickerResponse();
-  }
+  const guard = guardTickerRequest(req);
+  if (guard.response) return guard.response;
+  const { ticker } = guard;
 
   const startedAt = Date.now();
   try {
     const { prices, dates } = await scrapeStockData(ticker);
     console.log("[req]", JSON.stringify({ fn: "run-calculations", ticker, instance: INSTANCE_ID, ms: Date.now() - startedAt, status: 200 }));
-    return new Response(JSON.stringify({ prices, dates }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    return jsonResponse({ prices, dates });
   } catch (error) {
     console.log("[req]", JSON.stringify({ fn: "run-calculations", ticker, instance: INSTANCE_ID, ms: Date.now() - startedAt, status: 502 }));
     console.error(`Error scraping ${ticker}:`, error);
-    return new Response(JSON.stringify({ error: "Failed to retrieve stock data.", prices: [], dates: [] }), {
-      status: 502,
-      headers: { "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: "Failed to retrieve stock data.", prices: [], dates: [] }, 502);
   }
 };
 
