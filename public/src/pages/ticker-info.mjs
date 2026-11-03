@@ -4,7 +4,7 @@
 import { auth } from '../lib/firebase.mjs';
 import { sanitizeTicker } from '../lib/ticker.mjs';
 import { formatMarketCap } from '../lib/format.mjs';
-import { getCachedWatchList } from '../lib/storage.mjs';
+import { getCachedWatchList, getStorageItem } from '../lib/storage.mjs';
 import { onWatchlistChanged } from '../lib/events.mjs';
 import {
     getStockData, fetchStockInfo, fetchDividendInfo, fetchCompanyProfile, runStockCalculations
@@ -58,7 +58,7 @@ function initTickerInfoPage() {
     if (tickerFromPath) {
         let cachedTicker = null;
         try {
-            cachedTicker = JSON.parse(localStorage.getItem('mostRecentCalculations'))?.ticker ?? null;
+            cachedTicker = JSON.parse(getStorageItem('mostRecentCalculations') || 'null')?.ticker ?? null;
         } catch (error) { /* treat as uncached */ }
         if (cachedTicker === tickerFromPath) {
             tickerFromPath = null; // already loaded, render normally
@@ -82,10 +82,10 @@ function initTickerInfoPage() {
 function renderTickerInfoPage() {
     loadCalculatedValues();
     let ticker = "";
-    var storageItem = localStorage.getItem('mostRecentCalculations');
+    const storageItem = getStorageItem('mostRecentCalculations');
     if (storageItem) {
         try {
-            var calculations = JSON.parse(storageItem);
+            const calculations = JSON.parse(storageItem);
             ticker = calculations.ticker;
         } catch (error) {
             console.error('Error parsing cached calculations: ', error);
@@ -96,10 +96,10 @@ function renderTickerInfoPage() {
 
     setAddToWatchlistButtonState(isTickerInWatchlist(ticker));
 
-    var recentData = localStorage.getItem('mostRecentData');
+    const recentData = getStorageItem('mostRecentData');
     try {
         if (recentData) {
-            var data = JSON.parse(recentData);
+            const data = JSON.parse(recentData);
             createStockChart(data);
         } else {
             console.log("No data was found in localStorage.");
@@ -181,10 +181,10 @@ function setAddToWatchlistButtonState(inWatchlist) {
 }
 
 function loadCalculatedValues() {
-    var storageItem = localStorage.getItem('mostRecentCalculations');
+    const storageItem = getStorageItem('mostRecentCalculations');
     try {
         if (storageItem) {
-            var calculations = JSON.parse(storageItem);
+            const calculations = JSON.parse(storageItem);
 
             tickerLabelIP.textContent = calculations.ticker;
             assignValueOnScreen('grBL', calculations.greatBRLow);
@@ -212,8 +212,8 @@ function loadCalculatedValues() {
 }
 
 function activeWarningOnScreen(){
-    var warning = localStorage.getItem('recentlyCalculatedWarning');
-    var data = null;
+    const warning = getStorageItem('recentlyCalculatedWarning');
+    let data = null;
     try {
         data = warning ? JSON.parse(warning) : null;
     } catch (error) {

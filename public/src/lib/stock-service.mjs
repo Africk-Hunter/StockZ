@@ -1,5 +1,6 @@
 /* Client side of the Netlify functions plus the calculation cache. */
 import { computeBuyRanges } from './buy-range.mjs';
+import { setStorageItem, getStorageItem } from './storage.mjs';
 import { tickerPath } from './ticker.mjs';
 
 // GETs `url` as JSON via XHR with a 15s timeout. `noun` ("stock data", ...)
@@ -38,7 +39,9 @@ function getJson(url, ticker, noun, onSuccess) {
 // optional: pass it when the result should also be cached for the next page.
 export function getStockData(ticker, localStorageItem) {
     return getJson("/run-calculations?ticker=", ticker, 'stock data', (response) => {
-        if (localStorageItem) localStorage.setItem(localStorageItem, JSON.stringify(response));
+        if (localStorageItem) {
+            setStorageItem(localStorageItem, JSON.stringify(response));
+        }
     });
 }
 
@@ -47,7 +50,7 @@ export function fetchStockInfo(ticker) {
 }
 
 export function setThresholdWarning(thresholdLowered) {
-    localStorage.setItem('recentlyCalculatedWarning', JSON.stringify(thresholdLowered ? 'threshold' : 'none'));
+    setStorageItem('recentlyCalculatedWarning', JSON.stringify(thresholdLowered ? 'threshold' : 'none'));
 }
 
 // `localStorageItem` is optional — pass it when the result also needs to be
@@ -60,7 +63,7 @@ export function runStockCalculations(rawData, ticker, localStorageItem) {
     setThresholdWarning(thresholdLowered);
 
     if (localStorageItem) {
-        localStorage.setItem(localStorageItem, JSON.stringify(calculations));
+        setStorageItem(localStorageItem, JSON.stringify(calculations));
     }
 
     return calculations;

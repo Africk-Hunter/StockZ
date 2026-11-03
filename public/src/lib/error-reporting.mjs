@@ -15,9 +15,27 @@
 const ERROR_LOG_KEY = 'stockZ_errorLog';
 const ERROR_LOG_MAX_ENTRIES = 25;
 
+function getStorageValue(key, fallback = null) {
+    try {
+        const value = window.localStorage.getItem(key);
+        return value === null ? fallback : value;
+    } catch (error) {
+        return fallback;
+    }
+}
+
+function setStorageValue(key, value) {
+    try {
+        window.localStorage.setItem(key, value);
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
+
 function readErrorLog() {
     try {
-        const parsed = JSON.parse(localStorage.getItem(ERROR_LOG_KEY) || '[]');
+        const parsed = JSON.parse(getStorageValue(ERROR_LOG_KEY, '[]'));
         return Array.isArray(parsed) ? parsed : [];
     } catch (error) {
         return [];
@@ -36,11 +54,7 @@ export function recordError(level, message, extra = {}) {
     const log = readErrorLog();
     log.push(entry);
     while (log.length > ERROR_LOG_MAX_ENTRIES) log.shift();
-    try {
-        localStorage.setItem(ERROR_LOG_KEY, JSON.stringify(log));
-    } catch (error) {
-        // localStorage full/unavailable — nothing more to do locally.
-    }
+    setStorageValue(ERROR_LOG_KEY, JSON.stringify(log));
 
     sendErrorReport(entry);
 }

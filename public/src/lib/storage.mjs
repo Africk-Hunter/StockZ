@@ -3,8 +3,36 @@
    mostRecentData / mostRecentCalculations (the ticker page's inputs) and
    recentlyCalculatedWarning (see stock-service.mjs). */
 
-function readJsonList(key, label) {
-    const raw = localStorage.getItem(key);
+export function storageAvailable() {
+    try {
+        const key = '__stockz_storage_probe__';
+        window.localStorage.setItem(key, '1');
+        window.localStorage.removeItem(key);
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
+
+export function getStorageItem(key) {
+    try {
+        return window.localStorage.getItem(key);
+    } catch (error) {
+        return null;
+    }
+}
+
+export function setStorageItem(key, value) {
+    try {
+        window.localStorage.setItem(key, value);
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
+
+export function readJsonList(key, label) {
+    const raw = getStorageItem(key);
     try {
         return raw ? JSON.parse(raw) : [];
     } catch (error) {
@@ -18,7 +46,7 @@ export function getCachedWatchList() {
 }
 
 export function setCachedWatchList(items) {
-    localStorage.setItem('userWatchListData', JSON.stringify(items));
+    setStorageItem('userWatchListData', JSON.stringify(items));
 }
 
 export function getCachedFolders() {
@@ -26,5 +54,5 @@ export function getCachedFolders() {
 }
 
 export function setCachedFolders(folders) {
-    localStorage.setItem('userWatchlistFolders', JSON.stringify(folders));
+    setStorageItem('userWatchlistFolders', JSON.stringify(folders));
 }
