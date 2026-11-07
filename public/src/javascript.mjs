@@ -11,6 +11,7 @@ import './pages/nav.mjs';
 import './pages/main-page.mjs';
 import './pages/ticker-info.mjs';
 import './pages/bulk-add.mjs';
+import './pages/export-modal.mjs';
 import { enterButton, continueSignedInUser } from './pages/login.mjs';
 import { watchlistItemsContainer, startWatchlistPage } from './pages/watchlist-page.mjs';
 

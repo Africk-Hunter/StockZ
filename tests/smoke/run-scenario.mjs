@@ -52,6 +52,8 @@ const WATCHLIST_IDS = [
   "renameFolderModalCloseBtn", "renameFolderModalCancelBtn", "renameFolderModalSaveBtn",
   "bulkAddBtn", "bulkAddModalOverlay", "bulkAddModalForm", "bulkAddModalInput", "bulkAddModalStatus",
   "bulkAddModalCloseBtn", "bulkAddModalCancelBtn", "bulkAddModalSubmitBtn", "bulkAddModalFolders",
+  "exportBtn", "exportModalOverlay", "exportModalForm", "exportModalTree", "exportModalSummary",
+  "exportModalCloseBtn", "exportModalCancelBtn", "exportModalSubmitBtn", "exportFormatReadable",
 ];
 
 function watchlistBrowser(extra = {}) {
@@ -306,6 +308,71 @@ const scenarios = {
     el("bulkAddModalInput").value = "aaa";
     await el("bulkAddModalForm").fire("submit");
     assert.equal(el("bulkAddModalStatus").textContent, "Already on your watch list: AAA");
+  },
+
+  async "watchlist-export"() {
+    const browser = watchlistBrowser();
+    const fb = installFakeFirebase({ watchlistDocs: ITEMS.map((i) => [i.ticker, i]), folderDocs: [["f1", { name: "Tech", createdAt: 1 }]] });
+    await import(ENTRY);
+    await fb.signIn({ uid: "u1" });
+    await flush();
+    const el = (id) => browser.elements.get(id);
+    const tree = () => el("exportModalTree").descendants();
+    const group = (id) => tree().find((d) => d.dataset.exportGroup === id);
+    const groupBox = (id) => group(id).descendants().find((d) => d.type === "checkbox");
+    const stockBox = (ticker) => tree().find((d) => d.dataset.ticker === ticker);
+    const allBox = () => tree().find((d) => d.dataset.exportAll);
+    const setBox = async (box, checked) => { box.checked = checked; await box.fire("change"); };
+
+    // Viewing All Stocks: everything starts selected. Groups: Tech (BBB), No watchlist (AAA, CCC).
+    await el("exportBtn").fire("click");
+    assert.equal(el("exportModalOverlay").hasClass("hidden"), false);
+    assert.equal(el("exportModalSummary").textContent, "3 of 3 selected");
+    assert.equal(allBox().checked, true);
+
+    // Untick the "No watchlist" group, open it, and re-tick just CCC.
+    await setBox(groupBox("none"), false);
+    assert.equal(el("exportModalSummary").textContent, "1 of 3 selected");
+    assert.equal(allBox().indeterminate, true);
+    const list = group("none").children[1];
+    assert.equal(list.hasClass("hidden"), true);
+    await group("none").descendants().find((d) => d.tagName === "BUTTON").fire("click");
+    assert.equal(list.hasClass("hidden"), false);
+    await setBox(stockBox("CCC"), true);
+    assert.equal(groupBox("none").checked, false);
+    assert.equal(groupBox("none").indeterminate, true);
+    assert.ok(group("none").descendants().some((d) => d.textContent === "1/2"));
+
+    // Importable file.
+    await el("exportModalForm").fire("submit");
+    assert.equal(el("exportModalOverlay").hasClass("hidden"), true);
+    const jsonFile = browser.nav.downloads[0];
+    assert.match(jsonFile.filename, /^stockz-watchlist-\d{4}-\d{2}-\d{2}\.json$/);
+    assert.match(jsonFile.type, /^application\/json/);
+    const data = JSON.parse(jsonFile.text);
+    assert.deepEqual(data.watchlists, [{ name: "Tech", tickers: ["BBB"] }]);
+    assert.deepEqual(data.stocks.map((s) => s.ticker), ["BBB", "CCC"]);
+
+    // Viewing the Tech folder: only its stocks start selected. Readable file.
+    await el("folderDropdownPanel").children[1].children[0].fire("click");
+    await el("exportBtn").fire("click");
+    assert.equal(el("exportModalSummary").textContent, "1 of 3 selected");
+    el("exportFormatReadable").checked = true;
+    await el("exportModalForm").fire("submit");
+    const txtFile = browser.nav.downloads[1];
+    assert.match(txtFile.filename, /\.txt$/);
+    assert.match(txtFile.text, /^Tech \(1 stock\)$/m);
+    assert.match(txtFile.text, /^BBB\s+BBB Corp\s+\$50\.00\s+\$100\.00\s+\$200\.00\s+1\.5%\s+Below range$/m);
+    assert.ok(!txtFile.text.includes("AAA"));
+
+    // Nothing selected: Export is disabled and does nothing.
+    await el("exportBtn").fire("click");
+    await setBox(allBox(), false);
+    assert.equal(el("exportModalSubmitBtn").disabled, true);
+    await el("exportModalForm").fire("submit");
+    assert.equal(browser.nav.downloads.length, 2);
+    await el("exportModalCancelBtn").fire("click");
+    assert.equal(el("exportModalOverlay").hasClass("hidden"), true);
   },
 };
 

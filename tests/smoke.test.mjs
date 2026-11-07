@@ -13,6 +13,7 @@ const SCENARIOS = [
   "ticker-path-uncached",
   "watchlist",
   "watchlist-bulk-add",
+  "watchlist-export",
 ];
 
 // --import needs a URL on Windows (a bare D:... path parses as scheme "d:").

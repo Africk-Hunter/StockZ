@@ -77,6 +77,11 @@
                         </div>
                     </div>
                     <button id="bulkAddBtn" type="button" class="flex items-center h-full px-2 laptop:px-4 text-text-color text-xs laptop:text-lg desktop:text-xl font-semibold bg-secondary-color rounded-lg hover:bg-text-color hover:text-background transition-colors duration-150 select-none flex-shrink-0">Bulk Add</button>
+                    <!-- Icon-only on phones to leave room for the sort controls -->
+                    <button id="exportBtn" type="button" title="Export stocks" aria-label="Export stocks" class="flex items-center gap-2 h-full px-2 laptop:px-4 text-text-color text-xs laptop:text-lg desktop:text-xl font-semibold bg-secondary-color rounded-lg hover:bg-text-color hover:text-background transition-colors duration-150 select-none flex-shrink-0">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 laptop:w-5 laptop:h-5" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14"/></svg>
+                        <span class="hidden laptop:inline">Export</span>
+                    </button>
                 </div>
                 <!-- Phone-only sort control (the column-header sort buttons are laptop+ only) -->
                 <div class="laptop:hidden flex items-center h-full gap-1 ml-auto mr-2">
@@ -158,6 +163,44 @@
             <div class="flex gap-3 justify-center mt-1">
                 <button id="bulkAddModalCancelBtn" type="button" class="btn-secondary flex-1">Cancel</button>
                 <button id="bulkAddModalSubmitBtn" type="submit" class="btn-primary flex-1">Add</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="exportModalOverlay" class="hidden modal-overlay">
+        <form id="exportModalForm" class="modal-panel laptop:max-w-md gap-4">
+            <div class="flex justify-between items-center">
+                <h2 class="modal-title">Export Stocks</h2>
+                <button id="exportModalCloseBtn" type="button" class="modal-close" aria-label="Close">&times;</button>
+            </div>
+            <div class="flex flex-col gap-1">
+                <div class="flex justify-between items-baseline">
+                    <p class="section-label">Stocks</p>
+                    <p id="exportModalSummary" class="text-xs laptop:text-sm text-text-color text-opacity-60"></p>
+                </div>
+                <!-- Rows are built in src/pages/export-modal.mjs -->
+                <div id="exportModalTree" class="flex flex-col max-h-[40vh] laptop:max-h-72 overflow-y-auto no-scrollbar rounded-lg border border-text-color border-opacity-25 p-1"></div>
+            </div>
+            <fieldset class="flex flex-col gap-2">
+                <legend class="section-label mb-1">Format</legend>
+                <label class="flex items-start gap-3 rounded-lg border border-text-color border-opacity-25 has-[:checked]:border-accent-color has-[:checked]:border-opacity-100 p-3 cursor-pointer transition-colors duration-150">
+                    <input id="exportFormatImportable" type="radio" name="exportFormat" value="json" checked class="accent-accent-color w-4 h-4 mt-0.5 laptop:mt-1 flex-shrink-0">
+                    <span class="flex flex-col gap-0.5">
+                        <span class="text-sm laptop:text-base font-semibold">Importable <span class="font-normal text-text-color text-opacity-60">.json</span></span>
+                        <span class="text-xs laptop:text-sm text-text-color text-opacity-60">Your stocks and the watchlists they're in, as structured data for importing.</span>
+                    </span>
+                </label>
+                <label class="flex items-start gap-3 rounded-lg border border-text-color border-opacity-25 has-[:checked]:border-accent-color has-[:checked]:border-opacity-100 p-3 cursor-pointer transition-colors duration-150">
+                    <input id="exportFormatReadable" type="radio" name="exportFormat" value="txt" class="accent-accent-color w-4 h-4 mt-0.5 laptop:mt-1 flex-shrink-0">
+                    <span class="flex flex-col gap-0.5">
+                        <span class="text-sm laptop:text-base font-semibold">Readable <span class="font-normal text-text-color text-opacity-60">.txt</span></span>
+                        <span class="text-xs laptop:text-sm text-text-color text-opacity-60">A plain-text table of prices and buy ranges, grouped by watchlist.</span>
+                    </span>
+                </label>
+            </fieldset>
+            <div class="flex gap-3 justify-center mt-1">
+                <button id="exportModalCancelBtn" type="button" class="btn-secondary flex-1">Cancel</button>
+                <button id="exportModalSubmitBtn" type="submit" class="btn-primary flex-1">Export</button>
             </div>
         </form>
     </div>

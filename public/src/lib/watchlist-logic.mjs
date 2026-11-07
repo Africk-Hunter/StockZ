@@ -108,7 +108,11 @@ export function sortWatchlistItems(items, sortKey, direction) {
 // (great/good/okay bands each 1 step wide, separated by 1-step gaps, with the
 // bad band spanning the final 2 steps), so the bands can be reconstructed
 // from just those two bounds without re-fetching price history.
-export function getCurrentPriceRangeColorClass(currentPrice, goodBuyPrice, badBuyPrice) {
+// Returns 'below' | 'great' | 'good' | 'okay' | 'bad' | 'above', or null when
+// the data is missing/invalid.
+export function getBuyTier(currentPrice, goodBuyPrice, badBuyPrice) {
+    // Number(null) is 0, which would read as "below range".
+    if (currentPrice === null || currentPrice === undefined || currentPrice === '') return null;
     const price = Number(currentPrice);
     const min = Number(goodBuyPrice);
     const max = Number(badBuyPrice);
@@ -116,17 +120,27 @@ export function getCurrentPriceRangeColorClass(currentPrice, goodBuyPrice, badBu
         return null;
     }
 
-    if (price < min) {
-        return 'bg-purple-500';
-    }
+    if (price < min) return 'below';
 
     const step = (max - min) / 8;
     // The 1-step gaps between bands belong to the cheaper band below them, so a
-    // price that falls in a gap still gets a tier color instead of none.
-    if (price < min + 2 * step) return 'bg-great-buy-one';
-    if (price < min + 4 * step) return 'bg-good-buy-one';
-    if (price < min + 6 * step) return 'bg-okay-buy-one';
-    if (price <= max) return 'bg-desperate-buy-one';
+    // price that falls in a gap still gets a tier instead of none.
+    if (price < min + 2 * step) return 'great';
+    if (price < min + 4 * step) return 'good';
+    if (price < min + 6 * step) return 'okay';
+    if (price <= max) return 'bad';
 
-    return null;
+    return 'above';
+}
+
+const TIER_COLOR_CLASSES = {
+    below: 'bg-purple-500',
+    great: 'bg-great-buy-one',
+    good: 'bg-good-buy-one',
+    okay: 'bg-okay-buy-one',
+    bad: 'bg-desperate-buy-one',
+};
+
+export function getCurrentPriceRangeColorClass(currentPrice, goodBuyPrice, badBuyPrice) {
+    return TIER_COLOR_CLASSES[getBuyTier(currentPrice, goodBuyPrice, badBuyPrice)] ?? null;
 }

@@ -52,6 +52,7 @@ export class FakeElement {
   setAttribute(k, v) { this.attributes[k] = v; }
   focus() {}
   select() {}
+  click() { globalThis.__onElementClick?.(this); return this.fire("click"); }
   querySelector(sel) { return this.querySelectorAll(sel)[0] ?? null; }
   querySelectorAll(sel) {
     const out = [];
@@ -139,10 +140,23 @@ export function createFakeBrowser({ ids = [], url = "http://localhost/", localSt
     setItem: (k, v) => void store.set(k, String(v)),
     removeItem: (k) => void store.delete(k),
   };
+  // lib/storage.mjs reads window.localStorage (so it can catch a sandboxed
+  // iframe's SecurityError), so the fake window needs it too.
+  globalThis.window.localStorage = globalThis.localStorage;
   setGlobal("navigator", { userAgent: "smoke-test" });
   globalThis.alert = (msg) => { nav.alerts = [...(nav.alerts ?? []), msg]; };
   globalThis.confirm = () => true;
-  globalThis.Blob = class { constructor(parts) { this.parts = parts; } };
+  globalThis.Blob = class { constructor(parts, options = {}) { this.parts = parts; this.type = options.type ?? ""; } };
+  // File downloads (blob URL + <a download>.click()) land in nav.downloads.
+  const blobs = new Map();
+  nav.downloads = [];
+  URL.createObjectURL = (blob) => { const href = `blob:fake/${blobs.size + 1}`; blobs.set(href, blob); return href; };
+  URL.revokeObjectURL = (href) => void blobs.delete(href);
+  globalThis.__onElementClick = (el) => {
+    if (el.tagName !== "A" || !el.download) return;
+    const blob = blobs.get(el.href);
+    nav.downloads.push({ filename: el.download, type: blob?.type, text: blob?.parts.join("") });
+  };
   globalThis.fetch = async () => ({ ok: true });
 
   // XMLHttpRequest backed by the scenario's `xhr(path, params)` function, which
