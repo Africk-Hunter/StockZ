@@ -6,6 +6,7 @@ import { sanitizeTicker } from '../lib/ticker.mjs';
 import { formatMarketCap } from '../lib/format.mjs';
 import { getCachedWatchList, getStorageItem } from '../lib/storage.mjs';
 import { onWatchlistChanged } from '../lib/events.mjs';
+import { getBuyTierLabel, getCurrentPriceRangeColorClass } from '../lib/watchlist-logic.mjs';
 import {
     getStockData, fetchStockInfo, fetchDividendInfo, fetchCompanyProfile, runStockCalculations
 } from '../lib/stock-service.mjs';
@@ -158,7 +159,12 @@ function renderTickerInfoPage() {
         // "Add" is clicked. Kick the stock-info fetch off now (in the
         // background) so it's likely already resolved by the time they click
         // Add, instead of blocking on it here.
+        let lifetimeStartPrice = null;
+        try {
+            lifetimeStartPrice = JSON.parse(getStorageItem('mostRecentCalculations'))?.lifetimeStartPrice ?? null;
+        } catch (e) { /* no cached calculations: the next refresh fills it in */ }
         openFolderModal(tickerToAdd, {
+            lifetimeStartPrice,
             goodBuyPrice: grBLonPage.textContent.replace('$', ''),
             badBuyPrice: bBHonPage.textContent.replace('$', ''),
             infoPromise: fetchStockInfo(tickerToAdd).catch((error) => {
@@ -176,8 +182,9 @@ function isTickerInWatchlist(ticker) {
 function setAddToWatchlistButtonState(inWatchlist) {
     if (!addToWatchlist) return;
     addToWatchlist.textContent = inWatchlist ? 'Modify Watchlist(s)' : 'Add To Watchlist';
-    addToWatchlist.classList.toggle('bg-accent-color', !inWatchlist);
-    addToWatchlist.classList.toggle('bg-secondary-color', inWatchlist);
+    // One button style: amber to add, a canopy chip once it is on a list.
+    addToWatchlist.classList.toggle('btn', !inWatchlist);
+    addToWatchlist.classList.toggle('chip', inWatchlist);
 }
 
 function loadCalculatedValues() {
@@ -197,6 +204,8 @@ function loadCalculatedValues() {
             assignValueOnScreen('bBH', calculations.badBRHigh);
             assignValueOnScreen('dipPrice', calculations.dipPrice);
             assignValueOnScreen('currentPrice', calculations.currentPrice);
+            assignMobileVerdict(calculations);
+            assignCurrentPriceTile(calculations);
             assignRangeOnScreen('mobileGreatRange', calculations.greatBRLow, calculations.greatBRHigh);
             assignRangeOnScreen('mobileGoodRange', calculations.goodBRLow, calculations.goodBRHigh);
             assignRangeOnScreen('mobileOkayRange', calculations.okayBRLow, calculations.okayBRHigh);
@@ -269,7 +278,39 @@ function assignValueOnScreen(id, value){
     }
 }
 
-// Mobile buy-range chips show a single "$low–$high" string per zone instead
+// Phone header: the current price in large type plus the verdict as a word
+// (and a tier colour), so the answer is readable without comparing numbers.
+function assignMobileVerdict(calculations) {
+    const priceEl = document.getElementById('mobileCurrentPrice');
+    const verdictEl = document.getElementById('mobileVerdict');
+    if (!priceEl || !verdictEl) return;
+    const price = calculations.currentPrice;
+    priceEl.textContent = (typeof price === 'number' && Number.isFinite(price)) ? '$' + price.toFixed(2) : 'N/A';
+    const label = getBuyTierLabel(price, calculations.greatBRLow, calculations.badBRHigh);
+    const colorClass = getCurrentPriceRangeColorClass(price, calculations.greatBRLow, calculations.badBRHigh);
+    verdictEl.textContent = label ? (label === 'Below' ? 'Below range' : label + ' buy') : '—';
+    verdictEl.className = verdictEl.className.replace(/\b(bg-\S+|text-cream|text-ink)\b/g, '').trim();
+    verdictEl.classList.add(...(colorClass ? colorClass.split(' ') : ['bg-canopy', 'text-cream']));
+}
+
+// Desktop price panel: tint the current-price tile with its buy-range colour
+// matching the band the price falls in. The colour is the signal; the tier
+// name is only a hover tooltip.
+function assignCurrentPriceTile(calculations) {
+    const tileEl = document.getElementById('currentPriceTile');
+    if (!tileEl) return;
+    const { currentPrice, greatBRLow, badBRHigh } = calculations;
+    const label = getBuyTierLabel(currentPrice, greatBRLow, badBRHigh);
+    const colorClass = getCurrentPriceRangeColorClass(currentPrice, greatBRLow, badBRHigh);
+    tileEl.title = label ? (label === 'Below' ? 'Below range' : label + ' buy') : '';
+    tileEl.className = tileEl.className.replace(/\b(bg-\S+|text-cream|text-ink)\b/g, '').trim();
+    tileEl.classList.add(...(colorClass ? colorClass.split(' ') : ['bg-canopy', 'text-cream']));
+    // On a tinted tile the captions take the tile's own text colour (ink or
+    // cream, whichever the tier picked) instead of the fixed sand.
+    tileEl.classList.toggle('is-tinted', Boolean(colorClass));
+}
+
+// Mobile buy-range rows show a single "$low–$high" string per zone instead
 // of the desktop table's separate low/high cells.
 function assignRangeOnScreen(id, low, high) {
     const el = document.getElementById(id);

@@ -158,7 +158,10 @@ export function computeBuyRanges(rawData, ticker) {
             badBRLow: badBRLow,
             badBRHigh: badBRHigh,
             dipPrice: recoveryLowPrice,
-            currentPrice: rawData[0]
+            currentPrice: rawData[0],
+            // Oldest usable close (history is most recent first): lets the
+            // watchlist flag stocks that are down over their whole lifetime.
+            lifetimeStartPrice: data[data.length - 1]
         },
         thresholdLowered
     };

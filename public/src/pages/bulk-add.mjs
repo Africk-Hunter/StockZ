@@ -60,15 +60,15 @@ function renderBulkAddFolders() {
     const folders = getCachedFolders();
 
     const heading = document.createElement('p');
-    heading.className = 'text-text-color text-opacity-60 text-sm';
+    heading.className = 'section-label';
     heading.textContent = 'Add to:';
     bulkAddFolders.appendChild(heading);
 
     const allRow = document.createElement('label');
-    allRow.className = 'flex items-center gap-2 px-2 py-2 rounded';
+    allRow.className = 'opt is-static is-disabled';
     const allCheckbox = document.createElement('input');
     allCheckbox.type = 'checkbox';
-    allCheckbox.className = 'accent-accent-color w-4 h-4 laptop:w-5 laptop:h-5 flex-shrink-0 opacity-60';
+    allCheckbox.className = 'check';
     allCheckbox.checked = true;
     allCheckbox.disabled = true;
     const allName = document.createElement('span');
@@ -80,11 +80,11 @@ function renderBulkAddFolders() {
 
     folders.forEach((folder) => {
         const row = document.createElement('label');
-        row.className = 'flex items-center gap-2 px-2 py-2 rounded hover:bg-secondary-color cursor-pointer';
+        row.className = 'opt cursor-pointer';
 
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
-        checkbox.className = 'accent-accent-color w-4 h-4 laptop:w-5 laptop:h-5 flex-shrink-0';
+        checkbox.className = 'check';
         checkbox.checked = bulkAddFolderIds.has(folder.id);
         checkbox.addEventListener('change', () => {
             if (checkbox.checked) {
@@ -154,6 +154,7 @@ async function bulkAddTickers(user, rawText) {
                 badBuyPrice: calculations.badBRHigh.toFixed(2),
                 name: info.name || null,
                 currentPrice: info.currentPrice ?? null,
+                lifetimeStartPrice: calculations.lifetimeStartPrice ?? null,
                 dividendYield: info.dividendYield || null,
                 bandsUpdatedAt: Date.now(),
                 folderIds

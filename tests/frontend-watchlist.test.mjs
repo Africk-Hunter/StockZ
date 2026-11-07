@@ -94,13 +94,13 @@ test("compareWatchlistValues", () => {
 
 test("getCurrentPriceRangeColorClass maps price to tier", () => {
   const color = (price) => fe.getCurrentPriceRangeColorClass(price, 100, 180); // step = 10
-  assert.equal(color(99), "bg-purple-500");
-  assert.equal(color(100), "bg-great-buy-one");
-  assert.equal(color(119), "bg-great-buy-one");
-  assert.equal(color(120), "bg-good-buy-one");
-  assert.equal(color(140), "bg-okay-buy-one");
-  assert.equal(color(160), "bg-desperate-buy-one");
-  assert.equal(color(180), "bg-desperate-buy-one");
+  assert.equal(color(99), "bg-orchid text-cream");
+  assert.equal(color(100), "bg-band-great-1 text-ink");
+  assert.equal(color(119), "bg-band-great-1 text-ink");
+  assert.equal(color(120), "bg-band-good-1 text-ink");
+  assert.equal(color(140), "bg-band-okay-1 text-ink");
+  assert.equal(color(160), "bg-band-bad-1 text-cream");
+  assert.equal(color(180), "bg-band-bad-1 text-cream");
   assert.equal(color(181), null);
   assert.equal(fe.getCurrentPriceRangeColorClass("x", 100, 180), null);
   assert.equal(fe.getCurrentPriceRangeColorClass(150, 180, 100), null);

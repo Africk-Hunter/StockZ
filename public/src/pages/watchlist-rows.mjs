@@ -2,7 +2,7 @@
    in-place update used by progressive refresh. */
 import { tickerPath } from '../lib/ticker.mjs';
 import { formatPrice } from '../lib/format.mjs';
-import { getCurrentPriceRangeColorClass } from '../lib/watchlist-logic.mjs';
+import { getCurrentPriceRangeColorClass, getBuyTierLabel, isLifetimeNegative } from '../lib/watchlist-logic.mjs';
 import { navigateToTicker } from '../lib/stock-service.mjs';
 import { getCachedWatchList, setCachedWatchList } from '../lib/storage.mjs';
 import { deleteFromFirebase } from '../lib/watchlist-repo.mjs';
@@ -59,17 +59,22 @@ export function updateWatchlistRowInPlace(item) {
 
 function createEmptyWatchlistCard() {
     const card = document.createElement('div');
-    card.className = 'card flex flex-col items-center gap-2 p-6 text-center';
+    card.className = 'flex flex-col items-center gap-4 bg-floor cut-md p-6 text-center';
+
+    const label = document.createElement('div');
+    label.className = 'label-tile cut-sm';
+    label.textContent = 'Nothing here';
 
     const message = document.createElement('div');
-    message.className = 'text-text-color font-semibold';
+    message.className = 'text-body';
     message.textContent = 'No stocks yet';
 
     const cta = document.createElement('a');
     cta.href = '/main';
-    cta.className = 'text-accent-color text-sm font-semibold hover:underline';
+    cta.className = 'btn';
     cta.textContent = 'Search for a ticker';
 
+    card.appendChild(label);
     card.appendChild(message);
     card.appendChild(cta);
     return card;
@@ -96,6 +101,11 @@ function openTickerFromList(ticker) {
     navigateToTicker(ticker);
 }
 
+const ICON_ATTRS = 'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" aria-hidden="true"';
+const FOLDER_SVG = `<svg class="h-[18px] w-[18px]" ${ICON_ATTRS}><path d="M3 5h7l2 3h9v12H3z"/></svg>`;
+const TRASH_SVG = `<svg class="h-[18px] w-[18px]" ${ICON_ATTRS}><path d="M4 7h16M9 7V4h6v3M6 7v13h12V7M10 11v6M14 11v6"/></svg>`;
+const ICON_CELL = 'flex min-w-0 items-center justify-center bg-canopy text-cream transition-[background-color,color] duration-hover hover:bg-cream hover:text-ink';
+
 function createStockContainerItem(item) {
     const container = document.createElement('div');
     container.className = 'stock-container';
@@ -103,43 +113,59 @@ function createStockContainerItem(item) {
 
     const stockItem = document.createElement('div');
     // Column widths (grid-cols) must stay in sync with the header row template in watchlist.html, or header/row columns drift out of alignment
-    stockItem.className = 'stock-item transition duration-150 hover:brightness-125 hover:drop-shadow-xl hover:-translate-y-0.5 grid grid-cols-[1.6fr_1fr_1fr_1fr_1fr_1.75rem_1.75rem] laptop:grid-cols-[1.6fr_1fr_1fr_1fr_1fr_2.5rem_2.5rem] w-full items-stretch min-h-7 laptop:min-h-9 text-background text-[10px] laptop:text-base desktop:text-lg desktopXL:text-xl select-none font-semibold';
+    stockItem.className = 'stock-item grid grid-cols-[1.6fr_1fr_1fr_1fr_1fr_1.75rem_1.75rem] laptop:grid-cols-[1.6fr_1fr_1fr_1fr_1fr_2.5rem_2.5rem] gap-grout bg-deep cut-sm w-full items-stretch min-h-9 text-label laptop:text-mono desktop:text-small desktopXL:text-value select-none transition-[filter] duration-hover hover:brightness-110';
 
-    const cellBaseClass = 'flex justify-center items-center text-center leading-tight px-1 py-1 select-none min-w-0 border-r border-background';
+    const cellBaseClass = 'wl-cell';
 
     // A real link (/WFC) so middle-click / ctrl-click open the ticker in a new tab.
     const nameDiv = document.createElement('a');
     nameDiv.href = tickerPath(item.ticker);
-    nameDiv.className = cellBaseClass + ' bg-text-color rounded-l hover:cursor-pointer';
+    nameDiv.className = cellBaseClass + ' wl-name cursor-pointer';
     nameDiv.textContent = item.name ? `${item.name} (${item.ticker})` : item.ticker;
     nameDiv.title = nameDiv.textContent;
 
     const priceDiv = document.createElement('div');
     const priceRangeColorClass = getCurrentPriceRangeColorClass(item.currentPrice, item.goodBuyPrice, item.badBuyPrice);
-    priceDiv.className = cellBaseClass + ' ' + (priceRangeColorClass || 'bg-secondary-color');
+    priceDiv.className = cellBaseClass + ' ' + (priceRangeColorClass || 'bg-canopy text-cream');
     priceDiv.textContent = formatPrice(item.currentPrice);
+    const tierLabel = getBuyTierLabel(item.currentPrice, item.goodBuyPrice, item.badBuyPrice);
+    if (tierLabel) {
+        // Shown through CSS (::after) so the verdict reads as a word, not just a colour.
+        priceDiv.classList.add('wl-tier');
+        priceDiv.dataset.tier = tierLabel;
+        priceDiv.title = tierLabel + ' buy';
+    }
+    if (isLifetimeNegative(item.currentPrice, item.lifetimeStartPrice)) {
+        priceDiv.classList.add('wl-net-negative');
+        priceDiv.title = (tierLabel ? tierLabel + ' buy · ' : '') + 'down over its lifetime';
+    }
 
     const gbPriceDiv = document.createElement('div');
-    gbPriceDiv.className = cellBaseClass + ' bg-great-buy-one';
+    gbPriceDiv.className = cellBaseClass + ' bg-band-great-1';
     gbPriceDiv.textContent = item.goodBuyPrice;
 
     const bbPriceDiv = document.createElement('div');
-    bbPriceDiv.className = cellBaseClass + ' bg-desperate-buy-one';
+    bbPriceDiv.className = cellBaseClass + ' bg-band-bad-1 text-cream';
     bbPriceDiv.textContent = item.badBuyPrice;
 
     const dividendDiv = document.createElement('div');
-    dividendDiv.className = cellBaseClass + ' bg-secondary-color';
+    dividendDiv.className = cellBaseClass + ' bg-canopy text-cream';
     dividendDiv.textContent = item.dividendYield || '—';
 
     const folderIcon = document.createElement('button');
-    folderIcon.className = cellBaseClass + ' group bg-secondary-color hover:bg-text-color text-text-color transition-colors duration-150';
+    folderIcon.type = 'button';
+    folderIcon.className = ICON_CELL;
     folderIcon.title = 'Add to watchlists';
-    folderIcon.innerHTML = '<svg class="h-1/2 w-1/2 laptop:h-3/5 laptop:w-3/5 group-hover:text-background" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg>';
+    folderIcon.setAttribute('aria-label', 'Add to watchlists');
+    folderIcon.innerHTML = FOLDER_SVG;
 
     const deleteIcon = document.createElement('button');
-    deleteIcon.className = 'delete-icon flex justify-center items-center text-center leading-tight px-1 py-1 select-none min-w-0 bg-secondary-color rounded-r hover:bg-text-color transition-colors duration-150';
+    deleteIcon.type = 'button';
+    deleteIcon.className = 'delete-icon ' + ICON_CELL;
     deleteIcon.id = "watchlistDeleteButton";
-    deleteIcon.innerHTML = '<img class="h-full w-4/5" src="/src/trashcan.svg" alt="Delete">';
+    deleteIcon.title = 'Remove from watchlist';
+    deleteIcon.setAttribute('aria-label', 'Delete');
+    deleteIcon.innerHTML = TRASH_SVG;
 
     folderIcon.addEventListener('click', function (event) {
         event.stopPropagation();
@@ -169,74 +195,93 @@ function createStockContainerItem(item) {
     return container;
 }
 
-// Mobile card version of createStockContainerItem() — same item shape and
-// event handlers, laid out as a stacked card instead of a table row. Shows
-// price / GB / BB / dividend yield pills.
+// Mobile version of createStockContainerItem() — same item shape and event
+// handlers. A grouped tile block (name and actions over price / GB / BB /
+// dividend yield tiles), not a card.
 function createStockCardItem(item) {
     const card = document.createElement('div');
-    card.className = 'card flex flex-col gap-3 p-4 hover:cursor-pointer transition duration-150 hover:bg-opacity-30 hover:border-opacity-50';
+    card.className = 'flex flex-col gap-grout bg-deep cut-sm cursor-pointer active:brightness-110';
+    card.tabIndex = 0;
+    card.setAttribute('role', 'button');
 
-    const topRow = document.createElement('div');
-    topRow.className = 'flex items-start justify-between gap-3';
+    // Header: name + ticker, then the two row actions as 44px-wide touch targets.
+    const header = document.createElement('div');
+    header.className = 'grid grid-cols-[1fr_2.75rem_2.75rem] gap-grout';
 
     const nameCol = document.createElement('div');
-    nameCol.className = 'flex flex-col gap-0.5 min-w-0';
+    nameCol.className = 'flex flex-col justify-center gap-0.5 min-w-0 min-h-11 bg-canopy px-3 py-2 text-cream';
     const nameEl = document.createElement('div');
-    nameEl.className = 'text-text-color font-semibold text-sm truncate';
+    nameEl.className = 'text-body font-semibold leading-tight truncate';
     nameEl.textContent = item.name || item.ticker;
     const tickerEl = document.createElement('div');
-    tickerEl.className = 'text-text-color text-opacity-60 font-semibold text-xs tracking-wide';
+    tickerEl.className = 'caps text-label tracking-caps-label text-sand';
     tickerEl.textContent = item.ticker;
     nameCol.appendChild(nameEl);
     nameCol.appendChild(tickerEl);
 
-    const actionsCol = document.createElement('div');
-    actionsCol.className = 'flex items-center gap-2 flex-shrink-0';
-    const priceEl = document.createElement('div');
-    priceEl.className = 'font-poppins font-bold text-text-color text-lg';
-    priceEl.textContent = formatPrice(item.currentPrice);
-
     const folderBtn = document.createElement('button');
     folderBtn.type = 'button';
-    folderBtn.className = 'flex items-center justify-center w-7 h-7 rounded-lg bg-secondary-color text-text-color flex-shrink-0';
+    folderBtn.className = ICON_CELL;
     folderBtn.title = 'Add to watchlists';
-    folderBtn.innerHTML = '<svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg>';
+    folderBtn.setAttribute('aria-label', 'Add to watchlists');
+    folderBtn.innerHTML = FOLDER_SVG;
 
     const deleteBtn = document.createElement('button');
     deleteBtn.type = 'button';
-    deleteBtn.className = 'flex items-center justify-center w-7 h-7 rounded-lg bg-secondary-color flex-shrink-0';
+    deleteBtn.className = ICON_CELL;
     deleteBtn.title = 'Remove from watchlist';
-    deleteBtn.innerHTML = '<img class="h-3.5 w-3.5" src="/src/trashcan.svg" alt="Delete">';
+    deleteBtn.setAttribute('aria-label', 'Delete');
+    deleteBtn.innerHTML = TRASH_SVG;
 
-    actionsCol.appendChild(priceEl);
-    actionsCol.appendChild(folderBtn);
-    actionsCol.appendChild(deleteBtn);
+    // Stat tiles: a small caption over the value, so "GB"/"BB" never stand alone.
+    const makeTile = (caption, value, colorClass, extra) => {
+        const tile = document.createElement('div');
+        tile.className = 'flex flex-col min-w-0 items-center justify-center gap-0.5 px-0.5 py-2 text-center ' + colorClass;
+        const captionEl = document.createElement('span');
+        // Inherits the tile's own text colour (ink on light tiles, cream on dark ones) so
+        // the caption keeps the same contrast as the value on every tier colour.
+        captionEl.className = 'caps text-label font-semibold tracking-caps-label text-current';
+        captionEl.textContent = caption;
+        const valueEl = document.createElement('span');
+        valueEl.className = 'max-w-full font-mono text-mono font-semibold leading-tight tabular-nums truncate';
+        valueEl.textContent = value;
+        tile.appendChild(captionEl);
+        tile.appendChild(valueEl);
+        if (extra) tile.appendChild(extra);
+        return tile;
+    };
 
-    topRow.appendChild(nameCol);
-    topRow.appendChild(actionsCol);
-
-    const pillRow = document.createElement('div');
-    pillRow.className = 'flex gap-2';
-    const currentPricePill = document.createElement('div');
     const priceRangeColorClass = getCurrentPriceRangeColorClass(item.currentPrice, item.goodBuyPrice, item.badBuyPrice);
-    currentPricePill.className = 'flex-1 text-center rounded-lg py-1.5 text-background text-xs font-bold ' + (priceRangeColorClass || 'bg-white');
-    currentPricePill.textContent = formatPrice(item.currentPrice);
-    const gbPill = document.createElement('div');
-    gbPill.className = 'flex-1 text-center rounded-lg py-1.5 bg-great-buy-one text-background text-xs font-bold';
-    gbPill.textContent = 'GB ' + item.goodBuyPrice;
-    const bbPill = document.createElement('div');
-    bbPill.className = 'flex-1 text-center rounded-lg py-1.5 bg-desperate-buy-one text-background text-xs font-bold';
-    bbPill.textContent = 'BB ' + item.badBuyPrice;
-    pillRow.appendChild(currentPricePill);
-    pillRow.appendChild(gbPill);
-    pillRow.appendChild(bbPill);
-    const divPill = document.createElement('div');
-    divPill.className = 'flex-1 text-center rounded-lg py-1.5 bg-secondary-color text-text-color text-xs font-bold';
-    divPill.textContent = 'Div ' + (item.dividendYield || '—');
-    pillRow.appendChild(divPill);
+    const tierLabel = getBuyTierLabel(item.currentPrice, item.goodBuyPrice, item.badBuyPrice);
+    let tierEl = null;
+    if (tierLabel) {
+        // The verdict reads as a word, not just a colour.
+        tierEl = document.createElement('span');
+        tierEl.className = 'caps text-label font-semibold tracking-caps-label';
+        tierEl.textContent = tierLabel;
+    }
+    const currentPricePill = makeTile('Price', formatPrice(item.currentPrice), priceRangeColorClass || 'bg-cream text-ink', tierEl);
+    if (tierLabel) currentPricePill.title = tierLabel + ' buy';
+    if (isLifetimeNegative(item.currentPrice, item.lifetimeStartPrice)) {
+        currentPricePill.classList.add('wl-net-negative');
+        currentPricePill.title = (tierLabel ? tierLabel + ' buy · ' : '') + 'down over its lifetime';
+    }
+    const gbPill = makeTile('Good', item.goodBuyPrice, 'bg-band-great-1 text-ink');
+    const bbPill = makeTile('Bad', item.badBuyPrice, 'bg-band-bad-1 text-cream');
+    const divPill = makeTile('Div', item.dividendYield || '—', 'bg-canopy text-cream');
 
-    card.appendChild(topRow);
-    card.appendChild(pillRow);
+    const tiles = document.createElement('div');
+    tiles.className = 'grid grid-cols-4 gap-grout';
+    tiles.appendChild(currentPricePill);
+    tiles.appendChild(gbPill);
+    tiles.appendChild(bbPill);
+    tiles.appendChild(divPill);
+
+    header.appendChild(nameCol);
+    header.appendChild(folderBtn);
+    header.appendChild(deleteBtn);
+    card.appendChild(header);
+    card.appendChild(tiles);
 
     folderBtn.addEventListener('click', function (event) {
         event.stopPropagation();
@@ -250,6 +295,12 @@ function createStockCardItem(item) {
 
     card.addEventListener('click', function () {
         openTickerFromList(item.ticker);
+    });
+    card.addEventListener('keydown', function (event) {
+        if (event.target === card && (event.key === 'Enter' || event.key === ' ')) {
+            event.preventDefault();
+            openTickerFromList(item.ticker);
+        }
     });
 
     return card;

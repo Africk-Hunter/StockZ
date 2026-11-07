@@ -35,9 +35,9 @@ if (watchlistItemsContainer) {
         if (refreshButton.disabled) return;
         const user = auth.currentUser;
         if (user) {
-            const refreshIcon = refreshButton.querySelector('img');
+            const refreshIcon = refreshButton.querySelector('svg');
             refreshButton.disabled = true;
-            refreshIcon.classList.add('animate-spin-reverse');
+            refreshIcon.classList.add('animate-spin');
             try {
                 const [result, folders] = await Promise.all([
                     updateWatchListValues(user),
@@ -48,7 +48,7 @@ if (watchlistItemsContainer) {
                 showRefreshStatus(result.failed);
             } finally {
                 clearStuckRefreshProgress();
-                refreshIcon.classList.remove('animate-spin-reverse');
+                refreshIcon.classList.remove('animate-spin');
                 refreshButton.disabled = false;
             }
         } else {

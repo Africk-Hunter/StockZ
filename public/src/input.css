@@ -2,76 +2,325 @@
 @tailwind components;
 @tailwind utilities;
 
-@keyframes spin-reverse {
-    from {
-        transform: rotate(360deg);
-    }
-    to {
-        transform: rotate(0deg);
-    }
-}
+/* Understory. Tokens live in tailwind.config.js. This file holds the shared
+   primitives (tile, group, button, chip, field, modal) and the state classes
+   the page scripts toggle. Rules outside @layer come after the utilities on
+   purpose: the morph/state classes must beat the per-element size utilities. */
 
-.animate-spin-reverse {
-    animation: spin-reverse 1s linear infinite;
-}
-
-/* Shared UI primitives. Keep modal/button/input styling here so every page
-   (and the JS-generated markup in javascript.mjs) stays visually consistent. */
 @layer base {
+    html {
+        background-color: theme('colors.deep');
+    }
+    body {
+        background-color: theme('colors.deep');
+        color: theme('colors.cream');
+        font-family: theme('fontFamily.body');
+        font-size: 16px;
+        font-weight: 500; /* Barlow 400 is thin on dark green; 500 is loaded */
+        -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3, h4, p { margin: 0; }
+    button { -webkit-tap-highlight-color: transparent; font: inherit; }
+    /* Focus is an inset ring: clip-path would clip an outline or outside ring. */
     :focus-visible {
-        outline: 2px solid #44B735;
-        outline-offset: 2px;
-    }
-    input:focus-visible,
-    textarea:focus-visible {
         outline: none;
+        box-shadow: theme('boxShadow.ring');
     }
-    button {
-        -webkit-tap-highlight-color: transparent;
-    }
+    a { color: theme('colors.lime'); }
+    ::placeholder { color: rgba(242, 236, 210, .7); opacity: 1; }
+    select { font: inherit; }
+    option { background-color: theme('colors.canopy'); color: theme('colors.cream'); }
 }
 
 @layer components {
+    /* ---- tiles: flat, opaque, butted together with 2px of grout ---- */
+    .tile-group {
+        @apply flex gap-grout bg-deep cut-md;
+    }
+    .tile-group > * { @apply min-w-0; }
+    .label-tile {
+        @apply caps flex items-center justify-center bg-canopy px-3 py-2 text-center text-label tracking-caps-label text-cream;
+    }
+    .value-tile {
+        @apply flex items-center justify-center bg-cream px-3 py-2 text-center font-mono font-semibold tabular-nums text-ink;
+    }
+    /* Rows of the combined price/info panel: label left, value right. */
+    .info-row {
+        @apply flex flex-1 items-center justify-between gap-3 bg-canopy px-4 py-3 min-h-11;
+    }
+    .info-label {
+        @apply caps text-label tracking-caps-label text-sand;
+    }
+    .info-value {
+        @apply min-w-0 truncate text-right font-mono font-semibold tabular-nums text-small text-cream desktop:text-value;
+    }
+    .is-tinted .tile-caption { color: inherit; }
+    .section-label {
+        @apply caps text-label tracking-caps-label text-sand;
+    }
+
+    /* A cut element with a thin coloured edge: the element is the edge colour,
+       ::before is the fill. Size comes from --k (cut) and --edge (edge width). */
+    .edged {
+        --k: 16px;
+        --edge: 1px;
+        --fill: theme('colors.floor');
+        @apply relative isolate bg-hairline;
+        clip-path: polygon(var(--k) 0, 100% 0, 100% calc(100% - var(--k)), calc(100% - var(--k)) 100%, 0 100%, 0 var(--k));
+    }
+    .edged::before {
+        content: '';
+        position: absolute;
+        inset: var(--edge);
+        z-index: -1;
+        background: var(--fill);
+        clip-path: polygon(calc(var(--k) - var(--edge) * .41) 0, 100% 0, 100% calc(100% - var(--k) + var(--edge) * .41), calc(100% - var(--k) + var(--edge) * .41) 100%, 0 100%, 0 calc(var(--k) - var(--edge) * .41));
+    }
+
+    /* ---- the one button: amber, ink caps, bark plate on the right and bottom ---- */
+    .btn {
+        @apply caps cut-sm inline-flex items-center justify-center border-0 border-b-[3px] border-r-[3px] border-solid border-bark bg-amber px-5 py-3 text-label tracking-caps-label text-ink transition-[background-color,border-width,transform] duration-hover ease-understory disabled:cursor-not-allowed disabled:opacity-40;
+    }
+    .btn:hover:not(:disabled) { background-color: theme('colors.butter'); }
+    .btn:active:not(:disabled) {
+        transform: translate(2px, 2px);
+        border-right-width: 1px;
+        border-bottom-width: 1px;
+        transition-duration: 120ms;
+    }
+
+    /* ---- secondary choices, selectors, tabs, ranges: canopy chips ---- */
+    .chip {
+        @apply caps cut-sm inline-flex items-center justify-center gap-2 border-0 border-b-[3px] border-r-[3px] border-solid border-plate bg-moss px-4 py-2 text-label tracking-caps-label text-cream transition-[background-color,color,border-width,transform] duration-hover ease-understory disabled:cursor-not-allowed disabled:opacity-40;
+    }
+    .chip:hover:not(:disabled) { background-color: theme('colors.cream'); color: theme('colors.ink'); }
+    .chip:active:not(:disabled) {
+        transform: translate(2px, 2px);
+        border-right-width: 1px;
+        border-bottom-width: 1px;
+        transition-duration: 120ms;
+    }
+    .chip.is-on, .chip[aria-pressed="true"] {
+        background-color: theme('colors.cream');
+        color: theme('colors.ink');
+        box-shadow: theme('boxShadow.underline-lime');
+    }
+    .chip.is-on:focus-visible, .chip[aria-pressed="true"]:focus-visible { box-shadow: theme('boxShadow.ring'); }
+    .chip-icon { @apply h-9 w-9 px-0 py-0; }
+
+    /* ---- fields ---- */
+    .field {
+        @apply cut-sm w-full bg-floor px-4 py-3 font-body text-body text-cream shadow-underline-hairline outline-none transition-shadow duration-hover disabled:opacity-40;
+    }
+    .field:focus { box-shadow: theme('boxShadow.ring'); }
+    .field.is-error, .field.is-error:focus { box-shadow: theme('boxShadow.underline-ember'); color: theme('colors.ember'); }
+    .field-error-text { @apply font-body text-small text-ember; }
+
+    /* ---- modals ---- */
     .modal-overlay {
-        @apply fixed inset-0 z-30 flex items-center justify-center bg-black bg-opacity-60 px-4;
+        @apply fixed inset-0 z-30 flex items-center justify-center bg-scrim px-4;
     }
     .modal-panel {
-        @apply flex w-full max-w-xs flex-col gap-3 rounded-lg border border-text-color border-opacity-25 bg-background p-4 text-text-color laptop:max-w-md laptop:p-6;
+        --fill: theme('colors.floor');
+        @apply edged flex max-h-[90vh] w-full max-w-xs flex-col gap-4 overflow-y-auto p-4 text-cream laptop:max-w-md laptop:p-6 desktop:max-w-xl desktop:gap-5 desktop:p-8 desktopXL:max-w-2xl;
     }
     .modal-title {
-        @apply truncate pr-2 text-lg font-semibold laptop:text-xl;
-    }
-    .modal-close {
-        @apply flex-shrink-0 text-2xl leading-none text-text-color transition-colors duration-150 hover:text-accent-color;
+        @apply caps caps-wide pr-2 text-h3 tracking-caps-title;
     }
     .modal-text {
-        @apply text-sm text-text-color text-opacity-80 laptop:text-base;
+        @apply font-body text-small text-sand laptop:text-body;
     }
 
-    .btn {
-        @apply flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-150 ease-in-out active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 laptop:text-base;
+    /* ---- status / feedback: a state-word label tile beside a message value tile ---- */
+    .status {
+        @apply cut-sm flex min-h-10 items-center gap-3 bg-cream py-1 pr-3 text-left font-body text-small font-medium text-ink;
     }
-    .btn-primary {
-        @apply btn bg-accent-color text-background hover:opacity-90;
+    .status::before {
+        content: attr(data-state);
+        border-right: 2px solid theme('colors.deep');
+        @apply caps flex flex-shrink-0 items-center self-stretch bg-canopy px-3 text-label tracking-caps-label text-cream;
     }
-    .btn-secondary {
-        @apply btn bg-secondary-color text-text-color hover:bg-text-color hover:text-background;
-    }
-    .btn-danger {
-        @apply btn bg-desperate-buy-one text-background hover:opacity-90;
-    }
-    .btn-ghost {
-        @apply btn bg-transparent text-text-color text-opacity-70 hover:text-opacity-100;
-    }
+    .status.is-warning::before { @apply bg-ember text-ink; }
+    .status.is-success::before { @apply bg-lime text-ink; }
 
-    .input-field {
-        @apply w-full rounded-lg bg-secondary-color bg-opacity-30 px-3 py-2 text-sm text-text-color placeholder-text-color placeholder-opacity-50 outline-none transition-shadow duration-150 focus:ring-2 focus:ring-accent-color laptop:text-base;
+    /* ---- navigation ---- */
+    .navlink {
+        @apply caps py-2 text-small tracking-caps-label text-cream transition-[color] duration-hover hover:text-lime laptop:text-body;
     }
+    .navlink.is-on { @apply text-lime; box-shadow: inset 0 -2px 0 theme('colors.lime'); }
+    .navlink.is-on:focus-visible { box-shadow: theme('boxShadow.ring'); }
+    /* keep the fixed bottom bar pinned while mobile browser chrome collapses on scroll */
+    nav.fixed { transform: translateZ(0); }
+    .tab {
+        @apply caps flex flex-1 flex-col items-center gap-1 pt-3 text-label tracking-caps-label text-sand transition-[color] duration-hover hover:text-lime;
+        /* clears the iPhone home indicator (needs viewport-fit=cover); 1.25rem elsewhere */
+        padding-bottom: max(1.25rem, calc(env(safe-area-inset-bottom) + .5rem));
+        box-shadow: inset 0 2px 0 transparent;
+    }
+    /* sits just above the fixed bottom tab bar (≈50px of content + the .tab bottom padding) */
+    .above-tab { bottom: calc(50px + max(1.25rem, calc(env(safe-area-inset-bottom) + .5rem)) + .75rem); }
+    .tab.is-on { @apply text-lime; box-shadow: inset 0 2px 0 theme('colors.lime'); }
+    .tab.is-on:focus-visible { box-shadow: theme('boxShadow.ring'); }
+    .icon { @apply h-[18px] w-[18px] flex-shrink-0; }
 
-    .section-label {
-        @apply text-xs font-bold uppercase tracking-wide text-text-color text-opacity-60;
+    /* ---- watchlist table cells ---- */
+    .wl-cell {
+        @apply flex min-w-0 items-center justify-center px-1 py-1 text-center font-mono font-semibold leading-tight tabular-nums text-ink;
     }
-    .card {
-        @apply rounded-lg border border-text-color border-opacity-25 bg-secondary-color bg-opacity-20;
+    .wl-name { @apply bg-cream font-body; }
+    /* Down over its whole lifetime: the buy-tier colour cross-fades into wine on the right half. */
+    .wl-net-negative {
+        background-image: linear-gradient(90deg, transparent 70%, rgba(122, 20, 80, 0.9) 100%);
     }
+    /* Option rows: stacked canopy tiles that invert on hover (menus, pickers, trees). */
+    .opt {
+        @apply flex items-center gap-2 border-0 border-l-[3px] border-solid border-plate bg-moss px-3 py-2 text-left text-small desktop:text-body desktop:px-4 desktop:py-3 text-cream transition-[background-color,color] duration-hover;
+    }
+    .opt:hover:not(.is-static) { background-color: theme('colors.cream'); color: theme('colors.ink'); }
+    .opt.is-on { background-color: theme('colors.cream'); color: theme('colors.ink'); border-color: theme('colors.lime'); box-shadow: theme('boxShadow.underline-lime'); }
+    .opt.is-on:focus-visible { box-shadow: theme('boxShadow.ring'); }
+    .opt:disabled, .opt.is-disabled { @apply opacity-40; }
+    .skeleton { @apply animate-skeleton bg-canopy; }
 }
+
+/* ---- page transitions (class names are toggled by the page scripts) ---- */
+.fade-in { animation: fade 120ms ease-out both; }
+.fade-in-slow { animation: fade 500ms ease-out both; }
+/* ticker-info page: the ticker box stays put (it is the continuation of the one on /main); everything after it fades in */
+.fade-in-rest > #tickerLabelIP ~ * { animation: fade 200ms ease-out both; }
+.fadeAway { animation: fadeout 200ms ease-in-out forwards; }
+.fadeAwayFast { animation: fadeout 90ms ease-out forwards; }
+
+/* ---- the ticker box and its morph ---- */
+#tickerParentBox, #tickerLabelIP {
+    --k: 32px;
+    --edge: 3px;
+    --fill: theme('colors.deep');
+    transition: width 500ms cubic-bezier(.2,.7,.2,1), height 500ms cubic-bezier(.2,.7,.2,1), margin 500ms cubic-bezier(.2,.7,.2,1), background-color 150ms, clip-path 500ms cubic-bezier(.2,.7,.2,1);
+}
+#tickerParentBox::before, #tickerLabelIP::before {
+    transition: clip-path 500ms cubic-bezier(.2,.7,.2,1);
+}
+#tickerParentBox, #tickerLabelIP { background-color: rgba(242, 236, 210, .5); }
+#tickerParentBox:focus-within { background-color: theme('colors.lime'); box-shadow: none; }
+#tickerParentBox.moveUpBox, #tickerLabelIP { --k: 8px; }
+#tickerLabelIP.moveDownBox { --k: 32px; }
+#mainTickerInput { font-family: theme('fontFamily.display'); letter-spacing: .06em; box-shadow: none; }
+#mainTickerInput:focus-visible { box-shadow: none; }
+#mainTickerInput.invalid-ticker { color: theme('colors.ember'); }
+#tickerParentBox:has(.invalid-ticker) { background-color: theme('colors.ember'); }
+
+#tickerParentBox.moveUpBox {
+    margin-top: 0;
+    height: 4rem;
+    min-height: 0;
+    width: calc((100% - 3rem) / 2); /* = the ticker-info label: w-3/6 of main minus its px-6 */
+    min-width: 0;
+}
+@media (min-width: 1024px) {
+    #tickerParentBox.moveUpBox { width: 13rem; }
+}
+#tickerParentBox #mainTickerInput { min-width: 0; transition: font-size 500ms cubic-bezier(.2,.7,.2,1), line-height 500ms cubic-bezier(.2,.7,.2,1); }
+.moveDownBox {
+    margin-top: 6rem;
+    height: 33.3333%;
+    width: 40%;
+}
+/* same type as the ticker-info label (text-h2, then text-wordmark at laptop) */
+#mainTickerInput.sizeText {
+    font-size: 30px;
+    line-height: 1.15;
+}
+@media (min-width: 1024px) {
+    #mainTickerInput.sizeText { font-size: 36px; line-height: 1; }
+}
+
+/* ---- chart frame ---- */
+.innerChart {
+    background-color: theme('colors.floor');
+    clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+    padding: 8px;
+    margin-bottom: 1.25rem;
+}
+canvas { color: theme('colors.cream'); }
+@media (max-width: 767px) {
+    .innerChart {
+        height: 260px;
+        display: flex;
+        align-items: stretch;
+        margin: 1.25rem 0;
+    }
+    canvas { flex: 1; }
+}
+@media (min-width: 992px) {
+    /* no bottom margin here: the stats panel stretches to the chart's bottom edge */
+    .innerChart { min-width: 100%; height: clamp(300px, 380px, 900px); margin-bottom: 0; }
+}
+@media (min-width: 1500px) {
+    .innerChart { min-width: 100%; height: clamp(300px, 475px, 900px); }
+}
+@media (min-width: 2560px) {
+    .innerChart { min-width: 100%; height: clamp(300px, 600px, 1000px); }
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
+.spinner {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 9999px;
+    animation: spin 1400ms linear infinite;
+}
+
+/* ---- reduced motion: no fades, arrivals, morph, pulse or press ---- */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 1ms !important;
+        animation-delay: 0ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 1ms !important;
+    }
+    .btn:active, .chip:active { transform: none !important; }
+}
+
+/* ---- checkbox and radio: an 18px canopy tile; checked is cream with an ink mark and lime underline ---- */
+.check {
+    appearance: none;
+    -webkit-appearance: none;
+    position: relative;
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    background-color: theme('colors.canopy');
+    cursor: pointer;
+}
+.check:checked {
+    background-color: theme('colors.cream');
+    box-shadow: theme('boxShadow.underline-lime');
+}
+.check:checked::after {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 2px;
+    width: 5px;
+    height: 10px;
+    border: solid theme('colors.ink');
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+.check[type="radio"]:checked::after {
+    left: 5px;
+    top: 5px;
+    width: 8px;
+    height: 8px;
+    border: 0;
+    background-color: theme('colors.ink');
+    transform: none;
+}
+.check:focus-visible { box-shadow: theme('boxShadow.ring'); }

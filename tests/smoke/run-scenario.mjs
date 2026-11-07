@@ -63,7 +63,7 @@ function watchlistBrowser(extra = {}) {
     xhr: backend,
     ...extra,
   });
-  browser.elements.get("refreshButton").appendChild(new FakeElement("img"));
+  browser.elements.get("refreshButton").appendChild(new FakeElement("svg"));
   browser.elements.get("mobileSortDir").appendChild(new FakeElement("svg"));
   return browser;
 }
@@ -78,7 +78,7 @@ const scenarios = {
     user.value = "me@example.com"; pass.value = "wrong";
     await enter.fire("click");
     assert.deepEqual(browser.nav.alerts, ["Incorrect email or password. Please try again."]);
-    assert.equal(user.style.background, "red");
+    assert.equal(user.hasClass("is-error"), true);
 
     pass.value = "right";
     await enter.fire("click");

@@ -2,26 +2,27 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>StockZ</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Michroma&family=Barlow:wght@400;500;600&family=Azeret+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/src/output.css">
-    <link rel="stylesheet" href="/src/style.css">
     <link rel="icon" type="image/x-icon" href="/src/favicon.ico">
 </head>
-<body class="overflow-hidden bg-background w-screen h-screen">
+<body class="overflow-hidden bg-deep text-cream w-screen h-screen">
 
-<div class="flex flex-col justify-center items-center font-poppins bg-background h-screen fade-in">
+<div class="flex flex-col justify-center items-center font-body bg-deep h-screen fade-in px-4">
 
-    <!-- <div id="stockZ" class="flex bg-transparent mb-10 md:text-9xl text-2xl font-semibold justify-center gap-6"> -->
-    <div id="stockZ" class="flex bg-transparent font-semibold justify-center text-6xl laptop:text-9xl laptop:gap-6 gap-2 mb-10">
-        <span class="text-text-color select-none">STOCK</span> <span class="text-accent-color select-none">Z</span>
+    <div id="stockZ" class="caps caps-wide flex justify-center text-h2 laptop:text-display tracking-caps-display gap-3 laptop:gap-6 mb-12 select-none">
+        <span class="text-cream">STOCK</span> <span class="text-lime">Z</span>
     </div>
-    <div class="flex flex-col laptop:flex-row gap-3 text-1xl laptop:gap-6 laptop:mb-6">
-        <input type="text" name="username" id="inputUsername" class="bg-text-color flex rounded-lg text-background placeholder-background placeholder-opacity-50 py-2 px-3 w-64 laptop:w-48 outline-none focus:ring-2 focus:ring-accent-color transition-shadow duration-150" placeholder="Username" autocomplete="username">
-        <input type="password" name="password" id="inputPassword" class="bg-text-color flex rounded-lg text-background placeholder-background placeholder-opacity-50 py-2 px-3 w-64 laptop:w-48 outline-none focus:ring-2 focus:ring-accent-color transition-shadow duration-150" placeholder="Password" autocomplete="current-password">
+    <div class="flex flex-col laptop:flex-row gap-2 laptop:gap-6">
+        <input type="text" name="username" id="inputUsername" class="field w-64 laptop:w-56" placeholder="Username" aria-label="Username" autocomplete="username">
+        <input type="password" name="password" id="inputPassword" class="field w-64 laptop:w-56" placeholder="Password" aria-label="Password" autocomplete="current-password">
     </div>
-    <form id="enterButton" class="bg-text-color flex hover:cursor-pointer laptop:w-40 laptop:mb-32 rounded-lg text-background justify-center items-center hover:bg-accent-color hover:scale-105 active:scale-95 transition-all duration-300 ease-in-out w-64 h-10 mt-3 laptop:mt-0 font-semibold">Enter</form>
+    <p id="loginError" role="alert" class="field-error-text hidden mt-4 text-center"></p>
+    <button type="button" id="enterButton" class="btn w-64 laptop:w-40 h-12 mt-6 laptop:mt-12">Enter</button>
 </div>
 
 <script type="module" src="/src/javascript.mjs">

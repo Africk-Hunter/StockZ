@@ -8,10 +8,17 @@ const tickerParentBox       = document.getElementById("tickerParentBox");
 const mainTickerInput       = document.getElementById("mainTickerInput");
 const tickerSubmitBtn       = document.getElementById("tickerSubmitBtn");
 
+// Invalid state: ember text on the input plus a sentence saying what is wrong.
+function setInvalid(on) {
+    mainTickerInput.classList.toggle('invalid-ticker', on);
+    const message = document.getElementById('tickerError');
+    if (message) message.classList.toggle('hidden', !on);
+}
+
 if (tickerParentBox) {
     renderMobileSearchSuggestions();
     mainTickerInput.addEventListener('input', function(){
-        mainTickerInput.classList.remove('invalid-ticker');
+        setInvalid(false);
         if(mainTickerInput.value != ""){
             tickerSubmitBtn.style.display = 'flex';
         } else{
@@ -57,29 +64,38 @@ function renderMobileSearchSuggestions() {
 
 function createSearchResultRow(item) {
     const row = document.createElement('div');
-    row.className = 'card flex items-center justify-between gap-3 px-4 py-3 hover:cursor-pointer transition duration-150 hover:bg-opacity-30 hover:border-opacity-50';
+    row.className = 'group tile-group cut-sm cursor-pointer';
+    row.tabIndex = 0;
+    row.setAttribute('role', 'button');
 
     const left = document.createElement('div');
-    left.className = 'flex flex-col gap-0.5 min-w-0';
+    left.className = 'flex flex-col gap-1 min-w-0 flex-1 bg-canopy px-4 py-3 transition-[background-color,color] duration-hover group-hover:bg-cream group-hover:text-ink';
     const symbolEl = document.createElement('div');
-    symbolEl.className = 'text-text-color font-bold text-sm';
+    symbolEl.className = 'caps text-small tracking-caps-label';
     symbolEl.textContent = item.ticker;
     const nameEl = document.createElement('div');
-    nameEl.className = 'text-text-color text-opacity-60 text-xs truncate';
+    nameEl.className = 'text-small truncate text-sand';
     nameEl.textContent = item.name || '';
     left.appendChild(symbolEl);
     left.appendChild(nameEl);
 
     const priceEl = document.createElement('div');
-    priceEl.className = 'font-poppins font-bold text-text-color text-sm flex-shrink-0';
+    priceEl.className = 'value-tile w-28 flex-shrink-0 text-small';
     priceEl.textContent = formatPrice(item.currentPrice);
 
     row.appendChild(left);
     row.appendChild(priceEl);
 
-    row.addEventListener('click', function () {
+    const open = function () {
         document.querySelector('main').classList.add('fadeAway');
         navigateToTicker(item.ticker);
+    };
+    row.addEventListener('click', open);
+    row.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            open();
+        }
     });
 
     return row;
@@ -88,7 +104,7 @@ function createSearchResultRow(item) {
 function tickerSubmit(){
     const ticker = sanitizeTicker(mainTickerInput.value);
     if (!ticker) {
-        mainTickerInput.classList.add('invalid-ticker');
+        setInvalid(true);
         return;
     }
     tickerSubmitBtn.style.display = 'none';
@@ -102,7 +118,7 @@ function tickerSubmit(){
             tickerSubmitBtn.style.display = 'flex';
             mainTickerInput.classList.remove("sizeText");
             tickerParentBox.classList.remove("moveUpBox");
-            mainTickerInput.classList.add('invalid-ticker');
+            setInvalid(true);
         }
     });
 }

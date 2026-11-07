@@ -21,6 +21,7 @@ export async function fetchWatchlistItems(uid) {
                 badBuyPrice: data.badBuyPrice,
                 name: data.name || null,
                 currentPrice: data.currentPrice ?? null,
+                lifetimeStartPrice: data.lifetimeStartPrice ?? null,
                 dividendYield: data.dividendYield || null,
                 bandsUpdatedAt: data.bandsUpdatedAt ?? null,
                 folderIds: Array.isArray(data.folderIds) ? data.folderIds : []
@@ -159,6 +160,7 @@ export async function updateWatchlistItemValues(uid, items) {
             badBuyPrice: updatedItem.badBuyPrice,
             name: updatedItem.name,
             currentPrice: updatedItem.currentPrice,
+            lifetimeStartPrice: updatedItem.lifetimeStartPrice ?? null,
             dividendYield: updatedItem.dividendYield,
             bandsUpdatedAt: updatedItem.bandsUpdatedAt ?? null
         });

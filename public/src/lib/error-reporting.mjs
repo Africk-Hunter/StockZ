@@ -118,14 +118,14 @@ function initBugReportWidget() {
         <div class="modal-panel">
             <div class="flex justify-between items-center">
                 <h2 class="modal-title">Report a Problem</h2>
-                <button type="button" data-bug-report-close class="modal-close">&times;</button>
+                <button type="button" data-bug-report-close class="chip chip-icon flex-shrink-0 text-body" aria-label="Close">&times;</button>
             </div>
-            <p class="text-xs laptop:text-sm text-text-color text-opacity-70">Tell me what happened — recent technical details from your session will be included automatically so I can look into it.</p>
-            <textarea data-bug-report-description rows="4" maxlength="1000" placeholder="What were you doing when something went wrong? (optional)" class="input-field resize-none"></textarea>
-            <div data-bug-report-status class="text-xs laptop:text-sm hidden"></div>
+            <p class="modal-text">Tell me what happened — recent technical details from your session will be included automatically so I can look into it.</p>
+            <textarea data-bug-report-description rows="4" maxlength="1000" placeholder="What were you doing when something went wrong? (optional)" class="field resize-none"></textarea>
+            <div data-bug-report-status class="text-small hidden"></div>
             <div class="flex justify-end gap-2">
-                <button type="button" data-bug-report-cancel class="btn-ghost">Cancel</button>
-                <button type="button" data-bug-report-send class="btn-primary">Send Report</button>
+                <button type="button" data-bug-report-cancel class="chip">Cancel</button>
+                <button type="button" data-bug-report-send class="btn">Send Report</button>
             </div>
         </div>
     `;
@@ -169,11 +169,11 @@ function initBugReportWidget() {
             });
             if (!response.ok) throw new Error(`Report failed with status ${response.status}`);
             statusEl.textContent = 'Thanks — your report was sent.';
-            statusEl.className = 'text-xs laptop:text-sm text-accent-color';
+            statusEl.className = 'text-small text-lime';
             setTimeout(closeModal, 1500);
         } catch (error) {
             statusEl.textContent = "Couldn't send automatically — please email gamehunter5879@gmail.com directly.";
-            statusEl.className = 'text-xs laptop:text-sm text-desperate-buy-one';
+            statusEl.className = 'text-small text-ember';
         } finally {
             sendBtn.disabled = false;
             sendBtn.textContent = 'Send Report';

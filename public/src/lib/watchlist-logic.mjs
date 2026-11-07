@@ -133,13 +133,32 @@ export function getBuyTier(currentPrice, goodBuyPrice, badBuyPrice) {
     return 'above';
 }
 
+// Tile fill plus the text colour that stays readable on it (cream on the dark
+// bad and orchid tiles, ink on the light ones).
 const TIER_COLOR_CLASSES = {
-    below: 'bg-purple-500',
-    great: 'bg-great-buy-one',
-    good: 'bg-good-buy-one',
-    okay: 'bg-okay-buy-one',
-    bad: 'bg-desperate-buy-one',
+    below: 'bg-orchid text-cream',
+    great: 'bg-band-great-1 text-ink',
+    good: 'bg-band-good-1 text-ink',
+    okay: 'bg-band-okay-1 text-ink',
+    bad: 'bg-band-bad-1 text-cream',
 };
+
+// The verdict as a word, so colour is never the only signal.
+const TIER_LABELS = { below: 'Below', great: 'Great', good: 'Good', okay: 'Okay', bad: 'Bad' };
+
+export function getBuyTierLabel(currentPrice, goodBuyPrice, badBuyPrice) {
+    return TIER_LABELS[getBuyTier(currentPrice, goodBuyPrice, badBuyPrice)] ?? null;
+}
+
+// True when the stock is down over its whole history (current close below its
+// oldest close). Missing/invalid data is never flagged.
+export function isLifetimeNegative(currentPrice, lifetimeStartPrice) {
+    if (currentPrice === null || currentPrice === undefined || currentPrice === '') return false;
+    if (lifetimeStartPrice === null || lifetimeStartPrice === undefined || lifetimeStartPrice === '') return false;
+    const price = Number(currentPrice);
+    const start = Number(lifetimeStartPrice);
+    return Number.isFinite(price) && Number.isFinite(start) && start > 0 && price < start;
+}
 
 export function getCurrentPriceRangeColorClass(currentPrice, goodBuyPrice, badBuyPrice) {
     return TIER_COLOR_CLASSES[getBuyTier(currentPrice, goodBuyPrice, badBuyPrice)] ?? null;

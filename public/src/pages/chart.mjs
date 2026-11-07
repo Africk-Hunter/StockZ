@@ -1,6 +1,11 @@
 /* Ticker Info price-history chart (Chart.js is loaded from a CDN by tickerInfo.html). */
 const chartRangeButtons = document.getElementById("chartRangeButtons");
 
+// Chart.js draws on a canvas, so it cannot read the Tailwind theme; these
+// mirror the Understory tokens.
+const CHART_COLORS = { lime: '#9BCB5E', ember: '#D9744A', cream: '#F2ECD2', floor: '#1A3526', canopy: '#24432F' };
+const CHART_FONT = "'Azeret Mono', ui-monospace, monospace";
+
 const CHART_RANGE_OPTIONS = [
     { label: '1Y', months: 12 },
     { label: '5Y', months: 60 },
@@ -12,23 +17,20 @@ function initChartRangeButtons(onRangeChange) {
     if (!chartRangeButtons) return;
     chartRangeButtons.innerHTML = '';
 
-    const activeClasses = ['bg-text-color', 'text-background'];
-    const inactiveClasses = ['bg-secondary-color', 'text-text-color'];
-
     CHART_RANGE_OPTIONS.forEach((option) => {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.textContent = option.label;
-        btn.className = 'px-3 py-1 rounded-lg text-sm laptop:text-base desktopXL:text-xl font-medium transition-all duration-150 ease-in-out hover:-translate-y-0.5 active:scale-95';
-        btn.classList.add(...(option.months === 'all' ? activeClasses : inactiveClasses));
+        btn.className = 'chip h-11 min-w-0 text-small laptop:h-auto laptop:text-small desktop:text-body' + (option.months === 'all' ? ' is-on' : '');
+        btn.setAttribute('aria-pressed', option.months === 'all' ? 'true' : 'false');
 
         btn.addEventListener('click', function() {
             chartRangeButtons.querySelectorAll('button').forEach((b) => {
-                b.classList.remove(...activeClasses);
-                b.classList.add(...inactiveClasses);
+                b.classList.remove('is-on');
+                b.setAttribute('aria-pressed', 'false');
             });
-            btn.classList.remove(...inactiveClasses);
-            btn.classList.add(...activeClasses);
+            btn.classList.add('is-on');
+            btn.setAttribute('aria-pressed', 'true');
             onRangeChange(option.months);
         });
 
@@ -62,12 +64,42 @@ export function createStockChart(stockData) {
 
     function colorsForPrices(rangePrices) {
         let rising = rangePrices.length < 2 || rangePrices[rangePrices.length - 1] >= rangePrices[0];
+        // Lime when rising, ember when falling; fill is the line colour at 18%.
         return rising
-            ? { line: 'rgb(3, 172, 19)', fill: 'rgba(3, 172, 19, 0.2)' }
-            : { line: 'rgb(255, 99, 132)', fill: 'rgba(255, 99, 132, 0.2)' };
+            ? { line: CHART_COLORS.lime, fill: 'rgba(155, 203, 94, 0.18)' }
+            : { line: CHART_COLORS.ember, fill: 'rgba(217, 116, 74, 0.18)' };
+    }
+
+    // Direction is also stated in words: a sign and an arrow beside the range buttons.
+    // The period is spelled out ("over 5 years", "over its lifetime") so the
+    // percentage is never ambiguous. A range longer than the stock's history
+    // is the lifetime too, not a false "10 years".
+    function describePeriod(months, pointCount) {
+        if (months === 'all' || pointCount < months) return 'over its lifetime';
+        if (months % 12 === 0) {
+            const years = months / 12;
+            return years === 1 ? 'over 1 year' : `over ${years} years`;
+        }
+        return `over ${months} months`;
+    }
+
+    function showDelta(rangePrices, months) {
+        const el = document.getElementById('chartDelta');
+        if (!el || rangePrices.length < 2) {
+            if (el) el.classList.add('hidden');
+            return;
+        }
+        const first = rangePrices[0];
+        const last = rangePrices[rangePrices.length - 1];
+        const pct = first ? ((last - first) / first) * 100 : 0;
+        const tone = pct > 0 ? 'bg-lime text-ink' : pct < 0 ? 'bg-ember text-ink' : 'bg-canopy text-cream';
+        const arrow = pct > 0 ? '▲' : pct < 0 ? '▼' : '▬';
+        el.className = 'cut-sm px-3 py-2 font-mono text-body font-semibold tabular-nums whitespace-nowrap self-start laptop:self-auto ' + tone;
+        el.textContent = `${arrow} ${pct > 0 ? '+' : ''}${pct.toFixed(2)}% ${describePeriod(months, rangePrices.length)}`;
     }
 
     let initialRange = sliceForRange('all');
+    showDelta(initialRange.prices, 'all');
     let initialColors = colorsForPrices(initialRange.prices);
 
     const crosshairPlugin = {
@@ -84,11 +116,17 @@ export function createStockChart(stockData) {
             chartCtx.lineTo(x, area.bottom);
             chartCtx.lineWidth = 1;
             chartCtx.setLineDash([4, 4]);
-            chartCtx.strokeStyle = 'rgba(228, 236, 228, 0.4)';
+            chartCtx.strokeStyle = 'rgba(242, 236, 210, 0.4)';
             chartCtx.stroke();
             chartCtx.restore();
         }
     };
+
+    if (Chart.defaults) {
+        Chart.defaults.color = CHART_COLORS.cream;
+        Chart.defaults.font.family = CHART_FONT;
+        Chart.defaults.borderColor = 'rgba(242, 236, 210, 0.22)';
+    }
 
     var stockChart = new Chart(ctx, {
         type: 'line',
@@ -106,7 +144,7 @@ export function createStockChart(stockData) {
                 pointHitRadius: 8,
                 pointHoverRadius: 4,
                 pointHoverBackgroundColor: initialColors.line,
-                pointHoverBorderColor: '#E4ECE4',
+                pointHoverBorderColor: CHART_COLORS.cream,
                 pointHoverBorderWidth: 1,
             }]
         },
@@ -156,18 +194,14 @@ export function createStockChart(stockData) {
                     ticks: {
                         maxTicksLimit: getMaxTicksLimit(), // Maximum number of ticks dynamically
                         callback: function(value, index, ticks) {
-                            let screenWidth = window.innerWidth;
-                            if (screenWidth < 640) {
-                                return (index % 2 === 0) ? this.getLabelForValue(value) : '';
-                            }
                             return '$' + value;
                         },
                         font: {
-                            size: getFontSize(),
+                            size: window.innerWidth < 640 ? 12 : getFontSize(),
                         }
                     },
                     title: {
-                        display: true,
+                        display: window.innerWidth >= 640,
                         text: 'Stock Price',
                         font: {
                             size: getFontSize(),
@@ -180,11 +214,14 @@ export function createStockChart(stockData) {
                     display: false
                 },
                 tooltip: {
-                    backgroundColor: '#1c2320',
-                    titleColor: '#E4ECE4',
-                    bodyColor: '#E4ECE4',
-                    borderColor: '#425C52',
-                    borderWidth: 1,
+                    backgroundColor: CHART_COLORS.floor,
+                    titleColor: CHART_COLORS.cream,
+                    bodyColor: CHART_COLORS.cream,
+                    titleFont: { family: CHART_FONT },
+                    bodyFont: { family: CHART_FONT },
+                    borderColor: CHART_COLORS.canopy,
+                    borderWidth: 1.5,
+                    cornerRadius: 0,
                     padding: 10,
                     displayColors: false,
                     callbacks: {
@@ -208,6 +245,7 @@ export function createStockChart(stockData) {
         stockChart.data.datasets[0].borderColor = colors.line;
         stockChart.data.datasets[0].backgroundColor = colors.fill;
         stockChart.data.datasets[0].pointHoverBackgroundColor = colors.line;
+        showDelta(range.prices, months);
         stockChart.update();
     }
 

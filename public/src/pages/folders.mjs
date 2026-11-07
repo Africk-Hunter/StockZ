@@ -158,8 +158,9 @@ export function renderFolderDropdown(folders) {
 
     const allRow = document.createElement('button');
     allRow.type = 'button';
-    allRow.className = 'flex justify-between items-center gap-2 w-full px-3 py-2 text-left hover:bg-text-color hover:bg-opacity-10 transition-colors duration-150' + (currentFolderId === null ? ' text-accent-color font-semibold' : '');
-    allRow.innerHTML = `<span>All Stocks</span><span class="opacity-60">${watchList.length}</span>`;
+    allRow.className = 'opt justify-between w-full' + (currentFolderId === null ? ' is-on' : '');
+    allRow.setAttribute('aria-pressed', String(currentFolderId === null));
+    allRow.innerHTML = `<span>All Stocks</span><span class="font-mono tabular-nums">${watchList.length}</span>`;
     allRow.addEventListener('click', () => selectFolder(null, 'All Stocks'));
     folderDropdownPanel.appendChild(allRow);
 
@@ -167,16 +168,17 @@ export function renderFolderDropdown(folders) {
         const count = watchList.filter(item => Array.isArray(item.folderIds) && item.folderIds.includes(folder.id)).length;
 
         const row = document.createElement('div');
-        row.className = 'flex items-center gap-1 px-2 py-1 hover:bg-text-color hover:bg-opacity-10 transition-colors duration-150';
+        row.className = 'flex items-stretch gap-grout bg-deep';
 
         const selectBtn = document.createElement('button');
         selectBtn.type = 'button';
-        selectBtn.className = 'flex justify-between items-center gap-2 flex-1 min-w-0 text-left' + (currentFolderId === folder.id ? ' text-accent-color font-semibold' : '');
+        selectBtn.className = 'opt justify-between flex-1 min-w-0' + (currentFolderId === folder.id ? ' is-on' : '');
+        selectBtn.setAttribute('aria-pressed', String(currentFolderId === folder.id));
         const nameSpan = document.createElement('span');
         nameSpan.className = 'truncate';
         nameSpan.textContent = folder.name;
         const countSpan = document.createElement('span');
-        countSpan.className = 'opacity-60 flex-shrink-0';
+        countSpan.className = 'font-mono tabular-nums flex-shrink-0';
         countSpan.textContent = count;
         selectBtn.appendChild(nameSpan);
         selectBtn.appendChild(countSpan);
@@ -184,7 +186,8 @@ export function renderFolderDropdown(folders) {
 
         const renameBtn = document.createElement('button');
         renameBtn.type = 'button';
-        renameBtn.className = 'flex-shrink-0 opacity-40 hover:opacity-100 hover:text-accent-color px-1';
+        renameBtn.className = 'opt flex-shrink-0 justify-center px-3';
+        renameBtn.setAttribute('aria-label', `Rename watchlist "${folder.name}"`);
         renameBtn.textContent = '✎';
         renameBtn.title = `Rename watchlist "${folder.name}"`;
         renameBtn.addEventListener('click', (event) => {
@@ -195,7 +198,8 @@ export function renderFolderDropdown(folders) {
 
         const deleteBtn = document.createElement('button');
         deleteBtn.type = 'button';
-        deleteBtn.className = 'flex-shrink-0 opacity-40 hover:opacity-100 hover:text-desperate-buy-one px-1';
+        deleteBtn.className = 'opt flex-shrink-0 justify-center px-3';
+        deleteBtn.setAttribute('aria-label', `Delete watchlist "${folder.name}"`);
         deleteBtn.textContent = '✕';
         deleteBtn.title = `Delete watchlist "${folder.name}"`;
         deleteBtn.addEventListener('click', async (event) => {
@@ -220,20 +224,22 @@ export function renderFolderDropdown(folders) {
     });
 
     const divider = document.createElement('div');
-    divider.className = 'border-t border-text-color border-opacity-20 my-1';
+    divider.className = 'border-t border-hairline my-1';
     folderDropdownPanel.appendChild(divider);
 
     const newFolderForm = document.createElement('form');
-    newFolderForm.className = 'flex gap-1 px-2 py-1';
+    newFolderForm.className = 'flex gap-grout bg-deep';
     const newFolderInput = document.createElement('input');
     newFolderInput.type = 'text';
     newFolderInput.placeholder = 'New watchlist';
     newFolderInput.maxLength = 40;
     newFolderInput.autocomplete = 'off';
-    newFolderInput.className = 'flex-1 min-w-0 bg-background rounded px-2 py-1 text-text-color placeholder-text-color placeholder-opacity-50 outline-none text-xs laptop:text-sm';
+    newFolderInput.className = 'field flex-1 min-w-0 cut-none px-3 py-2 text-small';
+    newFolderInput.setAttribute('aria-label', 'New watchlist name');
     const newFolderSubmit = document.createElement('button');
     newFolderSubmit.type = 'submit';
-    newFolderSubmit.className = 'flex-shrink-0 bg-accent-color text-background rounded px-2 text-xs laptop:text-sm font-semibold';
+    newFolderSubmit.className = 'opt flex-shrink-0 justify-center px-4';
+    newFolderSubmit.setAttribute('aria-label', 'Create watchlist');
     newFolderSubmit.textContent = '+';
     newFolderForm.appendChild(newFolderInput);
     newFolderForm.appendChild(newFolderSubmit);
@@ -337,6 +343,7 @@ async function commitFolderSelection() {
                 badBuyPrice: newEntry.badBuyPrice,
                 name: info.name || null,
                 currentPrice: info.currentPrice ?? null,
+                lifetimeStartPrice: newEntry.lifetimeStartPrice ?? null,
                 dividendYield: info.dividendYield || null,
                 bandsUpdatedAt: Date.now(),
                 folderIds
@@ -369,11 +376,11 @@ async function commitFolderSelection() {
 function createAllWatchlistRow() {
     const editable = !pendingNewEntry;
     const row = document.createElement('label');
-    row.className = 'flex items-center gap-2 px-2 py-2 rounded' + (editable ? ' hover:bg-secondary-color cursor-pointer' : '');
+    row.className = 'opt' + (editable ? ' cursor-pointer' : ' is-static is-disabled');
 
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
-    checkbox.className = 'accent-accent-color w-4 h-4 laptop:w-5 laptop:h-5 flex-shrink-0' + (editable ? '' : ' opacity-60');
+    checkbox.className = 'check';
     checkbox.checked = pendingKeepInAll;
     checkbox.disabled = !editable;
     checkbox.addEventListener('change', () => {
@@ -398,23 +405,23 @@ function renderFolderModalList() {
 
     if (folders.length === 0) {
         const empty = document.createElement('p');
-        empty.className = 'text-text-color text-opacity-60 text-sm text-center py-2';
+        empty.className = 'text-small text-sand text-center py-2';
         empty.textContent = 'No watchlists yet. Create one below.';
         folderModalList.appendChild(empty);
         return;
     }
 
     const divider = document.createElement('div');
-    divider.className = 'border-t border-text-color border-opacity-20 my-1';
+    divider.className = 'border-t border-hairline my-1';
     folderModalList.appendChild(divider);
 
     folders.forEach((folder) => {
         const row = document.createElement('label');
-        row.className = 'flex items-center gap-2 px-2 py-2 rounded ' + (pendingKeepInAll ? 'hover:bg-secondary-color cursor-pointer' : 'opacity-50');
+        row.className = 'opt ' + (pendingKeepInAll ? 'cursor-pointer' : 'is-static is-disabled');
 
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
-        checkbox.className = 'accent-accent-color w-4 h-4 laptop:w-5 laptop:h-5 flex-shrink-0';
+        checkbox.className = 'check';
         checkbox.checked = pendingKeepInAll && pendingFolderIds.has(folder.id);
         checkbox.disabled = !pendingKeepInAll;
         checkbox.addEventListener('change', () => {

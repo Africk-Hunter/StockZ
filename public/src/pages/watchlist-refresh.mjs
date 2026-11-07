@@ -16,6 +16,8 @@ function setRefreshProgress(done, total) {
     if (!statusEl) return;
     statusEl.dataset.progress = '1';
     statusEl.textContent = `Refreshing ${done} of ${total}…`;
+    statusEl.dataset.state = 'Refreshing';
+    statusEl.classList.remove('is-warning');
     statusEl.classList.remove('hidden');
 }
 
@@ -31,6 +33,8 @@ export function showRefreshStatus(failedTickers) {
     const shown = failedTickers.slice(0, 5).join(', ');
     const extra = failedTickers.length > 5 ? ` and ${failedTickers.length - 5} more` : '';
     statusEl.textContent = `Couldn't fully refresh ${failedTickers.length} ${failedTickers.length === 1 ? 'ticker' : 'tickers'} (${shown}${extra}). Showing previous values; try again in a minute.`;
+    statusEl.dataset.state = 'Warning';
+    statusEl.classList.add('is-warning');
     statusEl.classList.remove('hidden');
 }
 
@@ -90,6 +94,7 @@ export async function updateWatchListValues(user) {
                     badBuyPrice: updatedItem.badBuyPrice,
                     name: updatedItem.name,
                     currentPrice: updatedItem.currentPrice,
+                    lifetimeStartPrice: updatedItem.lifetimeStartPrice,
                     dividendYield: updatedItem.dividendYield,
                     bandsUpdatedAt: updatedItem.bandsUpdatedAt
                 }
@@ -119,6 +124,7 @@ export async function updateWatchListValues(user) {
             badBuyPrice: item.badBuyPrice,
             name: item.name || null,
             currentPrice: item.currentPrice ?? null,
+            lifetimeStartPrice: item.lifetimeStartPrice ?? null,
             dividendYield: item.dividendYield ?? null,
             bandsUpdatedAt: item.bandsUpdatedAt ?? null,
             folderIds: Array.isArray(item.folderIds) ? item.folderIds : []
@@ -132,7 +138,9 @@ export async function updateWatchListValues(user) {
 
         let historyResult = null;
         let infoResult;
-        if (bandsAreFresh(item)) {
+        // Items saved before lifetimeStartPrice existed need one history fetch to backfill it.
+        const needsLifetimeBackfill = item.lifetimeStartPrice === null || item.lifetimeStartPrice === undefined;
+        if (bandsAreFresh(item) && !needsLifetimeBackfill) {
             // Ranges are still valid: fetch only the price, and fetch history
             // too only if the price jumped enough to suggest a split.
             infoResult = await settle(fetchStockInfo(item.ticker));
@@ -155,6 +163,7 @@ export async function updateWatchListValues(user) {
                 const calculations = runStockCalculations(historyResult.value.prices, item.ticker);
                 updatedItem.goodBuyPrice = calculations.greatBRLow.toFixed(2);
                 updatedItem.badBuyPrice = calculations.badBRHigh.toFixed(2);
+                updatedItem.lifetimeStartPrice = calculations.lifetimeStartPrice ?? null;
                 updatedItem.bandsUpdatedAt = Date.now();
                 refreshStats.historyOk++;
             } catch (error) {

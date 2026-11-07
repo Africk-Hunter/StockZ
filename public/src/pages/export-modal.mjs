@@ -22,8 +22,8 @@ const exportModalCancelBtn    = document.getElementById("exportModalCancelBtn");
 const exportModalSubmitBtn    = document.getElementById("exportModalSubmitBtn");
 const exportFormatReadable    = document.getElementById("exportFormatReadable");
 
-const CHECKBOX_CLASS = 'accent-accent-color w-4 h-4 laptop:w-5 laptop:h-5 flex-shrink-0 cursor-pointer disabled:cursor-default';
-const CHEVRON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3 flex-shrink-0 opacity-60 transition-transform duration-150"><path d="M9 6l6 6-6 6"/></svg>';
+const CHECKBOX_CLASS = 'check disabled:cursor-default';
+const CHEVRON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" class="w-3 h-3 flex-shrink-0 transition-transform duration-hover"><path d="M9 6l6 6-6 6"/></svg>';
 
 // Watchlist data as of opening the modal, so the tree and the file agree.
 let exportItems = [];
@@ -71,14 +71,14 @@ function renderTree(groups, expandedGroupId) {
 
     if (exportItems.length === 0) {
         const empty = document.createElement('p');
-        empty.className = 'text-text-color text-opacity-60 text-sm text-center py-4';
+        empty.className = 'bg-canopy text-small text-sand text-center py-4';
         empty.textContent = 'Your watch list is empty.';
         exportModalTree.appendChild(empty);
         return;
     }
 
     const allRow = document.createElement('label');
-    allRow.className = 'flex items-center gap-2 px-2 py-2 rounded hover:bg-secondary-color hover:bg-opacity-40 cursor-pointer';
+    allRow.className = 'opt cursor-pointer';
     const allCheckbox = createCheckbox(exportItems.map(item => item.ticker));
     allCheckbox.dataset.exportAll = 'true';
     const allName = document.createElement('span');
@@ -89,9 +89,7 @@ function renderTree(groups, expandedGroupId) {
     exportModalTree.appendChild(allRow);
 
     const divider = document.createElement('div');
-    divider.className = 'border-t border-text-color border-opacity-20 my-1';
-    exportModalTree.appendChild(divider);
-
+    
     groups.forEach((group) => {
         exportModalTree.appendChild(createGroup(group, group.id === expandedGroupId));
     });
@@ -102,14 +100,14 @@ function renderTree(groups, expandedGroupId) {
 function createGroup(group, expanded) {
     const tickers = group.items.map(item => item.ticker);
     const wrapper = document.createElement('div');
-    wrapper.className = 'flex flex-col';
+    wrapper.className = 'flex flex-col gap-grout';
     wrapper.dataset.exportGroup = group.id ?? 'none';
 
     const header = document.createElement('div');
-    header.className = 'flex items-center gap-2 px-2 py-1 rounded hover:bg-secondary-color hover:bg-opacity-40';
+    header.className = 'opt';
 
     const countEl = document.createElement('span');
-    countEl.className = 'flex-shrink-0 text-xs laptop:text-sm opacity-60 tabular-nums';
+    countEl.className = 'flex-shrink-0 font-mono text-mono tabular-nums';
     const checkbox = createCheckbox(tickers, countEl);
     checkbox.setAttribute('aria-label', `Select all stocks in ${group.name}`);
 
@@ -133,12 +131,12 @@ function createGroup(group, expanded) {
     if (tickers.length === 0) {
         checkbox.disabled = true;
         toggle.disabled = true;
-        toggle.classList.add('opacity-50');
+        toggle.classList.add('opacity-40');
         return wrapper;
     }
 
     const list = document.createElement('div');
-    list.className = 'flex flex-col ml-6 laptop:ml-7 pl-2 border-l border-text-color border-opacity-20';
+    list.className = 'flex flex-col gap-grout ml-6 laptop:ml-7';
     group.items.forEach(item => list.appendChild(createStockRow(item)));
     wrapper.appendChild(list);
 
@@ -156,17 +154,17 @@ function createGroup(group, expanded) {
 
 function createStockRow(item) {
     const row = document.createElement('label');
-    row.className = 'flex items-center gap-2 px-2 py-1.5 rounded hover:bg-secondary-color hover:bg-opacity-40 cursor-pointer text-sm laptop:text-base';
+    row.className = 'opt cursor-pointer';
 
     const checkbox = createCheckbox([item.ticker]);
     checkbox.dataset.ticker = item.ticker;
 
     const tickerSpan = document.createElement('span');
-    tickerSpan.className = 'font-semibold flex-shrink-0';
+    tickerSpan.className = 'caps text-label tracking-caps-label flex-shrink-0';
     tickerSpan.textContent = item.ticker;
 
     const nameSpan = document.createElement('span');
-    nameSpan.className = 'truncate text-xs laptop:text-sm opacity-60';
+    nameSpan.className = 'truncate text-small text-sand';
     nameSpan.textContent = item.name || '';
 
     row.appendChild(checkbox);

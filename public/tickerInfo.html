@@ -2,181 +2,141 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>StockZ</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Michroma&family=Barlow:wght@400;500;600&family=Azeret+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/src/output.css">
-    <link rel="stylesheet" href="/src/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" integrity="sha384-NrKB+u6Ts6AtkIhwPixiKTzgSKNblyhlk0Sohlgar9UHUBzai/sgnNNWWd291xqt" crossorigin="anonymous"></script>
     <link rel="icon" type="image/x-icon" href="/src/favicon.ico">
 </head>
-<body class="bg-background w-screen h-screen">
+<body class="bg-deep text-cream w-full min-h-screen">
 
-<div class="flex flex-col items-center font-poppins h-screen" id="mainWrapper">
+<div class="flex flex-col items-center font-body min-h-screen overflow-x-clip" id="mainWrapper">
 
-    <nav class="hidden laptop:grid grid-rows-1 grid-cols-3 sized90 h-12 laptop:h-16 border-solid border-b border-text-color border-opacity-25">
-        <div id="stockZLogo" class="nav-home flex justify-self-start bg-transparent font-semibold justify-center laptop:gap-1 self-center hover:cursor-pointer">
-            <span class="text-text-color hidden laptop:flex laptop:text-5xl select-none">STOCK</span><span class="text-accent-color select-none text-4xl laptop:text-5xl ml-2">Z</span>
+    <nav class="hidden laptop:grid grid-cols-3 w-full h-16 px-6 border-solid border-b border-hairline" aria-label="Primary">
+        <div id="stockZLogo" class="nav-home flex justify-self-start self-center">
+            <button type="button" class="caps caps-wide flex gap-3 text-wordmark tracking-caps-label text-cream select-none" aria-label="StockZ home">STOCK<span class="text-lime">Z</span></button>
         </div>
 
-        <div class="flex justify-self-center justify-between items-center h-full w-full laptop:text-xl desktop:text-2xl self-center text-text-color font-medium">
-            <div id="tickerInfoBtn" class="nav-ticker-info"><img src="/src/tickerIcon.png" alt="" class="laptop:hidden h-6"><button class="hidden laptop:flex underline underline-offset-8 decoration-accent-color">Ticker Info</button></div>
-            <div id="homeBtn" class="nav-home"><img src="/src/houseIcon.svg" alt="" class="laptop:hidden h-6"><button class="hidden laptop:flex hover:text-accent-color transition-colors duration-150">Main</button></div>
-            <div id="watchListBtn" class="nav-watchlist"><img src="/src/listIcon.png" alt="" class="laptop:hidden h-6"><button class="hidden laptop:flex hover:text-accent-color transition-colors duration-150">Watch List</button></div>
+        <div class="flex justify-self-center justify-between items-center h-full w-full self-center">
+            <div id="tickerInfoBtn" class="nav-ticker-info"><button type="button" class="navlink is-on" aria-current="page">Ticker Info</button></div>
+            <div id="homeBtn" class="nav-home"><button type="button" class="navlink">Main</button></div>
+            <div id="watchListBtn" class="nav-watchlist"><button type="button" class="navlink">Watch List</button></div>
         </div>
 
-        <div class="flex justify-self-end items-center gap-4 h-full mr-5">
-            <button type="button" class="nav-bug-report flex items-center text-text-color hover:text-accent-color transition-colors duration-150" title="Report a problem" aria-label="Report a problem">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5 laptop:w-6 laptop:h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
-            </button>
-            <button class="nav-logout flex items-center hover:opacity-70 transition-opacity duration-150" id="logOutButton">
-                <img src="/src/logOut.png" alt="Log Out" class="h-6 laptop:h-8">
-            </button>
+        <div class="flex justify-self-end items-center gap-2 h-full">
+            <button type="button" class="nav-bug-report chip chip-icon h-11 w-11 laptop:h-9 laptop:w-9" title="Report a problem" aria-label="Report a problem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" class="icon" aria-hidden="true"><path d="M12 2l10 10-10 10L2 12zM12 8v5M12 16v1"/></svg></button>
+            <button type="button" class="nav-logout chip chip-icon" id="logOutButton" title="Log out" aria-label="Log out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" class="icon" aria-hidden="true"><path d="M10 4H4v16h6M14 8l4 4-4 4M18 12H9"/></svg></button>
         </div>
     </nav>
 
-    <div class="laptop:hidden flex items-center justify-between w-full px-5 pt-4 pb-1">
-        <div class="nav-home flex items-baseline gap-1 font-poppins font-extrabold text-sm tracking-widest uppercase select-none hover:cursor-pointer">
-            <span class="text-text-color">Stock</span><span class="text-accent-color">Z</span>
+    <div class="laptop:hidden flex items-center justify-between w-full px-6 pt-4 pb-2">
+        <div class="nav-home">
+            <button type="button" class="caps caps-wide flex gap-2 text-h3 tracking-caps-label text-cream select-none" aria-label="StockZ home">STOCK<span class="text-lime">Z</span></button>
         </div>
-        <div class="flex items-center gap-3">
-            <button type="button" class="nav-bug-report flex items-center justify-center w-8 h-8 text-text-color hover:text-accent-color transition-colors duration-150" title="Report a problem" aria-label="Report a problem">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
-            </button>
-            <button type="button" class="nav-logout flex items-center justify-center w-8 h-8">
-                <img src="/src/logOut.png" alt="Log Out" class="h-4">
-            </button>
+        <div class="flex items-center gap-2">
+            <button type="button" class="nav-bug-report chip chip-icon h-11 w-11 laptop:h-9 laptop:w-9" title="Report a problem" aria-label="Report a problem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" class="icon" aria-hidden="true"><path d="M12 2l10 10-10 10L2 12zM12 8v5M12 16v1"/></svg></button>
+            <button type="button" class="nav-logout chip chip-icon h-11 w-11 laptop:h-9 laptop:w-9" title="Log out" aria-label="Log out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" class="icon" aria-hidden="true"><path d="M10 4H4v16h6M14 8l4 4-4 4M18 12H9"/></svg></button>
         </div>
     </div>
 
-    <nav class="laptop:hidden fixed bottom-0 left-0 right-0 flex bg-background border-t border-text-color border-opacity-25 pb-6 pt-2 z-10">
-        <div class="nav-ticker-info flex-1 flex flex-col items-center gap-1 hover:cursor-pointer">
-            <img src="/src/tickerIcon.png" alt="" class="h-4">
-            <span class="text-accent-color text-[11px] font-semibold">Ticker Info</span>
-        </div>
-        <div class="nav-home flex-1 flex flex-col items-center gap-1 hover:cursor-pointer">
-            <img src="/src/houseIcon.svg" alt="" class="h-4 opacity-50">
-            <span class="text-text-color text-opacity-60 text-[11px] font-semibold">Search</span>
-        </div>
-        <div class="nav-watchlist flex-1 flex flex-col items-center gap-1 hover:cursor-pointer">
-            <img src="/src/listIcon.png" alt="" class="h-4 opacity-50">
-            <span class="text-text-color text-opacity-60 text-[11px] font-semibold">Watch List</span>
-        </div>
+    <nav class="laptop:hidden fixed bottom-0 left-0 right-0 flex bg-deep border-solid border-t border-hairline z-10" aria-label="Primary">
+        <button type="button" class="nav-ticker-info tab is-on" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" class="icon" aria-hidden="true"><path d="M4 20h16M7 16v-6M12 16V5M17 16v-4"/></svg><span>Ticker Info</span></button>
+        <button type="button" class="nav-home tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" class="icon" aria-hidden="true"><path d="M4 4h10v10H4zM14 14l6 6"/></svg><span>Search</span></button>
+        <button type="button" class="nav-watchlist tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" class="icon" aria-hidden="true"><path d="M3 5h6l2 3h10v11H3z"/></svg><span>Watch List</span></button>
     </nav>
 
-    <main class="flex flex-col h-max laptop:h-full w-full laptop:w-10/12 justify-start laptop:justify-between items-center font-bold gap-2 fade-in py-8 pb-24 laptop:pb-8 px-5 laptop:px-0">
-        <div id="tickerLabelIP" class="flex justify-center items-center select-none border-text-color border-2 laptop:border-3 border-opacity-50 border-solid rounded-lg min-h-16 laptop:h-1/8 w-3/6 laptop:w-52 hover:cursor-pointer transition-all duration-500 ease-in-out text-center uppercase text-text-color text-3xl laptop:text-4xl overflow-hidden"></div>
+    <main class="flex flex-col h-max laptop:h-full w-full laptop:w-11/12 max-w-[1500px] justify-start laptop:justify-between items-center gap-2 fade-in-rest py-6 pb-48 laptop:py-8 laptop:pb-8 px-4 laptop:px-0">
+        <div id="tickerLabelIP" class="edged flex justify-center items-center select-none h-16 w-3/6 laptop:w-52 cursor-pointer text-center uppercase caps caps-wide caps-display text-cream text-h2 laptop:text-wordmark overflow-hidden"></div>
 
-        <span id="thresHoldWarning" class="w-3/4 text-center laptop:justify-center text-sm laptop:text-xl desktop:text-2xl desktopXL:text-2xl text-desperate-buy-one hidden">Warning: Threshold was lowered. Use caution when examining stock.</span>
-        <div id="buyHolder" class="hidden laptop:flex laptop:flex-row w-full laptop:w-4/5 laptop:h-20 desktopXL:h-36 justify-start items-center gap-0 laptop:gap-0 laptop:mt-0">
+        <div class="laptop:hidden flex items-stretch w-full gap-grout bg-deep cut-md">
+            <div class="flex flex-col justify-center gap-1 flex-1 min-w-0 bg-canopy px-4 py-3">
+                <div class="caps text-label tracking-caps-label text-sand">Current price</div>
+                <div id="mobileCurrentPrice" class="font-mono font-semibold tabular-nums text-h2 leading-none text-cream">N/A</div>
+            </div>
+            <div id="mobileVerdict" class="caps flex items-center justify-center w-28 bg-canopy px-2 text-body font-semibold tracking-caps-label text-cream text-center">&mdash;</div>
+        </div>
 
-            <div class="flex flex-col justify-center items-start mt-5 laptop:mt-0 min-h-20 laptop:h-full w-3/4 bg-transparent">
-                <div class="flex justify-center items-center text-text-color bg-secondary-color h-1/2 w-full rounded-t laptop:rounded-tr-none desktopXL:rounded-tl-lg border-b-2 laptop:border-r-2 border-background text-xl laptop:text-xl desktopXL:text-3xl font-medium">Great Buy Range</div>
-                <div class="flex h-1/2 w-full bg-transparent">
-                    <div id="grBL" class="flex justify-center items-center h-full w-1/2 bg-great-buy-one laptop:rounded-bl desktopXL:rounded-bl-lg border-r-2 border-background text-background text-xl laptop:text-xl desktop:text-2xl desktopXL:text-3xl"></div>
-                    <div id="grBH" class="flex justify-center items-center h-full w-1/2 bg-great-buy-two laptop:rounded-br-none laptop:border-r-2 border-background text-background text-xl laptop:text-xl desktop:text-2xl desktopXL:text-3xl"></div>
-                </div>
-            </div>
-            <div class="flex flex-col justify-center items-start min-h-20 laptop:h-full w-3/4 bg-transparent">
-                <div class="flex justify-center items-center text-text-color bg-secondary-color h-1/2 w-full laptop:rounded-t-none border-b-2 laptop:border-r-2 border-background text-xl laptop:text-xl desktop:text-2xl desktopXL:text-3xl font-medium">Good Buy Range</div>
-                <div class="flex h-1/2 w-full bg-transparent">
-                    <div id="gBL" class="flex justify-center items-center h-full w-1/2 bg-good-buy-one laptop:rounded-bl-none border-r-2 border-background text-background text-xl laptop:text-xl desktop:text-2xl desktopXL:text-3xl"></div>
-                    <div id="gBH" class="flex justify-center items-center h-full w-1/2 bg-good-buy-two laptop:rounded-b-none laptop:border-r-2 border-background text-background text-xl laptop:text-xl desktop:text-2xl desktopXL:text-3xl" ></div>
-                </div>
-            </div>
-            <div class="flex flex-col justify-center items-start min-h-20 laptop:h-full w-3/4 bg-transparent">
-                <div class="flex justify-center items-center text-text-color bg-secondary-color h-1/2 w-full laptop:rounded-t-none border-b-2 laptop:border-r-2 border-background text-xl laptop:text-xl desktop:text-2xl desktopXL:text-3xl font-medium ">Okay Buy Range</div>
-                <div class="flex h-1/2 w-full bg-transparent">
-                    <div id="oBL" class="flex justify-center items-center h-full w-1/2 bg-okay-buy-one laptop:rounded-bl-none border-r-2 border-background text-background text-xl laptop:text-xl desktop:text-2xl desktopXL:text-3xl" ></div>
-                    <div id="oBH" class="flex justify-center items-center h-full w-1/2 bg-okay-buy-two laptop:rounded-b-none laptop:border-r-2 border-background text-background text-xl laptop:text-xl desktop:text-2xl desktopXL:text-3xl"></div>
-                </div>
-            </div>
-            <div class="flex flex-col justify-center items-start min-h-20 laptop:h-full w-3/4 bg-transparent">
-                <div class="flex justify-center items-center text-text-color bg-secondary-color h-1/2 w-full laptop:rounded-t-none laptop:rounded-tr desktopXL:rounded-tr-lg border-b-2 border-background text-xl laptop:text-xl desktop:text-2xl desktopXL:text-3xl font-medium">Bad Buy Range</div>
-                <div class="flex h-1/2 w-full bg-transparent">
-                    <div id="bBL" class="flex justify-center items-center h-full w-1/2 bg-desperate-buy-one rounded-bl laptop:rounded-bl-none border-r-2 border-background text-background text-xl laptop:text-xl desktop:text-2xl desktopXL:text-3xl"></div>
-                    <div id="bBH" class="flex justify-center items-center h-full w-1/2 bg-desperate-buy-two rounded-br desktopXL:rounded-br-lg text-background text-xl laptop:text-xl desktop:text-2xl desktopXL:text-3xl"></div>
-                </div>
-            </div>
-
+        <div id="thresHoldWarning" data-state="Warning" class="status is-warning hidden w-full laptop:w-full"><span>Threshold was lowered. Use caution when examining stock.</span></div>
+        <div id="buyHolder" class="hidden laptop:grid grid-cols-8 grid-rows-[auto_4rem] desktopXL:grid-rows-[auto_6rem] gap-grout bg-deep cut-md w-full laptop:w-full">
+                <div class="label-tile col-span-2 laptop:text-small desktopXL:text-value">Great Buy Range</div>
+                <div class="label-tile col-span-2 laptop:text-small desktopXL:text-value">Good Buy Range</div>
+                <div class="label-tile col-span-2 laptop:text-small desktopXL:text-value">Okay Buy Range</div>
+                <div class="label-tile col-span-2 laptop:text-small desktopXL:text-value">Bad Buy Range</div>
+                <div id="grBL" class="value-tile bg-band-great-1 text-ink text-small laptop:text-[22px] desktopXL:text-[28px]"></div>
+                <div id="grBH" class="value-tile bg-band-great-2 text-ink text-small laptop:text-[22px] desktopXL:text-[28px]"></div>
+                <div id="gBL" class="value-tile bg-band-good-1 text-ink text-small laptop:text-[22px] desktopXL:text-[28px]"></div>
+                <div id="gBH" class="value-tile bg-band-good-2 text-ink text-small laptop:text-[22px] desktopXL:text-[28px]"></div>
+                <div id="oBL" class="value-tile bg-band-okay-1 text-ink text-small laptop:text-[22px] desktopXL:text-[28px]"></div>
+                <div id="oBH" class="value-tile bg-band-okay-2 text-ink text-small laptop:text-[22px] desktopXL:text-[28px]"></div>
+                <div id="bBL" class="value-tile bg-band-bad-1 text-cream text-small laptop:text-[22px] desktopXL:text-[28px]"></div>
+                <div id="bBH" class="value-tile bg-band-bad-2 text-cream text-small laptop:text-[22px] desktopXL:text-[28px]"></div>
         </div>
         <div class="laptop:hidden flex flex-col gap-2 w-full">
-            <div class="section-label">Buy Range</div>
-            <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-                <div class="flex-shrink-0 min-w-[9.25rem] rounded-lg px-4 py-3 bg-great-buy-one text-background">
-                    <div class="text-xs font-bold uppercase tracking-wide">Great</div>
-                    <div id="mobileGreatRange" class="font-poppins font-bold text-base"></div>
+            <div class="section-label text-small">Buy range</div>
+            <div class="flex flex-col gap-grout bg-deep cut-md">
+                <div class="grid grid-cols-[5rem_1fr] items-center bg-band-great-1 text-ink animate-arrive" style="animation-delay:0ms">
+                    <div class="caps px-3 py-4 text-small font-semibold tracking-caps-label">Great</div>
+                    <div id="mobileGreatRange" class="px-3 py-4 text-right font-mono font-semibold tabular-nums text-body"></div>
                 </div>
-                <div class="flex-shrink-0 min-w-[9.25rem] rounded-lg px-4 py-3 bg-good-buy-one text-background">
-                    <div class="text-xs font-bold uppercase tracking-wide">Good</div>
-                    <div id="mobileGoodRange" class="font-poppins font-bold text-base"></div>
+                <div class="grid grid-cols-[5rem_1fr] items-center bg-band-good-1 text-ink animate-arrive" style="animation-delay:75ms">
+                    <div class="caps px-3 py-4 text-small font-semibold tracking-caps-label">Good</div>
+                    <div id="mobileGoodRange" class="px-3 py-4 text-right font-mono font-semibold tabular-nums text-body"></div>
                 </div>
-                <div class="flex-shrink-0 min-w-[9.25rem] rounded-lg px-4 py-3 bg-okay-buy-one text-background">
-                    <div class="text-xs font-bold uppercase tracking-wide">Okay</div>
-                    <div id="mobileOkayRange" class="font-poppins font-bold text-base"></div>
+                <div class="grid grid-cols-[5rem_1fr] items-center bg-band-okay-1 text-ink animate-arrive" style="animation-delay:150ms">
+                    <div class="caps px-3 py-4 text-small font-semibold tracking-caps-label">Okay</div>
+                    <div id="mobileOkayRange" class="px-3 py-4 text-right font-mono font-semibold tabular-nums text-body"></div>
                 </div>
-                <div class="flex-shrink-0 min-w-[9.25rem] rounded-lg px-4 py-3 bg-desperate-buy-one text-background">
-                    <div class="text-xs font-bold uppercase tracking-wide">Bad</div>
-                    <div id="mobileBadRange" class="font-poppins font-bold text-base"></div>
+                <div class="grid grid-cols-[5rem_1fr] items-center bg-band-bad-1 text-cream animate-arrive" style="animation-delay:225ms">
+                    <div class="caps px-3 py-4 text-small font-semibold tracking-caps-label">Bad</div>
+                    <div id="mobileBadRange" class="px-3 py-4 text-right font-mono font-semibold tabular-nums text-body"></div>
                 </div>
             </div>
         </div>
-        <section id="extraInfo" class="flex flex-col-reverse laptop:flex-row w-full laptop:w-4/5 laptop:h-3/6 items-center">
-            <div class="laptop:w-3/4">
-                <div id="chartRangeButtons" class="flex justify-center laptop:justify-end gap-2 mb-2"></div>
+        <section id="extraInfo" class="flex flex-col laptop:flex-row laptop:gap-6 w-full laptop:w-full laptop:items-stretch items-center">
+            <div class="w-full laptop:w-3/4">
+                <div class="flex flex-col items-stretch laptop:flex-row laptop:items-center justify-between gap-2 mb-2">
+                    <div id="chartDelta" class="hidden"></div>
+                    <div id="chartRangeButtons" class="grid grid-cols-4 gap-2 laptop:flex laptop:justify-end laptop:ml-auto"></div>
+                </div>
                 <div class="innerChart">
                     <canvas id="stockChart" class="flex"></canvas>
                 </div>
             </div>
-            <div class="flex flex-col w-full laptop:w-1/4 h-full ">
-                <div class="flex flex-col justify-center items-start mt-5 laptop:mt-0 min-h-20 laptop:h-1/5 w-full bg-transparent">
-                    <div class="flex h-1/2 w-full bg-transparent">
-                        <div class="flex justify-center items-center h-full w-1/2 bg-secondary-color rounded-tl desktopXL:rounded-tl-lg border-r-2 border-background text-text-color text-lg laptop:text-sm desktop:text-xl desktopXL:text-3xl font-medium">Current Price</div>
-                        <div class="flex justify-center items-center h-full w-1/2 bg-secondary-color rounded-tr desktopXL:rounded-tr-lg laptop:rounded-br-none laptop:border-r-2 border-background text-text-color text-lg laptop:text-sm desktop:text-xl desktopXL:text-3xl font-medium">Dip Price</div>
+            <div class="flex flex-col gap-grout w-full laptop:w-1/4 h-full bg-deep cut-md">
+                <div class="grid grid-cols-[3fr_2fr] gap-grout min-h-24 laptop:h-1/4">
+                    <div id="currentPriceTile" class="flex flex-col justify-center gap-1 px-4 py-3 bg-canopy text-cream min-w-0 transition-colors duration-hover">
+                        <span class="tile-caption caps whitespace-nowrap text-label tracking-caps-label text-sand">Current price</span>
+                        <div id="currentPrice" class="font-mono font-semibold tabular-nums leading-none text-h3 desktopXL:text-h2"></div>
                     </div>
-                    <div class="flex h-1/2 w-full bg-transparent">
-                        <div id="currentPrice" class="flex justify-center items-center h-full w-1/2 bg-text-color rounded-bl desktopXL:rounded-bl-lg border-r-2 border-background text-background text-xl laptop:text-xl desktop:text-2xl desktopXL:text-3xl"></div>
-                        <div id="dipPrice" class="flex justify-center items-center h-full w-1/2 bg-text-color rounded-br desktopXL:rounded-br-lg laptop:border-r-2 border-background text-background text-xl laptop:text-xl desktop:text-2xl desktopXL:text-3xl"></div>
+                    <div class="flex flex-col justify-center gap-1 px-4 py-3 bg-canopy text-cream min-w-0">
+                        <span class="caps whitespace-nowrap text-label tracking-caps-label text-sand">Dip price</span>
+                        <div id="dipPrice" class="font-mono font-semibold tabular-nums leading-none text-value desktopXL:text-h3"></div>
                     </div>
                 </div>
-                <div class="flex flex-col justify-center items-start mt-5 laptop:mt-2 min-h-64 laptop:min-h-0 laptop:flex-1 w-full bg-transparent">
-                    <div class="flex flex-1 w-full bg-transparent">
-                        <div class="flex justify-center items-center text-center leading-tight h-full w-1/2 px-2 bg-secondary-color rounded-tl desktopXL:rounded-tl-lg border-b-2 border-r-2 border-background text-text-color text-xs laptop:text-sm desktop:text-lg desktopXL:text-2xl font-medium">Dividend Yield</div>
-                        <div id="dividendYield" class="flex justify-center items-center text-center leading-tight h-full w-1/2 px-2 bg-text-color rounded-tr desktopXL:rounded-tr-lg border-b-2 border-background text-background text-xs laptop:text-sm desktop:text-lg desktopXL:text-2xl font-semibold"></div>
-                    </div>
-                    <div class="flex flex-1 w-full bg-transparent">
-                        <div class="flex justify-center items-center text-center leading-tight h-full w-1/2 px-2 bg-secondary-color border-b-2 border-r-2 border-background text-text-color text-xs laptop:text-sm desktop:text-lg desktopXL:text-2xl font-medium">Payout Ratio</div>
-                        <div id="payoutRatio" class="flex justify-center items-center text-center leading-tight h-full w-1/2 px-2 bg-text-color border-b-2 border-background text-background text-xs laptop:text-sm desktop:text-lg desktopXL:text-2xl font-semibold"></div>
-                    </div>
-                    <div class="flex flex-1 w-full bg-transparent">
-                        <div class="flex justify-center items-center text-center leading-tight h-full w-1/2 px-2 bg-secondary-color border-b-2 border-r-2 border-background text-text-color text-xs laptop:text-sm desktop:text-lg desktopXL:text-2xl font-medium">Last Payout</div>
-                        <div id="lastPayoutAmount" class="flex justify-center items-center text-center leading-tight h-full w-1/2 px-2 bg-text-color border-b-2 border-background text-background text-xs laptop:text-sm desktop:text-lg desktopXL:text-2xl font-semibold"></div>
-                    </div>
-                    <div class="flex flex-1 w-full bg-transparent">
-                        <div class="flex justify-center items-center text-center leading-tight h-full w-1/2 px-2 bg-secondary-color border-b-2 border-r-2 border-background text-text-color text-xs laptop:text-sm desktop:text-lg desktopXL:text-2xl font-medium">Market Cap</div>
-                        <div id="marketCapValue" class="flex justify-center items-center text-center leading-tight h-full w-1/2 px-2 bg-text-color border-b-2 border-background text-background text-xs laptop:text-sm desktop:text-lg desktopXL:text-2xl font-semibold"></div>
-                    </div>
-                    <div class="flex flex-1 w-full bg-transparent">
-                        <div class="flex justify-center items-center text-center leading-tight h-full w-1/2 px-2 bg-secondary-color border-b-2 border-r-2 border-background text-text-color text-xs laptop:text-sm desktop:text-lg desktopXL:text-2xl font-medium">Cap Size</div>
-                        <div id="capCategory" class="flex justify-center items-center text-center leading-tight h-full w-1/2 px-2 bg-text-color border-b-2 border-background text-background text-xs laptop:text-sm desktop:text-lg desktopXL:text-2xl font-semibold"></div>
-                    </div>
-                    <div class="flex flex-1 w-full bg-transparent">
-                        <div class="flex justify-center items-center text-center leading-tight h-full w-1/2 px-2 bg-secondary-color rounded-bl desktopXL:rounded-bl-lg border-r-2 border-background text-text-color text-xs laptop:text-sm desktop:text-lg desktopXL:text-2xl font-medium">Sector</div>
-                        <div id="sectorValue" class="flex justify-center items-center text-center leading-tight h-full w-1/2 px-2 bg-text-color rounded-br desktopXL:rounded-br-lg text-background text-xs laptop:text-sm desktop:text-lg desktopXL:text-2xl font-semibold"></div>
-                    </div>
+                <div class="flex flex-col laptop:flex-1 gap-grout">
+                    <div class="info-row"><span class="info-label">Dividend Yield</span><span id="dividendYield" class="info-value"></span></div>
+                    <div class="info-row"><span class="info-label">Payout Ratio</span><span id="payoutRatio" class="info-value"></span></div>
+                    <div class="info-row"><span class="info-label">Last Payout</span><span id="lastPayoutAmount" class="info-value"></span></div>
+                    <div class="info-row"><span class="info-label">Market Cap</span><span id="marketCapValue" class="info-value"></span></div>
+                    <div class="info-row"><span class="info-label">Cap Size</span><span id="capCategory" class="info-value"></span></div>
+                    <div class="info-row"><span class="info-label">Sector</span><span id="sectorValue" class="info-value"></span></div>
                 </div>
             </div>
         </section>
 
         <section id="otherButtons" class="flex flex-col min-h-1/6 laptop:h-44 desktopXL:h-52 w-full laptop:w-1/4 desktopXL:w-2/5 gap-2 justify-end">
-            <button id="addToWatchlist" class="text-text-color bg-secondary-color rounded-lg h-11 laptop:h-2/6 active:scale-95 font-medium text-base laptop:text-base desktop:text-xl desktopXL:text-2xl hover:bg-text-color hover:text-background hover:-translate-y-1 transition-all duration-200 ease-in-out">Add To Watchlist</button>
-            <div class="flex justify-between w-full h-11 laptop:h-2/6 gap-2">
-                <button id="stockStatsLink" class="flex justify-center items-center bg-secondary-color w-1/2 h-full active:scale-95 rounded-lg text-text-color font-medium text-sm laptop:text-base desktop:text-xl desktopXL:text-2xl hover:bg-text-color hover:text-background hover:-translate-y-1 transition-all duration-200 ease-in-out">Stock Statistics</button>
-                <button id="stockDescLink" class="flex justify-center items-center bg-secondary-color w-1/2 h-full active:scale-95 rounded-lg text-text-color font-medium text-sm laptop:text-base desktop:text-xl desktopXL:text-2xl hover:bg-text-color hover:text-background hover:-translate-y-1 transition-all duration-200 ease-in-out">Stock Description</button>
+            <button id="addToWatchlist" class="btn above-tab fixed left-4 w-[calc(100%-2rem)] z-10 h-14 text-small laptop:static laptop:w-auto laptop:z-auto laptop:h-2/6 laptop:text-small desktop:text-body">Add To Watchlist</button>
+            <div class="section-label text-small laptop:hidden mt-2">More on this stock</div>
+            <div class="flex justify-between w-full h-12 laptop:h-2/6 gap-2">
+                <button id="stockStatsLink" class="chip w-1/2 h-full text-small desktop:text-body">Statistics <svg class="inline-block h-3 w-3 flex-shrink-0" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" aria-hidden="true"><path d="M5 2H2v8h8V7M7 2h3v3M10 2L5.5 6.5"/></svg></button>
+                <button id="stockDescLink" class="chip w-1/2 h-full text-small desktop:text-body">Description <svg class="inline-block h-3 w-3 flex-shrink-0" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" aria-hidden="true"><path d="M5 2H2v8h8V7M7 2h3v3M10 2L5.5 6.5"/></svg></button>
             </div>
-            <div class="flex justify-between w-full h-11 laptop:h-2/6 gap-2">
-                <button id="dividendHistoryLink" class="flex justify-center items-center bg-secondary-color w-1/2 h-full active:scale-95 rounded-lg text-text-color font-medium text-sm laptop:text-base desktop:text-xl desktopXL:text-2xl hover:bg-text-color hover:text-background hover:-translate-y-1 transition-all duration-200 ease-in-out">Dividend History</button>
-                <button id="epsChartLink" class="flex justify-center items-center bg-secondary-color w-1/2 h-full active:scale-95 rounded-lg text-text-color font-medium text-sm laptop:text-base desktop:text-xl desktopXL:text-2xl hover:bg-text-color hover:text-background hover:-translate-y-1 transition-all duration-200 ease-in-out">EPS Chart</button>
+            <div class="flex justify-between w-full h-12 laptop:h-2/6 gap-2">
+                <button id="dividendHistoryLink" class="chip w-1/2 h-full text-small desktop:text-body">Dividends <svg class="inline-block h-3 w-3 flex-shrink-0" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" aria-hidden="true"><path d="M5 2H2v8h8V7M7 2h3v3M10 2L5.5 6.5"/></svg></button>
+                <button id="epsChartLink" class="chip w-1/2 h-full text-small desktop:text-body">EPS Chart <svg class="inline-block h-3 w-3 flex-shrink-0" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" aria-hidden="true"><path d="M5 2H2v8h8V7M7 2h3v3M10 2L5.5 6.5"/></svg></button>
             </div>
         </section>
     </main>
@@ -187,33 +147,18 @@
     <div id="folderModal" class="modal-panel">
         <div class="flex justify-between items-center">
             <h2 id="folderModalTitle" class="modal-title">Add to a Watchlist</h2>
-            <button id="folderModalCloseBtn" type="button" class="modal-close">&times;</button>
+            <button id="folderModalCloseBtn" type="button" class="chip chip-icon flex-shrink-0 text-body" aria-label="Close">&times;</button>
         </div>
-        <div id="folderModalList" class="flex flex-col gap-1 max-h-60 overflow-y-auto no-scrollbar">
+        <div id="folderModalList" class="flex flex-col gap-grout max-h-60 desktop:max-h-80 overflow-y-auto no-scrollbar">
         </div>
         <form id="folderModalNewFolderForm" class="flex gap-2 mt-2">
-            <input id="folderModalNewFolderInput" type="text" placeholder="New watchlist name" maxlength="40" autocomplete="off" class="input-field flex-1 min-w-0">
-            <button type="submit" class="btn-secondary flex-shrink-0">Create</button>
+            <input id="folderModalNewFolderInput" type="text" placeholder="New watchlist name" maxlength="40" autocomplete="off" aria-label="New watchlist name" class="field flex-1 min-w-0">
+            <button type="submit" class="chip flex-shrink-0">Create</button>
         </form>
-        <button id="folderModalAddBtn" type="button" class="btn-primary">Add</button>
-    </div>
-</div>
-
-<div id="deleteConfirmModalOverlay" class="hidden modal-overlay">
-    <div class="modal-panel laptop:max-w-sm gap-4">
-        <div class="flex justify-between items-center">
-            <h2 class="modal-title">Remove from Watch List</h2>
-            <button id="deleteConfirmModalCloseBtn" type="button" class="modal-close">&times;</button>
-        </div>
-        <p id="deleteConfirmModalMessage" class="modal-text"></p>
-        <div class="flex gap-3 justify-center mt-1">
-            <button id="deleteConfirmModalCancelBtn" type="button" class="btn-secondary flex-1">Cancel</button>
-            <button id="deleteConfirmModalConfirmBtn" type="button" class="btn-danger flex-1">Remove</button>
-        </div>
+        <button id="folderModalAddBtn" type="button" class="btn">Add</button>
     </div>
 </div>
 
 <script type="module" src="/src/javascript.mjs"></script>
-
 </body>
 </html>

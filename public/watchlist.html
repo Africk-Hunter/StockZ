@@ -2,118 +2,105 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>StockZ</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Michroma&family=Barlow:wght@400;500;600&family=Azeret+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/src/output.css">
-    <link rel="stylesheet" href="/src/style.css">
     <link rel="icon" type="image/x-icon" href="/src/favicon.ico">
 </head>
-<body class="bg-background w-screen min-h-screen">
+<body class="bg-deep text-cream w-full min-h-screen">
 
-<div class="flex flex-col items-center font-poppins min-h-screen" id="mainWrapper">
+<div class="flex flex-col items-center font-body min-h-screen" id="mainWrapper">
 
-    <nav class="hidden laptop:grid grid-rows-1 grid-cols-3 sized90 h-12 laptop:h-16 border-solid border-b border-text-color border-opacity-25">
-        <div id="stockZLogo" class="nav-home flex justify-self-start bg-transparent font-semibold justify-center laptop:gap-1 self-center hover:cursor-pointer">
-            <span class="text-text-color hidden laptop:flex laptop:text-5xl select-none">STOCK</span><span class="text-accent-color select-none text-4xl laptop:text-5xl ml-2">Z</span>
+    <nav class="hidden laptop:grid grid-cols-3 w-full h-16 px-6 border-solid border-b border-hairline" aria-label="Primary">
+        <div id="stockZLogo" class="nav-home flex justify-self-start self-center">
+            <button type="button" class="caps caps-wide flex gap-3 text-wordmark tracking-caps-label text-cream select-none" aria-label="StockZ home">STOCK<span class="text-lime">Z</span></button>
         </div>
 
-        <div class="flex justify-self-center justify-between items-center h-full w-full laptop:text-xl desktop:text-2xl self-center text-text-color font-medium">
-            <div id="tickerInfoBtn" class="nav-ticker-info"><img src="/src/tickerIcon.png" alt="" class="laptop:hidden h-6"><button class="hidden laptop:flex hover:text-accent-color transition-colors duration-150">Ticker Info</button></div>
-            <div id="homeBtn" class="nav-home"><img src="/src/houseIcon.svg" alt="" class="laptop:hidden h-6"><button class="hidden laptop:flex hover:text-accent-color transition-colors duration-150">Main</button></div>
-            <div id="watchListBtn" class="nav-watchlist"><img src="/src/listIcon.png" alt="" class="laptop:hidden h-6"><button class="hidden laptop:flex underline underline-offset-8 decoration-accent-color">Watch List</button></div>
+        <div class="flex justify-self-center justify-between items-center h-full w-full self-center">
+            <div id="tickerInfoBtn" class="nav-ticker-info"><button type="button" class="navlink">Ticker Info</button></div>
+            <div id="homeBtn" class="nav-home"><button type="button" class="navlink">Main</button></div>
+            <div id="watchListBtn" class="nav-watchlist"><button type="button" class="navlink is-on" aria-current="page">Watch List</button></div>
         </div>
 
-        <div class="flex justify-self-end items-center gap-4 h-full mr-5">
-            <button type="button" class="nav-bug-report flex items-center text-text-color hover:text-accent-color transition-colors duration-150" title="Report a problem" aria-label="Report a problem">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5 laptop:w-6 laptop:h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
-            </button>
-            <button class="nav-logout flex items-center hover:opacity-70 transition-opacity duration-150" id="logOutButton">
-                <img src="/src/logOut.png" alt="Log Out" class="h-6 laptop:h-8">
-            </button>
+        <div class="flex justify-self-end items-center gap-2 h-full">
+            <button type="button" class="nav-bug-report chip chip-icon" title="Report a problem" aria-label="Report a problem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" class="icon" aria-hidden="true"><path d="M12 2l10 10-10 10L2 12zM12 8v5M12 16v1"/></svg></button>
+            <button type="button" class="nav-logout chip chip-icon" id="logOutButton" title="Log out" aria-label="Log out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" class="icon" aria-hidden="true"><path d="M10 4H4v16h6M14 8l4 4-4 4M18 12H9"/></svg></button>
         </div>
     </nav>
 
-    <div class="laptop:hidden flex items-center justify-between w-full px-5 pt-4 pb-1">
-        <div class="nav-home flex items-baseline gap-1 font-poppins font-extrabold text-sm tracking-widest uppercase select-none hover:cursor-pointer">
-            <span class="text-text-color">Stock</span><span class="text-accent-color">Z</span>
+    <div class="laptop:hidden flex items-center justify-between w-full px-6 pt-4 pb-2">
+        <div class="nav-home">
+            <button type="button" class="caps caps-wide flex gap-2 text-h3 tracking-caps-label text-cream select-none" aria-label="StockZ home">STOCK<span class="text-lime">Z</span></button>
         </div>
-        <div class="flex items-center gap-3">
-            <button type="button" class="nav-bug-report flex items-center justify-center w-8 h-8 text-text-color hover:text-accent-color transition-colors duration-150" title="Report a problem" aria-label="Report a problem">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
-            </button>
-            <button type="button" class="nav-logout flex items-center justify-center w-8 h-8">
-                <img src="/src/logOut.png" alt="Log Out" class="h-4">
-            </button>
+        <div class="flex items-center gap-2">
+            <button type="button" class="nav-bug-report chip chip-icon" title="Report a problem" aria-label="Report a problem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" class="icon" aria-hidden="true"><path d="M12 2l10 10-10 10L2 12zM12 8v5M12 16v1"/></svg></button>
+            <button type="button" class="nav-logout chip chip-icon" title="Log out" aria-label="Log out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" class="icon" aria-hidden="true"><path d="M10 4H4v16h6M14 8l4 4-4 4M18 12H9"/></svg></button>
         </div>
     </div>
 
-    <nav class="laptop:hidden fixed bottom-0 left-0 right-0 flex bg-background border-t border-text-color border-opacity-25 pb-6 pt-2 z-10">
-        <div class="nav-ticker-info flex-1 flex flex-col items-center gap-1 hover:cursor-pointer">
-            <img src="/src/tickerIcon.png" alt="" class="h-4 opacity-50">
-            <span class="text-text-color text-opacity-60 text-[11px] font-semibold">Ticker Info</span>
-        </div>
-        <div class="nav-home flex-1 flex flex-col items-center gap-1 hover:cursor-pointer">
-            <img src="/src/houseIcon.svg" alt="" class="h-4 opacity-50">
-            <span class="text-text-color text-opacity-60 text-[11px] font-semibold">Search</span>
-        </div>
-        <div class="nav-watchlist flex-1 flex flex-col items-center gap-1 hover:cursor-pointer">
-            <img src="/src/listIcon.png" alt="" class="h-4">
-            <span class="text-accent-color text-[11px] font-semibold">Watch List</span>
-        </div>
+    <nav class="laptop:hidden fixed bottom-0 left-0 right-0 flex bg-deep border-solid border-t border-hairline z-10" aria-label="Primary">
+        <button type="button" class="nav-ticker-info tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" class="icon" aria-hidden="true"><path d="M4 20h16M7 16v-6M12 16V5M17 16v-4"/></svg><span>Ticker Info</span></button>
+        <button type="button" class="nav-home tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" class="icon" aria-hidden="true"><path d="M4 4h10v10H4zM14 14l6 6"/></svg><span>Search</span></button>
+        <button type="button" class="nav-watchlist tab is-on" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" class="icon" aria-hidden="true"><path d="M3 5h6l2 3h10v11H3z"/></svg><span>Watch List</span></button>
     </nav>
 
     <main class="flex flex-grow w-full justify-center items-start mt-10 laptop:mt-16 desktop:mt-20 pb-10 fade-in">
-        <section id="watchListContainerLarge" class="flex flex-col items-center justify-start w-11/12 laptop:w-4/5 desktop:w-3/5 desktopXL:w-1/2 rounded-xl min-h-[75vh] border-solid border border-text-color border-opacity-25">
-            <div class="laptop:hidden flex items-center justify-start w-11/12 mt-3 font-poppins font-bold text-xl text-text-color">Watch List</div>
-            <div class="flex justify-between items-center h-9 w-11/12 laptop:h-14 mt-2 laptop:mb-3">
-                <div class="flex items-center gap-2 h-full min-w-0">
-                    <div id="folderDropdownWrapper" class="relative flex items-center h-full min-w-0">
-                        <button id="folderDropdownBtn" type="button" class="flex items-center gap-1 laptop:gap-2 h-full px-2 laptop:px-4 text-text-color text-xs laptop:text-lg desktop:text-xl font-semibold bg-secondary-color rounded-lg hover:bg-text-color hover:text-background transition-colors duration-150 select-none min-w-0 max-w-[8rem] laptop:max-w-xs">
+        <section id="watchListContainerLarge" class="edged flex flex-col items-center justify-start w-11/12 laptop:w-4/5 desktop:w-3/5 desktopXL:w-1/2 max-w-content min-h-[75vh] pb-4">
+            <div class="laptop:hidden flex items-center justify-start w-11/12 mt-3 caps caps-wide text-h3 tracking-caps-title text-cream">Watch List</div>
+            <!-- Phones: two rows (watchlist picker + refresh, then sort + Bulk Add + Export). The left group uses display:contents there so its children can be ordered into those rows. -->
+            <div class="flex flex-wrap laptop:flex-nowrap justify-between items-center gap-2 w-11/12 laptop:h-14 mt-2 laptop:mb-3">
+                <div class="contents laptop:flex items-center gap-2 h-full min-w-0">
+                    <div id="folderDropdownWrapper" class="relative flex items-center h-11 laptop:h-full min-w-0 flex-1 laptop:flex-none order-1 laptop:order-none">
+                        <button id="folderDropdownBtn" type="button" class="chip h-full min-w-0 select-none" aria-haspopup="true">
                             <span id="folderDropdownLabel" class="truncate">All Stocks</span>
-                            <span class="text-[8px] laptop:text-xs flex-shrink-0">&#9660;</span>
+                            <span class="text-[10px] flex-shrink-0" aria-hidden="true">&#9660;</span>
                         </button>
-                        <div id="folderDropdownPanel" class="hidden absolute left-0 top-full mt-1 w-48 laptop:w-64 bg-secondary-color rounded-lg shadow-lg z-20 py-1 text-text-color text-xs laptop:text-base max-h-[70vh] overflow-y-auto no-scrollbar">
+                        <div id="folderDropdownPanel" class="hidden absolute left-0 top-full mt-2 w-48 laptop:w-64 desktop:w-80 desktopXL:w-96 edged flex flex-col gap-grout p-2 z-20 text-cream text-small max-h-[70vh] overflow-y-auto no-scrollbar">
                         </div>
                     </div>
-                    <button id="bulkAddBtn" type="button" class="flex items-center h-full px-2 laptop:px-4 text-text-color text-xs laptop:text-lg desktop:text-xl font-semibold bg-secondary-color rounded-lg hover:bg-text-color hover:text-background transition-colors duration-150 select-none flex-shrink-0">Bulk Add</button>
+                    <button id="bulkAddBtn" type="button" class="chip h-11 laptop:h-full select-none flex-shrink-0 order-4 laptop:order-none ml-auto laptop:ml-0">Bulk Add</button>
                     <!-- Icon-only on phones to leave room for the sort controls -->
-                    <button id="exportBtn" type="button" title="Export stocks" aria-label="Export stocks" class="flex items-center gap-2 h-full px-2 laptop:px-4 text-text-color text-xs laptop:text-lg desktop:text-xl font-semibold bg-secondary-color rounded-lg hover:bg-text-color hover:text-background transition-colors duration-150 select-none flex-shrink-0">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 laptop:w-5 laptop:h-5" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14"/></svg>
+                    <button id="exportBtn" type="button" title="Export stocks" aria-label="Export stocks" class="chip hidden laptop:inline-flex h-11 w-11 laptop:w-auto laptop:h-full px-0 laptop:px-4 select-none flex-shrink-0 order-5 laptop:order-none">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" class="icon" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14"/></svg>
                         <span class="hidden laptop:inline">Export</span>
                     </button>
                 </div>
                 <!-- Phone-only sort control (the column-header sort buttons are laptop+ only) -->
-                <div class="laptop:hidden flex items-center h-full gap-1 ml-auto mr-2">
-                    <select id="mobileSortSelect" aria-label="Sort by" class="h-full bg-secondary-color text-text-color text-xs font-semibold rounded-lg px-2 outline-none">
+                <div class="laptop:hidden flex items-center h-11 gap-2 order-3">
+                    <!-- 16px text: iOS Safari zooms the page on focus for form controls smaller than that -->
+                    <select id="mobileSortSelect" aria-label="Sort by" class="caps cut-sm h-full bg-canopy text-cream text-body tracking-caps-label pl-3 pr-2 outline-none">
                         <option value="">Sort</option>
                         <option value="ticker">Name</option>
                         <option value="currentPrice">Price</option>
                         <option value="priceTier">Tier</option>
-                        <option value="goodBuyPrice">GB</option>
-                        <option value="badBuyPrice">BB</option>
-                        <option value="dividendYield">Div</option>
+                        <option value="goodBuyPrice">Good buy</option>
+                        <option value="badBuyPrice">Bad buy</option>
+                        <option value="dividendYield">Dividend</option>
                     </select>
-                    <button id="mobileSortDir" type="button" aria-label="Toggle sort direction" class="h-full w-8 bg-secondary-color text-text-color rounded-lg select-none flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 transition-transform duration-150"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+                    <button id="mobileSortDir" type="button" aria-label="Toggle sort direction" class="chip chip-icon h-11 w-11 select-none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" class="icon transition-transform duration-hover" aria-hidden="true"><path d="M12 20V4M6 10l6-6 6 6"/></svg></button>
                 </div>
                 <!-- Small bar at top for refresh button to go in top right corner -->
-                <button id="refreshButton" class="h-full w-6 laptop:w-10 hover:opacity-70 transition-opacity duration-150 disabled:opacity-50 disabled:cursor-not-allowed"><img src="/src/refreshIcon.svg" alt="Refresh" class=""></button>
+                <button id="refreshButton" type="button" class="chip chip-icon h-11 laptop:h-full w-11 laptop:w-14 order-2 laptop:order-none" title="Refresh" aria-label="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" class="icon" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.5-5.8M20 4v5h-5"/></svg></button>
             </div>
-            <p id="refreshStatus" role="status" class="hidden w-11/12 mb-2 text-xs laptop:text-sm text-text-color text-opacity-70"></p>
+            <p id="refreshStatus" role="status" data-state="Info" class="status hidden w-11/12 mb-2"></p>
             <!-- Column widths (grid-cols) must stay in sync with the row template in createStockContainerItem() in src/pages/watchlist-rows.mjs, including the two trailing action-icon tracks, or header/row columns drift out of alignment -->
-            <div class="hidden laptop:grid grid-cols-[1.6fr_1fr_1fr_1fr_1fr_1.75rem_1.75rem] laptop:grid-cols-[1.6fr_1fr_1fr_1fr_1fr_2.5rem_2.5rem] w-11/12 h-8 laptop:h-14 rounded border-solid border text-text-color text-[9px] laptop:text-base desktop:text-lg desktopXL:text-xl border-text-color border-opacity-25 font-semibold">
+            <div class="hidden laptop:grid grid-cols-[1.6fr_1fr_1fr_1fr_1fr_1.75rem_1.75rem] laptop:grid-cols-[1.6fr_1fr_1fr_1fr_1fr_2.5rem_2.5rem] gap-grout bg-deep cut-sm w-11/12 h-14">
                 <!-- Column Names -->
-                <button id="sortByName" class="flex justify-center items-center h-full border-r border-text-color border-opacity-25 hover:bg-text-color hover:bg-opacity-10 transition-colors duration-150 select-none px-1 min-w-0 truncate">Name<span id="sortByNameArrow" class="ml-1"></span></button>
-                <button id="sortByPrice" class="flex justify-center items-center h-full border-r border-text-color border-opacity-25 hover:bg-text-color hover:bg-opacity-10 transition-colors duration-150 select-none px-1 min-w-0 truncate">Price<span id="sortByPriceArrow" class="ml-1"></span></button>
-                <button id="sortByGB" class="flex justify-center items-center h-full border-r border-text-color border-opacity-25 hover:bg-text-color hover:bg-opacity-10 transition-colors duration-150 select-none px-1 min-w-0 truncate">GB<span id="sortByGBArrow" class="ml-1"></span></button>
-                <button id="sortByBB" class="flex justify-center items-center h-full border-r border-text-color border-opacity-25 hover:bg-text-color hover:bg-opacity-10 transition-colors duration-150 select-none px-1 min-w-0 truncate">BB<span id="sortByBBArrow" class="ml-1"></span></button>
-                <button id="sortByDividend" class="flex justify-center items-center h-full hover:bg-text-color hover:bg-opacity-10 transition-colors duration-150 select-none px-1 min-w-0 truncate">Div<span id="sortByDividendArrow" class="ml-1"></span></button>
+                <button id="sortByName" type="button" class="caps flex justify-center items-center h-full bg-canopy text-cream text-label tracking-caps-label hover:bg-cream hover:text-ink transition-[background-color,color] duration-hover select-none px-1 min-w-0 truncate">Name<span id="sortByNameArrow" class="ml-1"></span></button>
+                <button id="sortByPrice" type="button" class="caps flex justify-center items-center h-full bg-canopy text-cream text-label tracking-caps-label hover:bg-cream hover:text-ink transition-[background-color,color] duration-hover select-none px-1 min-w-0 truncate">Price<span id="sortByPriceArrow" class="ml-1"></span></button>
+                <button id="sortByGB" type="button" class="caps flex justify-center items-center h-full bg-canopy text-cream text-label tracking-caps-label hover:bg-cream hover:text-ink transition-[background-color,color] duration-hover select-none px-1 min-w-0 truncate">GB<span id="sortByGBArrow" class="ml-1"></span></button>
+                <button id="sortByBB" type="button" class="caps flex justify-center items-center h-full bg-canopy text-cream text-label tracking-caps-label hover:bg-cream hover:text-ink transition-[background-color,color] duration-hover select-none px-1 min-w-0 truncate">BB<span id="sortByBBArrow" class="ml-1"></span></button>
+                <button id="sortByDividend" type="button" class="caps flex justify-center items-center h-full bg-canopy text-cream text-label tracking-caps-label hover:bg-cream hover:text-ink transition-[background-color,color] duration-hover select-none px-1 min-w-0 truncate">Div<span id="sortByDividendArrow" class="ml-1"></span></button>
+                <div class="bg-canopy col-span-2"></div>
             </div>
             <div id="watchlistItemsContainer" class="hidden laptop:flex flex-col w-11/12 mt-3 overflow-x-hidden gap-2">
 
             </div>
 
-            <div id="watchlistCardsContainer" class="laptop:hidden flex flex-col w-11/12 mt-3 gap-3.5 pb-20">
+            <div id="watchlistCardsContainer" class="laptop:hidden flex flex-col w-11/12 mt-3 gap-2 pb-28">
 
             </div>
 
@@ -124,97 +111,97 @@
         <div id="folderModal" class="modal-panel">
             <div class="flex justify-between items-center">
                 <h2 id="folderModalTitle" class="modal-title">Add to a Watchlist</h2>
-                <button id="folderModalCloseBtn" type="button" class="modal-close">&times;</button>
+                <button id="folderModalCloseBtn" type="button" class="chip chip-icon flex-shrink-0 text-body" aria-label="Close">&times;</button>
             </div>
-            <div id="folderModalList" class="flex flex-col gap-1 max-h-60 overflow-y-auto no-scrollbar">
+            <div id="folderModalList" class="flex flex-col gap-grout max-h-60 desktop:max-h-80 overflow-y-auto no-scrollbar">
             </div>
             <form id="folderModalNewFolderForm" class="flex gap-2 mt-2">
-                <input id="folderModalNewFolderInput" type="text" placeholder="New watchlist name" maxlength="40" autocomplete="off" class="input-field flex-1 min-w-0">
-                <button type="submit" class="btn-secondary flex-shrink-0">Create</button>
+                <input id="folderModalNewFolderInput" type="text" placeholder="New watchlist name" maxlength="40" autocomplete="off" aria-label="New watchlist name" class="field flex-1 min-w-0">
+                <button type="submit" class="chip flex-shrink-0">Create</button>
             </form>
-            <button id="folderModalAddBtn" type="button" class="btn-primary">Add</button>
+            <button id="folderModalAddBtn" type="button" class="btn">Add</button>
         </div>
     </div>
 
     <div id="renameFolderModalOverlay" class="hidden modal-overlay">
-        <form id="renameFolderModalForm" class="modal-panel laptop:max-w-sm gap-4">
+        <form id="renameFolderModalForm" class="modal-panel laptop:max-w-lg desktop:max-w-xl desktopXL:max-w-2xl">
             <div class="flex justify-between items-center">
                 <h2 class="modal-title">Rename Watchlist</h2>
-                <button id="renameFolderModalCloseBtn" type="button" class="modal-close">&times;</button>
+                <button id="renameFolderModalCloseBtn" type="button" class="chip chip-icon flex-shrink-0 text-body" aria-label="Close">&times;</button>
             </div>
-            <input id="renameFolderModalInput" type="text" placeholder="Watchlist name" maxlength="40" autocomplete="off" aria-label="Watchlist name" class="input-field">
-            <div class="flex gap-3 justify-center mt-1">
-                <button id="renameFolderModalCancelBtn" type="button" class="btn-secondary flex-1">Cancel</button>
-                <button id="renameFolderModalSaveBtn" type="submit" class="btn-primary flex-1">Save</button>
+            <input id="renameFolderModalInput" type="text" placeholder="Watchlist name" maxlength="40" autocomplete="off" aria-label="Watchlist name" class="field">
+            <div class="flex gap-2 justify-center mt-1">
+                <button id="renameFolderModalCancelBtn" type="button" class="chip flex-1">Cancel</button>
+                <button id="renameFolderModalSaveBtn" type="submit" class="btn flex-1">Save</button>
             </div>
         </form>
     </div>
 
     <div id="bulkAddModalOverlay" class="hidden modal-overlay">
-        <form id="bulkAddModalForm" class="modal-panel laptop:max-w-md gap-4">
+        <form id="bulkAddModalForm" class="modal-panel">
             <div class="flex justify-between items-center">
                 <h2 class="modal-title">Bulk Add Stocks</h2>
-                <button id="bulkAddModalCloseBtn" type="button" class="modal-close">&times;</button>
+                <button id="bulkAddModalCloseBtn" type="button" class="chip chip-icon flex-shrink-0 text-body" aria-label="Close">&times;</button>
             </div>
-            <textarea id="bulkAddModalInput" rows="5" placeholder="AAPL, MSFT, WFC" aria-label="Tickers to add" autocomplete="off" spellcheck="false" class="input-field resize-none uppercase"></textarea>
-            <p class="modal-text text-sm text-text-color text-opacity-60">Separate tickers with commas, spaces or new lines (max 50).</p>
-            <div id="bulkAddModalFolders" class="flex flex-col gap-1 max-h-40 overflow-y-auto no-scrollbar"></div>
-            <p id="bulkAddModalStatus"class="modal-text text-sm hidden"></p>
-            <div class="flex gap-3 justify-center mt-1">
-                <button id="bulkAddModalCancelBtn" type="button" class="btn-secondary flex-1">Cancel</button>
-                <button id="bulkAddModalSubmitBtn" type="submit" class="btn-primary flex-1">Add</button>
+            <textarea id="bulkAddModalInput" rows="5" placeholder="AAPL, MSFT, WFC" aria-label="Tickers to add" autocomplete="off" spellcheck="false" class="field resize-none uppercase font-mono"></textarea>
+            <p class="modal-text">Separate tickers with commas, spaces or new lines (max 50).</p>
+            <div id="bulkAddModalFolders" class="flex flex-col gap-grout max-h-40 desktop:max-h-56 overflow-y-auto no-scrollbar"></div>
+            <p id="bulkAddModalStatus" class="modal-text hidden"></p>
+            <div class="flex gap-2 justify-center mt-1">
+                <button id="bulkAddModalCancelBtn" type="button" class="chip flex-1">Cancel</button>
+                <button id="bulkAddModalSubmitBtn" type="submit" class="btn flex-1">Add</button>
             </div>
         </form>
     </div>
 
     <div id="exportModalOverlay" class="hidden modal-overlay">
-        <form id="exportModalForm" class="modal-panel laptop:max-w-md gap-4">
+        <form id="exportModalForm" class="modal-panel">
             <div class="flex justify-between items-center">
                 <h2 class="modal-title">Export Stocks</h2>
-                <button id="exportModalCloseBtn" type="button" class="modal-close" aria-label="Close">&times;</button>
+                <button id="exportModalCloseBtn" type="button" class="chip chip-icon flex-shrink-0 text-body" aria-label="Close">&times;</button>
             </div>
             <div class="flex flex-col gap-1">
                 <div class="flex justify-between items-baseline">
                     <p class="section-label">Stocks</p>
-                    <p id="exportModalSummary" class="text-xs laptop:text-sm text-text-color text-opacity-60"></p>
+                    <p id="exportModalSummary" class="font-mono text-mono text-sand"></p>
                 </div>
                 <!-- Rows are built in src/pages/export-modal.mjs -->
-                <div id="exportModalTree" class="flex flex-col max-h-[40vh] laptop:max-h-72 overflow-y-auto no-scrollbar rounded-lg border border-text-color border-opacity-25 p-1"></div>
+                <div id="exportModalTree" class="flex flex-col gap-grout max-h-[40vh] laptop:max-h-72 desktop:max-h-96 overflow-y-auto no-scrollbar bg-deep cut-sm"></div>
             </div>
             <fieldset class="flex flex-col gap-2">
                 <legend class="section-label mb-1">Format</legend>
-                <label class="flex items-start gap-3 rounded-lg border border-text-color border-opacity-25 has-[:checked]:border-accent-color has-[:checked]:border-opacity-100 p-3 cursor-pointer transition-colors duration-150">
-                    <input id="exportFormatImportable" type="radio" name="exportFormat" value="json" checked class="accent-accent-color w-4 h-4 mt-0.5 laptop:mt-1 flex-shrink-0">
-                    <span class="flex flex-col gap-0.5">
-                        <span class="text-sm laptop:text-base font-semibold">Importable <span class="font-normal text-text-color text-opacity-60">.json</span></span>
-                        <span class="text-xs laptop:text-sm text-text-color text-opacity-60">Your stocks and the watchlists they're in, as structured data for importing.</span>
+                <label class="export-format flex items-start gap-3 cut-sm bg-canopy p-3 cursor-pointer transition-[background-color,color] duration-hover hover:bg-cream hover:text-ink has-[:checked]:bg-cream has-[:checked]:text-ink has-[:checked]:shadow-underline-lime has-[:focus-visible]:shadow-ring">
+                    <input id="exportFormatImportable" type="radio" name="exportFormat" value="json" checked class="check mt-1 flex-shrink-0">
+                    <span class="flex flex-col gap-1">
+                        <span class="text-small laptop:text-body font-semibold">Importable <span class="font-mono font-normal">.json</span></span>
+                        <span class="text-small">Your stocks and the watchlists they're in, as structured data for importing.</span>
                     </span>
                 </label>
-                <label class="flex items-start gap-3 rounded-lg border border-text-color border-opacity-25 has-[:checked]:border-accent-color has-[:checked]:border-opacity-100 p-3 cursor-pointer transition-colors duration-150">
-                    <input id="exportFormatReadable" type="radio" name="exportFormat" value="txt" class="accent-accent-color w-4 h-4 mt-0.5 laptop:mt-1 flex-shrink-0">
-                    <span class="flex flex-col gap-0.5">
-                        <span class="text-sm laptop:text-base font-semibold">Readable <span class="font-normal text-text-color text-opacity-60">.txt</span></span>
-                        <span class="text-xs laptop:text-sm text-text-color text-opacity-60">A plain-text table of prices and buy ranges, grouped by watchlist.</span>
+                <label class="export-format flex items-start gap-3 cut-sm bg-canopy p-3 cursor-pointer transition-[background-color,color] duration-hover hover:bg-cream hover:text-ink has-[:checked]:bg-cream has-[:checked]:text-ink has-[:checked]:shadow-underline-lime has-[:focus-visible]:shadow-ring">
+                    <input id="exportFormatReadable" type="radio" name="exportFormat" value="txt" class="check mt-1 flex-shrink-0">
+                    <span class="flex flex-col gap-1">
+                        <span class="text-small laptop:text-body font-semibold">Readable <span class="font-mono font-normal">.txt</span></span>
+                        <span class="text-small">A plain-text table of prices and buy ranges, grouped by watchlist.</span>
                     </span>
                 </label>
             </fieldset>
-            <div class="flex gap-3 justify-center mt-1">
-                <button id="exportModalCancelBtn" type="button" class="btn-secondary flex-1">Cancel</button>
-                <button id="exportModalSubmitBtn" type="submit" class="btn-primary flex-1">Export</button>
+            <div class="flex gap-2 justify-center mt-1">
+                <button id="exportModalCancelBtn" type="button" class="chip flex-1">Cancel</button>
+                <button id="exportModalSubmitBtn" type="submit" class="btn flex-1">Export</button>
             </div>
         </form>
     </div>
 
     <div id="deleteConfirmModalOverlay" class="hidden modal-overlay">
-        <div class="modal-panel laptop:max-w-sm gap-4">
+        <div class="modal-panel">
             <div class="flex justify-between items-center">
                 <h2 class="modal-title">Remove from Watch List</h2>
-                <button id="deleteConfirmModalCloseBtn" type="button" class="modal-close">&times;</button>
+                <button id="deleteConfirmModalCloseBtn" type="button" class="chip chip-icon flex-shrink-0 text-body" aria-label="Close">&times;</button>
             </div>
             <p id="deleteConfirmModalMessage" class="modal-text"></p>
-            <div class="flex gap-3 justify-center mt-1">
-                <button id="deleteConfirmModalCancelBtn" type="button" class="btn-secondary flex-1">Cancel</button>
-                <button id="deleteConfirmModalConfirmBtn" type="button" class="btn-danger flex-1">Remove</button>
+            <div class="flex gap-2 justify-center mt-1">
+                <button id="deleteConfirmModalCancelBtn" type="button" class="chip flex-1">Cancel</button>
+                <button id="deleteConfirmModalConfirmBtn" type="button" class="btn flex-1">Remove</button>
             </div>
         </div>
     </div>
@@ -222,13 +209,3 @@
     <script type="module" src="/src/javascript.mjs"></script>
 </body>
 </html>
-
-<!-- Example Watchlist Item -->
-<!--
-    <div class="flex w-full h-7 laptop:h-9 text-background text-lg laptop:text-2xl font-semibold">
-        <div class="flex h-full w-60 justify-center items-center bg-text-color rounded-l border-r border-background">WFC</div>
-        <div class="flex flexh-full w-60 justify-center items-center bg-great-buy-one border-r border-background">$39.45</div>
-        <div class="flex h-full w-60 justify-center items-center bg-desperate-buy-one rounded-r">$51.02</div>
-        <div id="deleteWatchlistItem" class="flex h-full w-10 justify-center items-center bg-none rounded border-solid border border-text-color border-opacity-25 ml-auto"><img class="h-full w-4/5" src="/src/trashcan.svg" alt="Delete"></div>
-    </div>
- -->

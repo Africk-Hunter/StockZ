@@ -24,22 +24,33 @@ async function loginUser(username, password) {
     }
 }
 
+// Error state: ember underline on the field plus a sentence saying what is wrong.
+function showLoginError(message) {
+    const el = document.getElementById('loginError');
+    if (!el) return;
+    el.textContent = message;
+    el.classList.remove('hidden');
+}
+
+function clearLoginError(input) {
+    input.classList.remove('is-error');
+    const el = document.getElementById('loginError');
+    if (el) el.classList.add('hidden');
+}
+
 async function handleLogin() {
     const username = inputUsername.value;
     const password = inputPassword.value;
 
     if (username === "") {
-        inputUsername.style.background = "red";
+        inputUsername.classList.add('is-error');
     }
     if (password === "") {
-        inputPassword.style.background = "red";
+        inputPassword.classList.add('is-error');
     }
-    inputPassword.addEventListener('click', function () {
-        inputPassword.style.background = '#E4ECE4';
-    });
-    inputUsername.addEventListener('click', function () {
-        inputUsername.style.background = '#E4ECE4';
-    });
+    if (username === "" || password === "") {
+        showLoginError('Enter your username and password.');
+    }
 
     try {
         const user = await loginUser(username, password);
@@ -56,8 +67,9 @@ async function handleLogin() {
                 window.location.href = '/main';
             }, 200);
         } else {
-            inputUsername.style.background = 'red';
-            inputPassword.style.background = 'red';
+            inputUsername.classList.add('is-error');
+            inputPassword.classList.add('is-error');
+            showLoginError('Incorrect email or password. Try again.');
             alert('Incorrect email or password. Please try again.');
         }
     } catch (error) {
@@ -68,6 +80,8 @@ async function handleLogin() {
 
 if (enterButton) {
     enterButton.addEventListener("click", handleLogin);
+    inputUsername.addEventListener('click', () => clearLoginError(inputUsername));
+    inputPassword.addEventListener('click', () => clearLoginError(inputPassword));
 
     inputUsername.addEventListener("keypress", function (event) {
         if (event.key === "Enter") {
