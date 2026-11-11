@@ -61,11 +61,18 @@
                         <div id="folderDropdownPanel" class="hidden absolute left-0 top-full mt-2 w-48 laptop:w-64 desktop:w-80 desktopXL:w-96 edged flex flex-col gap-grout p-2 z-20 text-cream text-small max-h-[70vh] overflow-y-auto no-scrollbar">
                         </div>
                     </div>
-                    <button id="bulkAddBtn" type="button" class="chip h-11 laptop:h-full select-none flex-shrink-0 order-4 laptop:order-none ml-auto laptop:ml-0">Bulk Add</button>
+                    <button id="bulkAddBtn" type="button" class="chip h-11 laptop:h-full select-none flex-shrink-0 order-4 laptop:order-none ml-auto laptop:ml-0">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" class="icon" aria-hidden="true"><path d="M12 20V9m0 0-4.5 4.5M12 9l4.5 4.5M5 5h14"/></svg>
+                        <span>Bulk Add</span>
+                    </button>
                     <!-- Icon-only on phones to leave room for the sort controls -->
                     <button id="exportBtn" type="button" title="Export stocks" aria-label="Export stocks" class="chip hidden laptop:inline-flex h-11 w-11 laptop:w-auto laptop:h-full px-0 laptop:px-4 select-none flex-shrink-0 order-5 laptop:order-none">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" class="icon" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14"/></svg>
                         <span class="hidden laptop:inline">Export</span>
+                    </button>
+                    <button id="removeBtn" type="button" title="Remove several stocks" aria-label="Remove several stocks" class="chip hidden laptop:inline-flex h-11 w-11 laptop:w-auto laptop:h-full px-0 laptop:px-4 select-none flex-shrink-0 order-6 laptop:order-none">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" class="icon" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7v13h12V7M10 11v6M14 11v6"/></svg>
+                        <span class="hidden laptop:inline">Remove</span>
                     </button>
                 </div>
                 <!-- Phone-only sort control (the column-header sort buttons are laptop+ only) -->
@@ -144,7 +151,9 @@
                 <button id="bulkAddModalCloseBtn" type="button" class="chip chip-icon flex-shrink-0 text-body" aria-label="Close">&times;</button>
             </div>
             <textarea id="bulkAddModalInput" rows="5" placeholder="AAPL, MSFT, WFC" aria-label="Tickers to add" autocomplete="off" spellcheck="false" class="field resize-none uppercase font-mono"></textarea>
-            <p class="modal-text">Separate tickers with commas, spaces or new lines (max 50).</p>
+            <p class="modal-text">Separate tickers with commas, spaces or new lines (max 200), or import a StockZ <span class="font-mono">.json</span> export (max 500).</p>
+            <input id="bulkAddModalFileInput" type="file" accept=".json,application/json" class="hidden">
+            <button id="bulkAddModalFileBtn" type="button" class="chip">Import .json file…</button>
             <div id="bulkAddModalFolders" class="flex flex-col gap-grout max-h-40 desktop:max-h-56 overflow-y-auto no-scrollbar"></div>
             <p id="bulkAddModalStatus" class="modal-text hidden"></p>
             <div class="flex gap-2 justify-center mt-1">
@@ -188,6 +197,29 @@
             <div class="flex gap-2 justify-center mt-1">
                 <button id="exportModalCancelBtn" type="button" class="chip flex-1">Cancel</button>
                 <button id="exportModalSubmitBtn" type="submit" class="btn flex-1">Export</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="removeModalOverlay" class="hidden modal-overlay">
+        <form id="removeModalForm" class="modal-panel">
+            <div class="flex justify-between items-center">
+                <h2 class="modal-title">Remove Stocks</h2>
+                <button id="removeModalCloseBtn" type="button" class="chip chip-icon flex-shrink-0 text-body" aria-label="Close">&times;</button>
+            </div>
+            <div class="flex flex-col gap-1">
+                <div class="flex justify-between items-baseline">
+                    <p class="section-label">Stocks</p>
+                    <p id="removeModalSummary" class="font-mono text-mono text-sand"></p>
+                </div>
+                <input id="removeModalSearch" type="text" placeholder="Search by ticker or name" autocomplete="off" aria-label="Search stocks" class="field w-full">
+                <!-- Rows are built in src/pages/remove-modal.mjs -->
+                <div id="removeModalList" class="flex flex-col gap-grout max-h-[40vh] laptop:max-h-72 desktop:max-h-96 overflow-y-auto no-scrollbar bg-deep cut-sm"></div>
+            </div>
+            <p class="modal-text">Selected stocks are removed from your watch list entirely, including every watchlist they're in.</p>
+            <div class="flex gap-2 justify-center mt-1">
+                <button id="removeModalCancelBtn" type="button" class="chip flex-1">Cancel</button>
+                <button id="removeModalSubmitBtn" type="submit" class="btn flex-1">Remove</button>
             </div>
         </form>
     </div>

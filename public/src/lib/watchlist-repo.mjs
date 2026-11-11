@@ -133,6 +133,33 @@ export async function deleteFromFirebase(ticker) {
     }
 }
 
+// Removes several tickers in batches (Firestore caps a batch at 500 writes) and
+// drops them from the cache. All-or-nothing per batch: returns the tickers that
+// were actually deleted so the caller can report a partial failure.
+export async function deleteManyFromFirebase(tickers) {
+    const user = auth.currentUser;
+    if (!user) {
+        console.error("No user is signed in.");
+        return [];
+    }
+    const deleted = [];
+    for (let i = 0; i < tickers.length; i += 400) {
+        const chunk = tickers.slice(i, i + 400);
+        try {
+            const batch = writeBatch(db);
+            chunk.forEach(ticker => batch.delete(doc(db, `users/${user.uid}/watchlist`, ticker)));
+            await batch.commit();
+            deleted.push(...chunk);
+        } catch (error) {
+            console.error("Error deleting documents: ", error);
+            break;
+        }
+    }
+    const gone = new Set(deleted);
+    setCachedWatchList(getCachedWatchList().filter(item => !gone.has(item.ticker)));
+    return deleted;
+}
+
 export function saveWatchlistItem(uid, entry) {
     return setDoc(doc(db, `users/${uid}/watchlist`, entry.ticker), entry);
 }

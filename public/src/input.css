@@ -185,9 +185,52 @@
 
 /* ---- page transitions (class names are toggled by the page scripts) ---- */
 .fade-in { animation: fade 120ms ease-out both; }
-.fade-in-slow { animation: fade 500ms ease-out both; }
-/* ticker-info page: the ticker box stays put (it is the continuation of the one on /main); everything after it fades in */
-.fade-in-rest > #tickerLabelIP ~ * { animation: fade 200ms ease-out both; }
+.fade-in-slow { animation: rise 500ms cubic-bezier(.2,.7,.2,1) both; }
+/* ticker-info page: the ticker box stays put (it is the continuation of the one on /main); everything after it rises in */
+.fade-in-rest > #tickerLabelIP ~ * { animation: rise 450ms cubic-bezier(.2,.7,.2,1) backwards; animation-delay: calc(var(--i, 0) * 70ms); }
+
+/* ---- entrance: every block on a page rises in, staggered by its position ----
+   Pure CSS, so it also plays for anything shown later (a `hidden` element
+   un-hidden, a card appended). :where() keeps specificity at zero so the
+   fadeAway/fade-in classes above always win. `backwards` (not `both`) so the
+   end state doesn't pin transform/opacity and fight hover or press styles. */
+@keyframes rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: none; }
+}
+@keyframes pop {
+    from { opacity: 0; transform: translateY(10px) scale(.97); }
+    to   { opacity: 1; transform: none; }
+}
+:where(
+    main > *:not(#tickerLabelIP),
+    nav > *,
+    #mainWrapper > div,
+    #watchListContainerLarge > *,
+    #mobileSearchResultsContainer > *,
+    body > div:not(#mainWrapper) > *
+) {
+    animation: rise 450ms cubic-bezier(.2,.7,.2,1) backwards;
+    animation-delay: calc(var(--i, 0) * 70ms);
+}
+:where(main > *:not(#tickerLabelIP), nav > *, #watchListContainerLarge > *, body > div:not(#mainWrapper) > *, .fade-in-rest > *) {
+    --i: 0;
+}
+:where(main > *:not(#tickerLabelIP), nav > *, #watchListContainerLarge > *, body > div:not(#mainWrapper) > *):nth-child(2) { --i: 1; }
+:where(main > *:not(#tickerLabelIP), nav > *, #watchListContainerLarge > *, body > div:not(#mainWrapper) > *):nth-child(3) { --i: 2; }
+:where(main > *:not(#tickerLabelIP), nav > *, #watchListContainerLarge > *, body > div:not(#mainWrapper) > *):nth-child(4) { --i: 3; }
+:where(main > *:not(#tickerLabelIP), nav > *, #watchListContainerLarge > *, body > div:not(#mainWrapper) > *):nth-child(5) { --i: 4; }
+:where(main > *:not(#tickerLabelIP), nav > *, #watchListContainerLarge > *, body > div:not(#mainWrapper) > *):nth-child(6) { --i: 5; }
+:where(main > *:not(#tickerLabelIP), nav > *, #watchListContainerLarge > *, body > div:not(#mainWrapper) > *):nth-child(n+7) { --i: 6; }
+.fade-in-rest > *:nth-child(n) { --i: 0; }
+.fade-in-rest > *:nth-child(3) { --i: 1; }
+.fade-in-rest > *:nth-child(4) { --i: 2; }
+.fade-in-rest > *:nth-child(5) { --i: 3; }
+.fade-in-rest > *:nth-child(6) { --i: 4; }
+.fade-in-rest > *:nth-child(n+7) { --i: 5; }
+/* modals: scrim fades, panel pops each time it is opened (display:none -> flex restarts the animation) */
+.modal-overlay { animation: fade 180ms ease-out backwards; }
+.modal-panel { animation: pop 260ms cubic-bezier(.2,.7,.2,1) backwards; }
 .fadeAway { animation: fadeout 200ms ease-in-out forwards; }
 .fadeAwayFast { animation: fadeout 90ms ease-out forwards; }
 
