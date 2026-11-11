@@ -1,0 +1,57 @@
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Michroma&family=Barlow:wght@500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;box-sizing:border-box}
+body{width:1200px;height:630px;overflow:hidden;background:#10241A;font-family:'Barlow',sans-serif;color:#F2ECD2;position:relative}
+.bg{position:absolute;inset:0;background:radial-gradient(900px 500px at 78% 70%,#24432F 0%,#1A3526 45%,#10241A 100%)}
+.grid{position:absolute;inset:0;background-image:linear-gradient(rgba(242,236,210,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(242,236,210,.05) 1px,transparent 1px);background-size:60px 60px}
+svg{position:absolute;inset:0}
+.t{position:absolute;left:72px;top:150px}
+.k{font-size:20px;letter-spacing:.32em;color:#9BCB5E;font-weight:600;margin-bottom:22px}
+h1{font-family:'Michroma',sans-serif;font-weight:400;font-size:112px;letter-spacing:.02em;line-height:1}
+h1 span{color:#9BCB5E}
+p{font-size:30px;line-height:1.3;margin-top:30px;color:#DCD3A6;font-weight:500;width:700px}
+.chip{position:absolute;left:72px;bottom:64px;font-size:22px;letter-spacing:.2em;color:#F2ECD2;font-weight:600;display:flex;gap:14px;align-items:center}
+.chip i{width:12px;height:12px;background:#9BCB5E;display:block}
+</style></head><body>
+<div class="bg"></div><div class="grid"></div>
+<svg width="1200" height="630" viewBox="0 0 1200 630">
+ <defs><linearGradient id="mg" gradientUnits="userSpaceOnUse" x1="520" x2="860"><stop offset="0" stop-color="#000"/><stop offset="1" stop-color="#fff"/></linearGradient><mask id="m"><rect width="1200" height="630" fill="url(#mg)"/></mask>
+  <linearGradient id="fade" x1="0" x2="1"><stop offset="0" stop-color="#10241A" stop-opacity="1"/><stop offset=".35" stop-color="#10241A" stop-opacity="0"/></linearGradient>
+  <linearGradient id="area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9BCB5E" stop-opacity=".28"/><stop offset="1" stop-color="#9BCB5E" stop-opacity="0"/></linearGradient>
+ </defs>
+ <!-- buy bands -->
+ <g opacity=".92">
+  <rect x="640" y="80" width="560" height="110" fill="#9BCB5E" opacity=".0"/>
+  <rect x="660" y="360" width="540" height="62" fill="#B8363B" opacity=".30"/>
+  <rect x="660" y="422" width="540" height="62" fill="#E07F52" opacity=".30"/>
+  <rect x="660" y="484" width="540" height="62" fill="#F5DE82" opacity=".30"/>
+  <rect x="660" y="546" width="540" height="84" fill="#9BCB5E" opacity=".34"/>
+ </g>
+ <g font-family="Barlow" font-weight="600" font-size="17" letter-spacing="3" text-anchor="end">
+  <text x="1170" y="398" fill="#F2ECD2" opacity=".75">BAD</text>
+  <text x="1170" y="460" fill="#F2ECD2" opacity=".75">OKAY</text>
+  <text x="1170" y="522" fill="#F2ECD2" opacity=".75">GOOD</text>
+  <text x="1170" y="592" fill="#F2ECD2">GREAT BUY</text>
+ </g>
+ <g stroke="#F2ECD2" stroke-opacity=".5" stroke-dasharray="6 8">
+  <line x1="660" y1="360" x2="1200" y2="360"/><line x1="660" y1="546" x2="1200" y2="546"/>
+ </g>
+ <!-- price line -->
+ <path id="p" d="M520 190 L570 150 L620 175 L670 120 L720 150 L770 100 L820 190 L870 300 L910 420 L950 520 L990 585 L1030 540 L1080 430 L1130 330 L1200 215"
+  fill="none" stroke="#F5DE82" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+ <path d="M520 190 L570 150 L620 175 L670 120 L720 150 L770 100 L820 190 L870 300 L910 420 L950 520 L990 585 L1030 540 L1080 430 L1130 330 L1200 215 L1200 630 L520 630Z" fill="url(#area)" opacity=".5" mask="url(#m)"/>
+ <rect x="0" y="0" width="760" height="630" fill="url(#fade)" opacity=".0"/>
+ <circle cx="990" cy="585" r="22" fill="#9BCB5E" opacity=".25"/>
+ <circle cx="990" cy="585" r="10" fill="#9BCB5E" stroke="#10241A" stroke-width="4"/>
+ <path d="M520 190 L570 150 L620 175 L670 120 L720 150 L770 100 L820 190 L870 300 L910 420 L950 520 L990 585 L1030 540 L1080 430 L1130 330 L1200 215" fill="none" stroke="#F5DE82" stroke-width="2" opacity="0"/>
+ <polygon points="0,0 60,0 0,60" fill="#9BCB5E"/>
+ <rect x="0" y="618" width="1200" height="12" fill="#9BCB5E"/>
+</svg>
+<div class="t">
+ <div class="k">BUY-RANGE FINDER</div>
+ <h1>Stock<span>Z</span></h1>
+ <p>Know the price to buy at, before you buy.</p>
+</div>
+<div class="chip"><i></i>STOCK-Z.COM</div>
+</body></html>
