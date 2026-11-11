@@ -11,6 +11,7 @@ import {
     groupWatchlistItems, serializeImportableExport, formatReadableExport, exportFileName
 } from '../lib/watchlist-export.mjs';
 import { watchlistState } from './watchlist-state.mjs';
+import { createCheckboxInput, createEmptyNote, createSelectAllRow, createStockRow } from './checkbox-list.mjs';
 
 const exportBtn               = document.getElementById("exportBtn");
 const exportModalOverlay      = document.getElementById("exportModalOverlay");
@@ -22,7 +23,6 @@ const exportModalCancelBtn    = document.getElementById("exportModalCancelBtn");
 const exportModalSubmitBtn    = document.getElementById("exportModalSubmitBtn");
 const exportFormatReadable    = document.getElementById("exportFormatReadable");
 
-const CHECKBOX_CLASS = 'check disabled:cursor-default';
 const CHEVRON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" class="w-3 h-3 flex-shrink-0 transition-transform duration-hover"><path d="M9 6l6 6-6 6"/></svg>';
 
 // Watchlist data as of opening the modal, so the tree and the file agree.
@@ -70,26 +70,14 @@ function renderTree(groups, expandedGroupId) {
     treeControls = [];
 
     if (exportItems.length === 0) {
-        const empty = document.createElement('p');
-        empty.className = 'bg-canopy text-small text-sand text-center py-4';
-        empty.textContent = 'Your watch list is empty.';
-        exportModalTree.appendChild(empty);
+        exportModalTree.appendChild(createEmptyNote('Your watch list is empty.'));
         return;
     }
 
-    const allRow = document.createElement('label');
-    allRow.className = 'opt cursor-pointer';
     const allCheckbox = createCheckbox(exportItems.map(item => item.ticker));
     allCheckbox.dataset.exportAll = 'true';
-    const allName = document.createElement('span');
-    allName.className = 'font-semibold';
-    allName.textContent = 'All stocks';
-    allRow.appendChild(allCheckbox);
-    allRow.appendChild(allName);
-    exportModalTree.appendChild(allRow);
+    exportModalTree.appendChild(createSelectAllRow(allCheckbox, 'All stocks'));
 
-    const divider = document.createElement('div');
-    
     groups.forEach((group) => {
         exportModalTree.appendChild(createGroup(group, group.id === expandedGroupId));
     });
@@ -137,7 +125,11 @@ function createGroup(group, expanded) {
 
     const list = document.createElement('div');
     list.className = 'flex flex-col gap-grout ml-6 laptop:ml-7';
-    group.items.forEach(item => list.appendChild(createStockRow(item)));
+    group.items.forEach(item => {
+        const checkbox = createCheckbox([item.ticker]);
+        checkbox.dataset.ticker = item.ticker;
+        list.appendChild(createStockRow(item, checkbox));
+    });
     wrapper.appendChild(list);
 
     const setExpanded = (open) => {
@@ -152,33 +144,10 @@ function createGroup(group, expanded) {
     return wrapper;
 }
 
-function createStockRow(item) {
-    const row = document.createElement('label');
-    row.className = 'opt cursor-pointer';
-
-    const checkbox = createCheckbox([item.ticker]);
-    checkbox.dataset.ticker = item.ticker;
-
-    const tickerSpan = document.createElement('span');
-    tickerSpan.className = 'caps text-label tracking-caps-label flex-shrink-0';
-    tickerSpan.textContent = item.ticker;
-
-    const nameSpan = document.createElement('span');
-    nameSpan.className = 'truncate text-small text-sand';
-    nameSpan.textContent = item.name || '';
-
-    row.appendChild(checkbox);
-    row.appendChild(tickerSpan);
-    row.appendChild(nameSpan);
-    return row;
-}
-
 // A checkbox that selects/deselects `tickers`. Clicking an indeterminate box
 // makes the browser tick it, so that selects all of them.
 function createCheckbox(tickers, countEl = null) {
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.className = CHECKBOX_CLASS;
+    const checkbox = createCheckboxInput();
     checkbox.addEventListener('change', () => {
         tickers.forEach(ticker => checkbox.checked ? selectedTickers.add(ticker) : selectedTickers.delete(ticker));
         syncTree();

@@ -6,6 +6,7 @@ import { getCachedWatchList } from '../lib/storage.mjs';
 import { deleteManyFromFirebase } from '../lib/watchlist-repo.mjs';
 import { notifyWatchlistChanged } from '../lib/events.mjs';
 import { openDeleteConfirmModal } from './delete-modal.mjs';
+import { createCheckboxInput, createEmptyNote, createSelectAllRow, createStockRow } from './checkbox-list.mjs';
 
 const removeBtn            = document.getElementById("removeBtn");
 const removeModalOverlay   = document.getElementById("removeModalOverlay");
@@ -16,8 +17,6 @@ const removeModalSummary   = document.getElementById("removeModalSummary");
 const removeModalCloseBtn  = document.getElementById("removeModalCloseBtn");
 const removeModalCancelBtn = document.getElementById("removeModalCancelBtn");
 const removeModalSubmitBtn = document.getElementById("removeModalSubmitBtn");
-
-const CHECKBOX_CLASS = 'check disabled:cursor-default';
 
 let allItems = [];
 let visibleTickers = [];
@@ -63,56 +62,27 @@ function renderList() {
     allCheckbox = null;
 
     if (items.length === 0) {
-        const empty = document.createElement('p');
-        empty.className = 'bg-canopy text-small text-sand text-center py-4';
-        empty.textContent = allItems.length === 0 ? 'Your watch list is empty.' : 'No stocks match your search.';
-        removeModalList.appendChild(empty);
+        removeModalList.appendChild(createEmptyNote(allItems.length === 0 ? 'Your watch list is empty.' : 'No stocks match your search.'));
         syncList();
         return;
     }
 
-    const allRow = document.createElement('label');
-    allRow.className = 'opt cursor-pointer';
-    allCheckbox = document.createElement('input');
-    allCheckbox.type = 'checkbox';
-    allCheckbox.className = CHECKBOX_CLASS;
+    allCheckbox = createCheckboxInput();
     allCheckbox.addEventListener('change', () => {
         visibleTickers.forEach(ticker => allCheckbox.checked ? selectedTickers.add(ticker) : selectedTickers.delete(ticker));
         syncList();
     });
-    const allName = document.createElement('span');
-    allName.className = 'font-semibold';
-    allName.textContent = query ? 'Select all results' : 'Select all';
-    allRow.appendChild(allCheckbox);
-    allRow.appendChild(allName);
-    removeModalList.appendChild(allRow);
+    removeModalList.appendChild(createSelectAllRow(allCheckbox, query ? 'Select all results' : 'Select all'));
 
     items.forEach((item) => {
-        const row = document.createElement('label');
-        row.className = 'opt cursor-pointer';
-
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.className = CHECKBOX_CLASS;
+        const checkbox = createCheckboxInput();
         checkbox.dataset.ticker = item.ticker;
         checkbox.addEventListener('change', () => {
             checkbox.checked ? selectedTickers.add(item.ticker) : selectedTickers.delete(item.ticker);
             syncList();
         });
         rowCheckboxes.set(item.ticker, checkbox);
-
-        const tickerSpan = document.createElement('span');
-        tickerSpan.className = 'caps text-label tracking-caps-label flex-shrink-0';
-        tickerSpan.textContent = item.ticker;
-
-        const nameSpan = document.createElement('span');
-        nameSpan.className = 'truncate text-small text-sand';
-        nameSpan.textContent = item.name || '';
-
-        row.appendChild(checkbox);
-        row.appendChild(tickerSpan);
-        row.appendChild(nameSpan);
-        removeModalList.appendChild(row);
+        removeModalList.appendChild(createStockRow(item, checkbox));
     });
     syncList();
 }
