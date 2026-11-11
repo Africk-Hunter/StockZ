@@ -157,6 +157,7 @@ const scenarios = {
     });
     const fb = installFakeFirebase();
     await import(ENTRY);
+    await fb.signIn({ uid: "u1" });
     await flush();
     const el = (id) => browser.elements.get(id);
 
@@ -175,6 +176,7 @@ const scenarios = {
     assert.equal(el("addToWatchlist").textContent, "Add To Watchlist");
 
     // Not signed in: clicking Add does nothing.
+    fb.auth.currentUser = null;
     await el("addToWatchlist").fire("click");
     assert.equal(el("folderModalTitle").textContent, "");
     assert.equal(fb.calls.filter((c) => c[0] === "setDoc").length, 0);
@@ -204,11 +206,28 @@ const scenarios = {
     const browser = createFakeBrowser({
       ids: ["tickerLabelIP", "thresHoldWarning", "addToWatchlist"], url: "http://localhost/WFC", xhr: backend,
     });
-    installFakeFirebase();
+    const fb = installFakeFirebase();
     await import(ENTRY);
+    await fb.signIn({ uid: "u1" });
     await flush();
     assert.equal(browser.nav.reloads, 1);
     assert.equal(JSON.parse(browser.store.get("mostRecentCalculations")).ticker, "WFC");
+  },
+
+  // A signed-out visitor on a direct link (/WFC) is sent to login and nothing is fetched.
+  async "ticker-signed-out"() {
+    let requests = 0;
+    const browser = createFakeBrowser({
+      ids: ["tickerLabelIP", "thresHoldWarning", "addToWatchlist"], url: "http://localhost/WFC",
+      xhr: (...a) => { requests++; return backend(...a); },
+    });
+    const fb = installFakeFirebase();
+    await import(ENTRY);
+    await fb.signIn(null);
+    await flush();
+    assert.deepEqual(browser.nav.assigned.at(-1), ["replace", "/"]);
+    assert.equal(requests, 0);
+    assert.equal(browser.nav.reloads, 0);
   },
 
   async watchlist() {

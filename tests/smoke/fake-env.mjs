@@ -132,6 +132,7 @@ export function createFakeBrowser({ ids = [], url = "http://localhost/", localSt
       get href() { return nav.assigned.filter((a) => a[0] === "href").at(-1)?.[1] ?? url; },
       set href(v) { nav.assigned.push(["href", v]); },
       reload() { nav.reloads++; },
+      replace(v) { nav.assigned.push(["replace", v]); },
     },
   });
   globalThis.location = globalThis.window.location;

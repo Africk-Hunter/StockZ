@@ -7,9 +7,9 @@
 import './lib/error-reporting.mjs';
 import { auth } from './lib/firebase.mjs';
 
-import './pages/nav.mjs';
+import { loggingOut } from './pages/nav.mjs';
 import './pages/main-page.mjs';
-import './pages/ticker-info.mjs';
+import { startTickerInfoPage } from './pages/ticker-info.mjs';
 import './pages/bulk-add.mjs';
 import './pages/export-modal.mjs';
 import './pages/remove-modal.mjs';
@@ -18,10 +18,14 @@ import { watchlistItemsContainer, startWatchlistPage } from './pages/watchlist-p
 
 auth.onAuthStateChanged(async (user) => {
     if (user) {
+        startTickerInfoPage();
         if (watchlistItemsContainer) {
             startWatchlistPage(user);
         } else if (enterButton) {
             await continueSignedInUser(user);
         }
+    } else if (!enterButton && !loggingOut) {
+        // Signed out on any page but the login page: send them to login.
+        window.location.replace('/');
     }
 });

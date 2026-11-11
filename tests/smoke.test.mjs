@@ -11,6 +11,7 @@ const SCENARIOS = [
   "main",
   "ticker-info",
   "ticker-path-uncached",
+  "ticker-signed-out",
   "watchlist",
   "watchlist-bulk-add",
   "watchlist-export",

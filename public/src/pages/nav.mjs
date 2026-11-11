@@ -29,14 +29,20 @@ function navigateTo(url, activePageMarker) {
     };
 }
 
+// True while the logout fade runs, so the signed-out redirect guard in the
+// entry module doesn't cut the animation short.
+export let loggingOut = false;
+
 async function logOutUser(){
     try {
+      loggingOut = true;
         await signOut(auth);
         document.getElementById('mainWrapper').classList.add('fadeAway');
         setTimeout(() => {
           window.location.href = '/';
         }, 500);
       } catch (error) {
+        loggingOut = false;
         console.error('Error logging out: ', error);
         alert('An error occurred while logging out. Please try again.');
       }

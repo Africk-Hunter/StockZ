@@ -30,8 +30,12 @@ const grBLonPage            = document.getElementById("grBL");
 const bBHonPage             = document.getElementById("bBH");
 const thresHoldWarning      = document.getElementById("thresHoldWarning");
 
-if (tickerLabelIP) {
-    initTickerInfoPage();
+export const tickerInfoPageExists = !!tickerLabelIP;
+
+// Called by the entry module once a signed-in user is confirmed, so no data is
+// fetched or rendered for signed-out visitors.
+export function startTickerInfoPage() {
+    if (tickerLabelIP) initTickerInfoPage();
 }
 
 if (addToWatchlist) {
