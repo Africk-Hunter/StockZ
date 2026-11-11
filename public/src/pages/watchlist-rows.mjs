@@ -2,7 +2,8 @@
    in-place update used by progressive refresh. */
 import { tickerPath } from '../lib/ticker.mjs';
 import { formatPrice } from '../lib/format.mjs';
-import { getCurrentPriceRangeColorClass, getBuyTierLabel, isLifetimeNegative } from '../lib/watchlist-logic.mjs';
+import { getCurrentPriceRangeColorClass, getBuyTierLabel, isLifetimeNegative, withSkippedBands } from '../lib/watchlist-logic.mjs';
+import { watchlistState } from './watchlist-state.mjs';
 import { navigateToTicker } from '../lib/stock-service.mjs';
 import { getCachedWatchList, setCachedWatchList } from '../lib/storage.mjs';
 import { deleteFromFirebase } from '../lib/watchlist-repo.mjs';
@@ -10,6 +11,9 @@ import { openFolderModal } from './folders.mjs';
 import { openDeleteConfirmModal } from './delete-modal.mjs';
 
 const watchListContainerLarge = document.getElementById("watchListContainerLarge");
+
+// The item as the table should show it under the current "look past" setting.
+const forDisplay = (item) => withSkippedBands(item, watchlistState.skipMonths);
 
 export function updateWatchlistUI(watchListItems) {
     const watchlistItemsContainer = document.getElementById('watchlistItemsContainer');
@@ -21,7 +25,7 @@ export function updateWatchlistUI(watchListItems) {
         watchlistCardsContainer.appendChild(createEmptyWatchlistCard());
     }
 
-    watchListItems.forEach((item, index) => {
+    watchListItems.map(forDisplay).forEach((item, index) => {
         const stockContainer = createStockContainerItem(item);
         const stockCard = createStockCardItem(item);
         stockContainer.dataset.ticker = item.ticker;
@@ -40,7 +44,8 @@ export function updateWatchlistUI(watchListItems) {
 // `item`, leaving every other row untouched (no clear, no re-fade). Used for
 // progressive refresh updates; a ticker that isn't on screen (e.g. filtered
 // out by the current folder) is simply skipped.
-export function updateWatchlistRowInPlace(item) {
+export function updateWatchlistRowInPlace(rawItem) {
+    const item = forDisplay(rawItem);
     const selector = `[data-ticker="${CSS.escape(item.ticker)}"]`;
     const oldContainer = document.querySelector('#watchlistItemsContainer ' + selector);
     const oldCard = document.querySelector('#watchlistCardsContainer ' + selector);

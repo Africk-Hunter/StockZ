@@ -5,6 +5,7 @@ import { saveWatchlistItems, saveWatchlistItemFolders, createFolder } from '../l
 import { looksLikeJson, parseImportFile } from '../lib/watchlist-import.mjs';
 import { getStockData, fetchStockInfo, runStockCalculations } from '../lib/stock-service.mjs';
 import { mapWithConcurrencyLimit } from '../lib/watchlist-logic.mjs';
+import { computeBoundsBySkip } from '../lib/buy-range.mjs';
 import { parseBulkTickers } from '../lib/ticker.mjs';
 import { notifyWatchlistChanged } from '../lib/events.mjs';
 import { watchlistState } from './watchlist-state.mjs';
@@ -236,6 +237,7 @@ async function bulkAddTickers(user, rawText) {
                 lifetimeStartPrice: calculations.lifetimeStartPrice ?? null,
                 dividendYield: info.dividendYield || null,
                 bandsUpdatedAt: Date.now(),
+                bandsBySkip: computeBoundsBySkip(data.prices, ticker),
                 folderIds: [...new Set([...baseFolderIds, ...importedFolderIds(ticker)])]
             };
         } catch (error) {

@@ -1,9 +1,10 @@
 /* Watchlist refresh: re-fetches prices (and, when stale, buy ranges) for every
    saved ticker with bounded concurrency, repainting rows as they arrive. */
 import { getCachedWatchList, setCachedWatchList } from '../lib/storage.mjs';
-import { fetchWatchlistItems, updateWatchlistItemValues } from '../lib/watchlist-repo.mjs';
+import { fetchWatchlistItems, updateWatchlistItemValues, updateWatchlistItemSkipBands } from '../lib/watchlist-repo.mjs';
+import { computeBoundsBySkip } from '../lib/buy-range.mjs';
 import { getStockData, fetchStockInfo, runStockCalculations } from '../lib/stock-service.mjs';
-import { bandsAreFresh, priceJumped, mapWithConcurrencyLimit } from '../lib/watchlist-logic.mjs';
+import { bandsAreFresh, priceJumped, mapWithConcurrencyLimit, hasBoundsForSkip } from '../lib/watchlist-logic.mjs';
 import { recordError } from '../lib/error-reporting.mjs';
 import { notifyWatchlistChanged } from '../lib/events.mjs';
 import { watchlistState } from './watchlist-state.mjs';
@@ -96,7 +97,8 @@ export async function updateWatchListValues(user) {
                     currentPrice: updatedItem.currentPrice,
                     lifetimeStartPrice: updatedItem.lifetimeStartPrice,
                     dividendYield: updatedItem.dividendYield,
-                    bandsUpdatedAt: updatedItem.bandsUpdatedAt
+                    bandsUpdatedAt: updatedItem.bandsUpdatedAt,
+                    bandsBySkip: updatedItem.bandsBySkip
                 }
                 : cachedItem
         )));
@@ -127,6 +129,7 @@ export async function updateWatchListValues(user) {
             lifetimeStartPrice: item.lifetimeStartPrice ?? null,
             dividendYield: item.dividendYield ?? null,
             bandsUpdatedAt: item.bandsUpdatedAt ?? null,
+            bandsBySkip: item.bandsBySkip ?? null,
             folderIds: Array.isArray(item.folderIds) ? item.folderIds : []
         };
         // No cache key is passed to getStockData: concurrent bulk callers
@@ -139,7 +142,9 @@ export async function updateWatchListValues(user) {
         let historyResult = null;
         let infoResult;
         // Items saved before lifetimeStartPrice existed need one history fetch to backfill it.
-        const needsLifetimeBackfill = item.lifetimeStartPrice === null || item.lifetimeStartPrice === undefined;
+        // Likewise for the per-"look past" bounds on items saved before they existed.
+        const needsLifetimeBackfill = item.lifetimeStartPrice === null || item.lifetimeStartPrice === undefined
+            || !item.bandsBySkip;
         if (bandsAreFresh(item) && !needsLifetimeBackfill) {
             // Ranges are still valid: fetch only the price, and fetch history
             // too only if the price jumped enough to suggest a split.
@@ -164,6 +169,7 @@ export async function updateWatchListValues(user) {
                 updatedItem.goodBuyPrice = calculations.greatBRLow.toFixed(2);
                 updatedItem.badBuyPrice = calculations.badBRHigh.toFixed(2);
                 updatedItem.lifetimeStartPrice = calculations.lifetimeStartPrice ?? null;
+                updatedItem.bandsBySkip = computeBoundsBySkip(historyResult.value.prices, item.ticker);
                 updatedItem.bandsUpdatedAt = Date.now();
                 refreshStats.historyOk++;
             } catch (error) {
@@ -237,4 +243,47 @@ export async function updateWatchListValues(user) {
         notifyWatchlistChanged();
     }
     return { failed: Array.from(failedTickers) };
+}
+
+// Fills in the "look past the last N months" bounds for items that don't have
+// them yet (saved before the option existed, or added from the ticker page).
+// Only those items are fetched — items that already have the bounds are not
+// touched — and each row repaints as its ticker finishes. Returns the tickers
+// that couldn't be filled in.
+export async function ensureSkipBounds(user, skipMonths) {
+    const missing = getCachedWatchList().filter((item) => !hasBoundsForSkip(item, skipMonths));
+    if (missing.length === 0) return [];
+
+    const failed = [];
+    const filled = [];
+    let done = 0;
+    setRefreshProgress(0, missing.length);
+    await mapWithConcurrencyLimit(missing, 4, async (item) => {
+        try {
+            const history = await getStockData(item.ticker);
+            const bandsBySkip = computeBoundsBySkip(history.prices, item.ticker);
+            const cached = getCachedWatchList();
+            const current = cached.find((cachedItem) => cachedItem.ticker === item.ticker);
+            if (!current) return; // removed while we were fetching
+            const updated = { ...current, bandsBySkip };
+            setCachedWatchList(cached.map((cachedItem) => (cachedItem.ticker === item.ticker ? updated : cachedItem)));
+            filled.push(updated);
+            updateWatchlistRowInPlace(updated);
+        } catch (error) {
+            failed.push(item.ticker);
+            console.warn(`Error calculating ${item.ticker} for look-past: `, error);
+        }
+        done++;
+        setRefreshProgress(done, missing.length);
+    });
+
+    if (filled.length > 0) {
+        try {
+            await updateWatchlistItemSkipBands(user.uid, filled);
+        } catch (error) {
+            console.warn('Could not save look-past bounds: ', error);
+        }
+    }
+    showRefreshStatus(failed);
+    return failed;
 }

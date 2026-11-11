@@ -60,6 +60,16 @@
         </div>
 
         <div id="thresHoldWarning" data-state="Warning" class="status is-warning hidden w-full laptop:w-full"><span>Threshold was lowered. Use caution when examining stock.</span></div>
+        <label id="skipRecentRow" class="flex items-center justify-end gap-2 w-full caps text-label tracking-caps-label text-sand">
+            <span>Look past the last</span>
+            <select id="skipRecentMonths" aria-label="Ignore the most recent months when finding the dip" class="caps cut-sm bg-canopy text-cream text-body tracking-caps-label pl-3 pr-2 py-1 outline-none">
+                <option value="0">0 months (default)</option>
+                <option value="3">3 months</option>
+                <option value="6">6 months</option>
+                <option value="12">12 months</option>
+                <option value="24">24 months</option>
+            </select>
+        </label>
         <div id="buyHolder" class="hidden laptop:grid grid-cols-8 grid-rows-[auto_4rem] desktopXL:grid-rows-[auto_6rem] gap-grout bg-deep cut-md w-full laptop:w-full">
                 <div class="label-tile col-span-2 laptop:text-small desktopXL:text-value">Great Buy Range</div>
                 <div class="label-tile col-span-2 laptop:text-small desktopXL:text-value">Good Buy Range</div>

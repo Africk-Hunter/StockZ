@@ -109,7 +109,13 @@ export function findDipInformation(closeData) {
 // Derives the great/good/okay/bad price bands for a stock. Returns
 // `{ calculations, thresholdLowered }`; `calculations.currentPrice` is always
 // the raw latest close.
-export function computeBuyRanges(rawData, ticker) {
+//
+// `skipRecentMonths` (default 0) makes the dip search look past the newest N
+// closes, e.g. when the stock is in a dip right now and that dip would
+// otherwise define the ranges. Month offsets stay relative to today, and
+// `currentPrice` is still the real latest close. Ignored if it would leave
+// fewer than two closes to analyse.
+export function computeBuyRanges(rawData, ticker, { skipRecentMonths = 0 } = {}) {
     // A $0 (or otherwise non-positive/non-finite) close is bad data or a
     // delisting artifact. Every ratio in the dip/average math divides by an
     // adjacent close, so a zero produces Infinity/NaN and poisons every
@@ -119,8 +125,15 @@ export function computeBuyRanges(rawData, ticker) {
         data.push(rawData[0] > 0 ? rawData[0] : 0.01);
     }
 
-    const averageMonthlyChange = calculateAverageMonthlyChange(data);
-    const { recoveryLowMonth, recoveryLowPrice, dropStartMonth, preDropPrice, thresholdLowered } = findDipInformation(data);
+    const skip = Number.isInteger(skipRecentMonths) && skipRecentMonths > 0 && data.length - skipRecentMonths >= 2
+        ? skipRecentMonths : 0;
+    const analysed = skip ? data.slice(skip) : data;
+
+    const averageMonthlyChange = calculateAverageMonthlyChange(analysed);
+    const dip = findDipInformation(analysed);
+    const { recoveryLowPrice, preDropPrice, thresholdLowered } = dip;
+    const recoveryLowMonth = dip.recoveryLowMonth + skip;
+    const dropStartMonth = dip.dropStartMonth + skip;
     let min = recoveryLowPrice + (recoveryLowMonth * (averageMonthlyChange * recoveryLowPrice));
 
     const priceInMiddleOfDip = (((3 * recoveryLowPrice) + (preDropPrice)) / 4);
@@ -165,4 +178,19 @@ export function computeBuyRanges(rawData, ticker) {
         },
         thresholdLowered
     };
+}
+
+// The "look past the last N months" choices offered in the UI (0 = default).
+export const SKIP_MONTH_OPTIONS = [3, 6, 12, 24];
+
+// The watchlist stores only the outer bounds of the ranges. This precomputes
+// them for every skip option from one price history, so switching the option
+// later is a lookup instead of a re-fetch. Shape: { "3": { good: "1.23", bad: "4.56" }, ... }
+export function computeBoundsBySkip(rawData, ticker) {
+    const bounds = {};
+    for (const months of SKIP_MONTH_OPTIONS) {
+        const { calculations } = computeBuyRanges(rawData, ticker, { skipRecentMonths: months });
+        bounds[months] = { good: calculations.greatBRLow.toFixed(2), bad: calculations.badBRHigh.toFixed(2) };
+    }
+    return bounds;
 }

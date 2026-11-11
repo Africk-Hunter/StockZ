@@ -24,6 +24,7 @@ export async function fetchWatchlistItems(uid) {
                 lifetimeStartPrice: data.lifetimeStartPrice ?? null,
                 dividendYield: data.dividendYield || null,
                 bandsUpdatedAt: data.bandsUpdatedAt ?? null,
+                bandsBySkip: data.bandsBySkip ?? null,
                 folderIds: Array.isArray(data.folderIds) ? data.folderIds : []
             });
         });
@@ -189,8 +190,19 @@ export async function updateWatchlistItemValues(uid, items) {
             currentPrice: updatedItem.currentPrice,
             lifetimeStartPrice: updatedItem.lifetimeStartPrice ?? null,
             dividendYield: updatedItem.dividendYield,
-            bandsUpdatedAt: updatedItem.bandsUpdatedAt ?? null
+            bandsUpdatedAt: updatedItem.bandsUpdatedAt ?? null,
+            bandsBySkip: updatedItem.bandsBySkip ?? null
         });
+    });
+    await batch.commit();
+}
+
+// Persists just the per-skip bounds for several items (used when the user
+// picks a "look past" option that older items haven't been calculated for).
+export async function updateWatchlistItemSkipBands(uid, items) {
+    const batch = writeBatch(db);
+    items.forEach((item) => {
+        batch.update(doc(db, `users/${uid}/watchlist`, item.ticker), { bandsBySkip: item.bandsBySkip });
     });
     await batch.commit();
 }

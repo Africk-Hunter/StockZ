@@ -1,13 +1,14 @@
 /* Watch List page: sort controls, refresh button, and (re)rendering the table. */
 import { auth } from '../lib/firebase.mjs';
-import { getCachedWatchList, setCachedFolders } from '../lib/storage.mjs';
+import { getCachedWatchList, setCachedFolders, getStorageItem, setStorageItem } from '../lib/storage.mjs';
 import { fetchWatchlistFolders } from '../lib/watchlist-repo.mjs';
-import { sortWatchlistItems } from '../lib/watchlist-logic.mjs';
+import { sortWatchlistItems, withSkippedBands } from '../lib/watchlist-logic.mjs';
+import { SKIP_MONTH_OPTIONS } from '../lib/buy-range.mjs';
 import { onWatchlistChanged } from '../lib/events.mjs';
 import { watchlistState } from './watchlist-state.mjs';
 import { updateWatchlistUI } from './watchlist-rows.mjs';
 import { initWatchlistFolders, renderFolderDropdown } from './folders.mjs';
-import { updateWatchListValues, showRefreshStatus, clearStuckRefreshProgress } from './watchlist-refresh.mjs';
+import { updateWatchListValues, showRefreshStatus, clearStuckRefreshProgress, ensureSkipBounds } from './watchlist-refresh.mjs';
 
 export const watchlistItemsContainer = document.getElementById("watchlistItemsContainer");
 const refreshButton           = document.getElementById("refreshButton");
@@ -56,6 +57,32 @@ if (watchlistItemsContainer) {
         }
     });
 
+    // "Look past the last N months": a device-level view setting. Switching it
+    // repaints instantly from the per-skip bounds each item already stores;
+    // only items that lack them are fetched (one request each, not a refresh).
+    const skipSelect = document.getElementById('skipRecentMonths');
+    if (skipSelect) {
+        const saved = parseInt(getStorageItem('watchlistSkipMonths'), 10);
+        watchlistState.skipMonths = SKIP_MONTH_OPTIONS.includes(saved) ? saved : 0;
+        skipSelect.value = String(watchlistState.skipMonths);
+        skipSelect.addEventListener('change', async () => {
+            const months = parseInt(skipSelect.value, 10) || 0;
+            watchlistState.skipMonths = months;
+            setStorageItem('watchlistSkipMonths', String(months));
+            runWatchlist();
+            const user = auth.currentUser;
+            if (months && user) {
+                try {
+                    await ensureSkipBounds(user, months);
+                } finally {
+                    clearStuckRefreshProgress();
+                }
+                // Rows repainted as they filled in; re-sort once at the end.
+                if (watchlistState.skipMonths === months) runWatchlist();
+            }
+        });
+    }
+
     sortByNameBtn.addEventListener('click', () => sortWatchlist('ticker'));
     sortByPriceBtn.addEventListener('click', () => sortWatchlist('currentPrice'));
     sortByGBBtn.addEventListener('click', () => sortWatchlist('goodBuyPrice'));
@@ -85,9 +112,11 @@ function runWatchlist() {
     const parsedWatchList = getCachedWatchList();
     const { currentFolderId, sortKey, sortDirection } = watchlistState;
 
-    const visibleWatchList = currentFolderId
+    const inFolder = currentFolderId
         ? parsedWatchList.filter(item => Array.isArray(item.folderIds) && item.folderIds.includes(currentFolderId))
         : parsedWatchList;
+    // Sort on the bounds the table is showing (the "look past" ones, if on).
+    const visibleWatchList = inFolder.map(item => withSkippedBands(item, watchlistState.skipMonths));
 
     sortWatchlistItems(visibleWatchList, sortKey, sortDirection);
 

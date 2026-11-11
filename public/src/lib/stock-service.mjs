@@ -58,8 +58,8 @@ export function setThresholdWarning(thresholdLowered) {
 // omit it for bulk/concurrent callers (like a watchlist refresh) so they
 // don't all fight over the same shared localStorage key. Either way, the
 // calculations are always returned directly.
-export function runStockCalculations(rawData, ticker, localStorageItem) {
-    const { calculations, thresholdLowered } = computeBuyRanges(rawData, ticker);
+export function runStockCalculations(rawData, ticker, localStorageItem, options) {
+    const { calculations, thresholdLowered } = computeBuyRanges(rawData, ticker, options);
     setThresholdWarning(thresholdLowered);
 
     if (localStorageItem) {

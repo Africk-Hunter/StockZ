@@ -346,6 +346,7 @@ async function commitFolderSelection() {
                 lifetimeStartPrice: newEntry.lifetimeStartPrice ?? null,
                 dividendYield: info.dividendYield || null,
                 bandsUpdatedAt: Date.now(),
+                bandsBySkip: newEntry.bandsBySkip ?? null,
                 folderIds
             };
             await saveWatchlistItem(user.uid, newCacheEntry);

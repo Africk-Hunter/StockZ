@@ -188,7 +188,12 @@ const scenarios = {
     await flush();
     const write = fb.calls.find((c) => c[0] === "setDoc");
     assert.equal(write[1], "users/u1/watchlist/WFC");
-    assert.equal(write[2].goodBuyPrice, "65.50");
+    // The add path recomputes the default bounds from the cached history (not
+    // the page text, which may be showing a "look past" view) and stores the
+    // per-skip bounds alongside them.
+    const { computeBuyRanges } = await import("../../public/src/lib/buy-range.mjs");
+    assert.equal(write[2].goodBuyPrice, computeBuyRanges(PRICES, "WFC").calculations.greatBRLow.toFixed(2));
+    assert.deepEqual(Object.keys(write[2].bandsBySkip), ["3", "6", "12", "24"]);
     assert.equal(write[2].name, "WFC Inc");
     assert.equal(el("addToWatchlist").textContent, "Modify Watchlist(s)");
     assert.ok(JSON.parse(browser.store.get("userWatchListData")).some((i) => i.ticker === "WFC"));

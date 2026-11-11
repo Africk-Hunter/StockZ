@@ -83,3 +83,37 @@ test("computeBuyRanges collapses the bands onto the price for <2 usable closes",
   const { calculations: allBad } = computeBuyRanges([0, 0, 0], "X");
   for (const key of BAND_KEYS) assert.ok(Number.isFinite(allBad[key]), key);
 });
+
+test("computeBuyRanges skipRecentMonths looks past a dip happening right now", () => {
+  // Old crash (60) followed by recovery, then a fresh drop in the latest months.
+  const inDipNow = [45, 65, 100, 110, 105, 100, 60, 90, 100, 105, 110];
+  const base = computeBuyRanges(inDipNow, "X").calculations;
+  const skipped = computeBuyRanges(inDipNow, "X", { skipRecentMonths: 3 }).calculations;
+  assert.equal(skipped.currentPrice, 45);
+  assert.equal(skipped.dipPrice, 60);
+  assert.notEqual(skipped.dipPrice, base.dipPrice);
+  for (const key of BAND_KEYS) assert.ok(Number.isFinite(skipped[key]), key);
+  // Bad/invalid skips fall back to the default behaviour.
+  assert.deepEqual(computeBuyRanges(inDipNow, "X", { skipRecentMonths: 99 }), computeBuyRanges(inDipNow, "X"));
+  assert.deepEqual(computeBuyRanges(inDipNow, "X", { skipRecentMonths: 0 }), computeBuyRanges(inDipNow, "X"));
+});
+
+test("computeBoundsBySkip precomputes watchlist bounds for every skip option", async () => {
+  const { computeBoundsBySkip, SKIP_MONTH_OPTIONS } = await import("../public/src/lib/buy-range.mjs");
+  const { withSkippedBands, hasBoundsForSkip } = await import("../public/src/lib/watchlist-logic.mjs");
+  const history = [45, 65, 100, 110, 105, 100, 60, 90, 100, 105, 110, 108, 112, 115, 118, 120, 119, 121, 125, 130, 128, 131, 133, 135, 140, 138];
+  const bounds = computeBoundsBySkip(history, "X");
+  assert.deepEqual(Object.keys(bounds).map(Number), SKIP_MONTH_OPTIONS);
+  const direct = computeBuyRanges(history, "X", { skipRecentMonths: 6 }).calculations;
+  assert.equal(bounds[6].good, direct.greatBRLow.toFixed(2));
+  assert.equal(bounds[6].bad, direct.badBRHigh.toFixed(2));
+
+  const item = { ticker: "X", goodBuyPrice: "1.00", badBuyPrice: "2.00", bandsBySkip: bounds };
+  assert.equal(withSkippedBands(item, 0), item);
+  assert.equal(withSkippedBands(item, 6).goodBuyPrice, bounds[6].good);
+  assert.equal(item.goodBuyPrice, "1.00"); // not mutated
+  const legacy = { ticker: "Y", goodBuyPrice: "1.00", badBuyPrice: "2.00" };
+  assert.equal(hasBoundsForSkip(legacy, 6), false);
+  assert.equal(hasBoundsForSkip(legacy, 0), true);
+  assert.equal(withSkippedBands(legacy, 6), legacy);
+});

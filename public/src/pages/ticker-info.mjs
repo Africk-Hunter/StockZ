@@ -12,6 +12,7 @@ import {
 } from '../lib/stock-service.mjs';
 import { openFolderModal } from './folders.mjs';
 import { createStockChart } from './chart.mjs';
+import { computeBuyRanges, computeBoundsBySkip } from '../lib/buy-range.mjs';
 
 const tickerLabelIP         = document.getElementById("tickerLabelIP");
 const stockStatsLink        = document.getElementById("stockStatsLink");
@@ -97,6 +98,24 @@ function renderTickerInfoPage() {
 
     setAddToWatchlistButtonState(isTickerInWatchlist(ticker));
 
+    // "Look past the last N months": recompute the bands from the cached
+    // history while ignoring the newest closes, so a dip happening right now
+    // doesn't become the reference dip. Only affects this page view.
+    const skipSelect = document.getElementById('skipRecentMonths');
+    if (skipSelect) {
+        skipSelect.addEventListener('change', () => {
+            try {
+                const data = JSON.parse(getStorageItem('mostRecentData') || 'null');
+                if (!data || !Array.isArray(data.prices) || !ticker) return;
+                runStockCalculations(data.prices, ticker, 'mostRecentCalculations',
+                    { skipRecentMonths: parseInt(skipSelect.value, 10) || 0 });
+                loadCalculatedValues();
+            } catch (error) {
+                console.error('Error recalculating buy ranges: ', error);
+            }
+        });
+    }
+
     const recentData = getStorageItem('mostRecentData');
     try {
         if (recentData) {
@@ -163,10 +182,26 @@ function renderTickerInfoPage() {
         try {
             lifetimeStartPrice = JSON.parse(getStorageItem('mostRecentCalculations'))?.lifetimeStartPrice ?? null;
         } catch (e) { /* no cached calculations: the next refresh fills it in */ }
+        // The watchlist stores the default (not "looked past") bounds plus the
+        // per-skip ones, so recompute them from the cached history instead of
+        // reading whatever the page is currently showing.
+        let goodBuyPrice = grBLonPage.textContent.replace('$', '');
+        let badBuyPrice = bBHonPage.textContent.replace('$', '');
+        let bandsBySkip = null;
+        try {
+            const history = JSON.parse(getStorageItem('mostRecentData') || 'null');
+            if (history && Array.isArray(history.prices) && history.prices.length) {
+                const { calculations } = computeBuyRanges(history.prices, tickerToAdd);
+                goodBuyPrice = calculations.greatBRLow.toFixed(2);
+                badBuyPrice = calculations.badBRHigh.toFixed(2);
+                bandsBySkip = computeBoundsBySkip(history.prices, tickerToAdd);
+            }
+        } catch (e) { /* keep the displayed values; bounds are filled in on demand later */ }
         openFolderModal(tickerToAdd, {
             lifetimeStartPrice,
-            goodBuyPrice: grBLonPage.textContent.replace('$', ''),
-            badBuyPrice: bBHonPage.textContent.replace('$', ''),
+            goodBuyPrice,
+            badBuyPrice,
+            bandsBySkip,
             infoPromise: fetchStockInfo(tickerToAdd).catch((error) => {
                 console.error('Error fetching stock info: ', error);
                 return {};

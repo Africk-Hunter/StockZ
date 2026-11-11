@@ -163,3 +163,18 @@ export function isLifetimeNegative(currentPrice, lifetimeStartPrice) {
 export function getCurrentPriceRangeColorClass(currentPrice, goodBuyPrice, badBuyPrice) {
     return TIER_COLOR_CLASSES[getBuyTier(currentPrice, goodBuyPrice, badBuyPrice)] ?? null;
 }
+
+// True when `item` can show its ranges for "look past the last N months"
+// without fetching anything (0 is the default bounds every item has).
+export function hasBoundsForSkip(item, skipMonths) {
+    return !skipMonths || Boolean(item.bandsBySkip && item.bandsBySkip[skipMonths]);
+}
+
+// A copy of `item` whose goodBuyPrice/badBuyPrice are the ones for the chosen
+// skip, so rendering, sorting and tiering work unchanged. Items that don't
+// have bounds for that skip yet keep their default ones.
+export function withSkippedBands(item, skipMonths) {
+    if (!skipMonths || !hasBoundsForSkip(item, skipMonths)) return item;
+    const bounds = item.bandsBySkip[skipMonths];
+    return { ...item, goodBuyPrice: bounds.good, badBuyPrice: bounds.bad };
+}

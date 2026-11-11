@@ -4,4 +4,5 @@ export const watchlistState = {
     currentFolderId: null,        // null = "All Stocks"
     sortKey: 'priceTier',         // null = Firestore order
     sortDirection: 'asc',
+    skipMonths: 0,                // "look past the last N months" (0 = off)
 };
