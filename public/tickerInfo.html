@@ -68,7 +68,7 @@
 
         <div id="thresHoldWarning" data-state="Warning" class="status is-warning hidden w-full laptop:w-full"><span>Threshold was lowered. Use caution when examining stock.</span></div>
         <label id="skipRecentRow" class="flex items-center justify-end gap-2 w-full caps text-label tracking-caps-label text-sand">
-            <span>Look past the last</span>
+            <span>Ignore dip from last</span>
             <select id="skipRecentMonths" aria-label="Ignore the most recent months when finding the dip" class="caps cut-sm bg-canopy text-cream text-body tracking-caps-label pl-3 pr-2 py-1 outline-none">
                 <option value="0">0 months (default)</option>
                 <option value="3">3 months</option>
@@ -112,8 +112,8 @@
                 </div>
             </div>
         </div>
-        <section id="extraInfo" class="flex flex-col laptop:flex-row laptop:gap-6 w-full laptop:w-full laptop:items-stretch items-center">
-            <div class="w-full laptop:w-3/4">
+        <section id="extraInfo" class="flex flex-col laptop:grid laptop:grid-cols-[3fr_1fr] laptop:grid-rows-[auto_1fr] laptop:gap-x-6 w-full laptop:w-full laptop:items-stretch items-center">
+            <div class="w-full laptop:col-start-1 laptop:row-start-1 laptop:row-span-2 min-w-0">
                 <div class="flex flex-col items-stretch laptop:flex-row laptop:items-center justify-between gap-2 mb-2">
                     <div id="chartDelta" class="hidden"></div>
                     <div id="chartRangeButtons" class="grid grid-cols-4 gap-2 laptop:flex laptop:justify-end laptop:ml-auto"></div>
@@ -122,7 +122,18 @@
                     <canvas id="stockChart" class="flex"></canvas>
                 </div>
             </div>
-            <div class="flex flex-col gap-grout w-full laptop:w-1/4 h-full bg-deep cut-md">
+            <div class="chartTools flex flex-col gap-2 w-full mt-2 laptop:mt-3 laptop:col-start-2 laptop:row-start-2 laptop:self-start">
+                <div class="flex w-full items-center gap-2">
+                    <button id="chartScaleToggle" type="button" class="chip h-11 flex-1 text-small laptop:h-9 desktop:h-10 desktop:text-body" aria-pressed="false" title="Log scale shows equal percentage moves as equal distances">Log Scale</button>
+                    <div class="flex gap-2" role="group" aria-label="Chart zoom">
+                        <button id="chartZoomOut" type="button" class="chip h-11 w-11 px-0 laptop:h-9 laptop:w-9 desktop:h-10 desktop:w-10" aria-label="Zoom out" title="Zoom out">&minus;</button>
+                        <button id="chartZoomIn" type="button" class="chip h-11 w-11 px-0 laptop:h-9 laptop:w-9 desktop:h-10 desktop:w-10" aria-label="Zoom in" title="Zoom in">+</button>
+                        <button id="chartZoomReset" type="button" class="chip h-11 text-small laptop:h-9 desktop:h-10 desktop:text-body" title="Reset zoom" disabled>Reset</button>
+                    </div>
+                </div>
+                <p class="hidden laptop:block font-body text-small text-sand">Ctrl + scroll to zoom &middot; drag to pan &middot; double-click to reset</p>
+            </div>
+            <div class="flex flex-col gap-grout w-full h-full bg-deep cut-md laptop:col-start-2 laptop:row-start-1">
                 <div class="grid grid-cols-[3fr_2fr] gap-grout min-h-24 laptop:h-1/4">
                     <div id="currentPriceTile" class="flex flex-col justify-center gap-1 px-4 py-3 bg-canopy text-cream min-w-0 transition-colors duration-hover">
                         <span class="tile-caption caps whitespace-nowrap text-label tracking-caps-label text-sand">Current price</span>

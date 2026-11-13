@@ -11,7 +11,7 @@ import {
     getStockData, fetchStockInfo, fetchDividendInfo, fetchCompanyProfile, runStockCalculations
 } from '../lib/stock-service.mjs';
 import { openFolderModal } from './folders.mjs';
-import { createStockChart } from './chart.mjs';
+import { createStockChart, setChartBuyRanges } from './chart.mjs';
 import { computeBuyRanges, computeBoundsBySkip } from '../lib/buy-range.mjs';
 
 const tickerLabelIP         = document.getElementById("tickerLabelIP");
@@ -242,6 +242,7 @@ function loadCalculatedValues() {
             assignValueOnScreen('bBH', calculations.badBRHigh);
             assignValueOnScreen('dipPrice', calculations.dipPrice);
             assignValueOnScreen('currentPrice', calculations.currentPrice);
+            setChartBuyRanges(calculations);
             assignMobileVerdict(calculations);
             assignCurrentPriceTile(calculations);
             assignRangeOnScreen('mobileGreatRange', calculations.greatBRLow, calculations.greatBRHigh);

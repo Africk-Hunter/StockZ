@@ -38,6 +38,61 @@ function initChartRangeButtons(onRangeChange) {
     });
 }
 
+// Buy-range bands shaded behind the price line. Colours mirror the band-*
+// tokens in tailwind.config.js (great / good / okay / bad).
+const BAND_STYLES = [
+    { key: 'great', label: 'Great', rgb: '155, 203, 94' },
+    { key: 'good', label: 'Good', rgb: '245, 222, 130' },
+    { key: 'okay', label: 'Okay', rgb: '224, 127, 82' },
+    { key: 'bad', label: 'Bad', rgb: '184, 54, 59' },
+];
+let buyBands = [];
+let liveChart = null;
+
+// Called whenever the buy ranges are (re)computed, before or after the chart exists.
+export function setChartBuyRanges(calculations) {
+    buyBands = [];
+    if (calculations) {
+        BAND_STYLES.forEach((style) => {
+            const low = Number(calculations[style.key + 'BRLow']);
+            const high = Number(calculations[style.key + 'BRHigh']);
+            if (Number.isFinite(low) && Number.isFinite(high) && high > 0 && high >= low) {
+                buyBands.push({ ...style, low, high });
+            }
+        });
+    }
+    if (liveChart) liveChart.update();
+}
+
+const buyBandsPlugin = {
+    id: 'stockChartBuyBands',
+    beforeDatasetsDraw(chart) {
+        const area = chart.chartArea;
+        const yScale = chart.scales.y;
+        if (!area || !yScale || !buyBands.length) return;
+        const ctx = chart.ctx;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(area.left, area.top, area.right - area.left, area.bottom - area.top);
+        ctx.clip();
+        buyBands.forEach((band) => {
+            // getPixelForValue handles linear and log axes alike. Bands are at
+            // least a hairline tall so a very narrow one still shows.
+            const yHigh = yScale.getPixelForValue(band.high);
+            const yLow = band.low > 0 ? yScale.getPixelForValue(band.low) : area.bottom;
+            const top = Math.min(yHigh, yLow);
+            const height = Math.max(Math.abs(yLow - yHigh), 2);
+            ctx.fillStyle = `rgba(${band.rgb}, 0.22)`;
+            ctx.fillRect(area.left, top, area.right - area.left, height);
+            ctx.fillStyle = `rgba(${band.rgb}, 0.9)`;
+            ctx.font = `600 10px ${CHART_FONT}`;
+            ctx.textBaseline = 'top';
+            ctx.fillText(band.label.toUpperCase(), area.left + 6, top + 2);
+        });
+        ctx.restore();
+    }
+};
+
 export function createStockChart(stockData) {
     var ctx = document.getElementById('stockChart').getContext('2d');
 
@@ -148,7 +203,7 @@ export function createStockChart(stockData) {
                 pointHoverBorderWidth: 1,
             }]
         },
-        plugins: [crosshairPlugin],
+        plugins: [buyBandsPlugin, crosshairPlugin],
         options: {
             responsive: true,
             maintainAspectRatio: false,
@@ -237,7 +292,111 @@ export function createStockChart(stockData) {
         }
     });
 
+    liveChart = stockChart;
+
+    // Ctrl + scroll (or a trackpad pinch) zooms the time axis around the
+    // cursor; double-click resets. The y-axis refits to the visible points.
+    // `view` holds fractional point indices, or null when showing everything.
+    let view = null;
+    const canvas = document.getElementById('stockChart');
+    canvas.title = 'Ctrl + scroll to zoom, drag to pan when zoomed, double-click to reset';
+
+    function resetZoom() {
+        view = null;
+        delete stockChart.options.scales.x.min;
+        delete stockChart.options.scales.x.max;
+    }
+
+    function updateCursor(dragging) {
+        canvas.style.cursor = dragging ? 'grabbing' : (view ? 'grab' : '');
+        const reset = document.getElementById('chartZoomReset');
+        if (reset) reset.disabled = !view; // nothing to reset at full view
+    }
+
+    // Show `span` points starting at fractional index `min`, clamped to the data.
+    function setView(min, span) {
+        const last = stockChart.data.labels.length - 1;
+        if (last < 3) return;
+        span = Math.min(last, Math.max(Math.min(4, last), span));
+        if (span >= last) {
+            resetZoom();
+        } else {
+            min = Math.min(Math.max(min, 0), last - span);
+            view = { min, max: min + span };
+            stockChart.options.scales.x.min = Math.round(view.min);
+            stockChart.options.scales.x.max = Math.round(view.max);
+        }
+        updateCursor(false);
+        stockChart.update('none');
+    }
+
+    // Zoom by `factor` (<1 zooms in), keeping the point at `frac` (0..1 across
+    // the plot area) where it is.
+    function zoomBy(factor, frac) {
+        const cur = view || { min: 0, max: stockChart.data.labels.length - 1 };
+        const span = cur.max - cur.min;
+        setView(cur.min + frac * span - frac * span * factor, span * factor);
+    }
+
+    function fracForX(offsetX) {
+        const area = stockChart.chartArea;
+        if (!area) return 0.5;
+        return Math.min(1, Math.max(0, (offsetX - area.left) / (area.right - area.left)));
+    }
+
+    canvas.addEventListener('wheel', function(e) {
+        if (!e.ctrlKey) return; // plain scrolling still scrolls the page
+        e.preventDefault();
+        zoomBy(e.deltaY < 0 ? 0.8 : 1.25, fracForX(e.offsetX));
+    }, { passive: false });
+
+    canvas.addEventListener('dblclick', function() {
+        resetZoom();
+        updateCursor(false);
+        stockChart.update('none');
+    });
+
+    // Click-and-drag to pan once zoomed in. Vertical touch drags still scroll
+    // the page (touch-action: pan-y); horizontal ones pan the chart.
+    canvas.style.touchAction = 'pan-y';
+    let drag = null;
+    canvas.addEventListener('pointerdown', function(e) {
+        if (!view || (e.pointerType === 'mouse' && e.button !== 0)) return;
+        drag = { x: e.clientX, min: view.min, span: view.max - view.min, id: e.pointerId };
+        try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* not capturable */ }
+        updateCursor(true);
+    });
+    canvas.addEventListener('pointermove', function(e) {
+        if (!drag || e.pointerId !== drag.id) return;
+        const area = stockChart.chartArea;
+        if (!area) return;
+        const shift = -((e.clientX - drag.x) / (area.right - area.left)) * drag.span;
+        setView(drag.min + shift, drag.span);
+        if (view) updateCursor(true);
+    });
+    function endDrag(e) {
+        if (!drag || e.pointerId !== drag.id) return;
+        drag = null;
+        updateCursor(false);
+    }
+    canvas.addEventListener('pointerup', endDrag);
+    canvas.addEventListener('pointercancel', endDrag);
+
+    // On-screen controls for when there's no scroll wheel (phones, trackpads).
+    const zoomIn = document.getElementById('chartZoomIn');
+    const zoomOut = document.getElementById('chartZoomOut');
+    const zoomReset = document.getElementById('chartZoomReset');
+    if (zoomIn) zoomIn.addEventListener('click', () => zoomBy(0.6, 0.5));
+    if (zoomOut) zoomOut.addEventListener('click', () => zoomBy(1 / 0.6, 0.5));
+    if (zoomReset) zoomReset.addEventListener('click', () => {
+        resetZoom();
+        updateCursor(false);
+        stockChart.update('none');
+    });
+
     function applyRange(months) {
+        resetZoom();
+        updateCursor(false);
         let range = sliceForRange(months);
         let colors = colorsForPrices(range.prices);
         stockChart.data.labels = range.dates;
@@ -250,6 +409,30 @@ export function createStockChart(stockData) {
     }
 
     initChartRangeButtons(applyRange);
+
+    // Linear vs logarithmic y-axis. On a log axis equal percentage moves take
+    // equal vertical distance, so steady growth reads as a straight line.
+    const scaleToggle = document.getElementById('chartScaleToggle');
+    function setLogScale(on) {
+        stockChart.options.scales.y.type = on ? 'logarithmic' : 'linear';
+        if (scaleToggle) {
+            scaleToggle.classList.toggle('is-on', on);
+            scaleToggle.setAttribute('aria-pressed', on ? 'true' : 'false');
+        }
+        stockChart.update();
+    }
+    if (scaleToggle) {
+        if (!chronoPrices.every((p) => p > 0)) scaleToggle.classList.add('hidden');
+        scaleToggle.addEventListener('click', function() {
+            let on = !scaleToggle.classList.contains('is-on');
+            setLogScale(on);
+            try { localStorage.setItem('chartLogScale', on ? '1' : '0'); } catch (e) { /* storage unavailable */ }
+        });
+        try {
+            // Log needs strictly positive prices; fall back to linear otherwise.
+            if (localStorage.getItem('chartLogScale') === '1' && chronoPrices.every((p) => p > 0)) setLogScale(true);
+        } catch (e) { /* storage unavailable */ }
+    }
 
     // Adjust canvas size dynamically
     window.addEventListener('resize', function() {
