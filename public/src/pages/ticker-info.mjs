@@ -220,9 +220,9 @@ function isTickerInWatchlist(ticker) {
 function setAddToWatchlistButtonState(inWatchlist) {
     if (!addToWatchlist) return;
     addToWatchlist.textContent = inWatchlist ? 'Modify Watchlist(s)' : 'Add To Watchlist';
-    // One button style: amber to add, a canopy chip once it is on a list.
-    addToWatchlist.classList.toggle('btn', !inWatchlist);
-    addToWatchlist.classList.toggle('chip', inWatchlist);
+    // The only colored button in the row: green to add, amber (yellow) to modify.
+    addToWatchlist.classList.add('btn');
+    addToWatchlist.classList.toggle('btn-green', !inWatchlist);
 }
 
 function loadCalculatedValues() {

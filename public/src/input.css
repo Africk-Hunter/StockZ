@@ -89,6 +89,10 @@
         transition-duration: 120ms;
     }
 
+    /* watchlist button: green to add, amber (the default .btn) to modify */
+    .btn.btn-green { background-color: theme('colors.lime'); }
+    .btn.btn-green:hover:not(:disabled) { background-color: #B4DC7F; }
+
     /* ---- secondary choices, selectors, tabs, ranges: canopy chips ---- */
     .chip {
         @apply caps cut-sm inline-flex items-center justify-center gap-2 border-0 border-b-[3px] border-r-[3px] border-solid border-plate bg-moss px-4 py-2 text-label tracking-caps-label text-cream transition-[background-color,color,border-width,transform] duration-hover ease-understory disabled:cursor-not-allowed disabled:opacity-40;
